@@ -1,7 +1,5 @@
 # =========================
-
 # Flutter / Dart / Pub
-
 # =========================
 
 .dart_tool/
@@ -10,14 +8,12 @@
 .packages
 .pub-cache/
 .pub/
-/build/
-/frontend/build/
+build/
+frontend/build/
 coverage/
-flutter/
+
 # =========================
-
 # Android
-
 # =========================
 
 **/android/app/debug/
@@ -30,9 +26,7 @@ flutter/
 *.jks
 
 # =========================
-
 # iOS
-
 # =========================
 
 **/ios/Flutter/.last_build_id
@@ -42,33 +36,25 @@ flutter/
 **/ios/DerivedData/
 
 # =========================
-
 # macOS
-
 # =========================
 
 .DS_Store
 
 # =========================
-
 # Windows
-
 # =========================
 
 Thumbs.db
 
 # =========================
-
 # Linux
-
 # =========================
 
 *~
 
 # =========================
-
 # IDEs & Editors
-
 # =========================
 
 .idea/
@@ -78,9 +64,7 @@ Thumbs.db
 .vscode/
 
 # =========================
-
 # Logs & Temporary Files
-
 # =========================
 
 *.log
@@ -90,23 +74,17 @@ __pycache__/
 *.pyc
 
 # =========================
-
 # Obfuscation / Debug Symbols
-
 # =========================
 
 app.*.symbols
 app.*.map.json
 
 # =========================
-
 # Misc
-
 # =========================
 
 .history/
 .svn/
-
-
-# Enviroment
+migrate_working_dir/
 project/
