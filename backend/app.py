@@ -6,12 +6,16 @@ from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 import os
 
-load_dotenv() 
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
 MONGO_URI = os.getenv("MONGO_URI")
+ALLOWED_ROLES = {"Customer", "Shopkeeper", "Distributor"}
+
+if not MONGO_URI:
+    raise RuntimeError("MONGO_URI environment variable is required")
 
 client = MongoClient(MONGO_URI)
 db = client["local_commerce"]
@@ -38,9 +42,30 @@ def derive_customer_id(email):
     normalized = email.strip().lower()
     return "".join(char if char.isalnum() else "_" for char in normalized)
 
+
+def parse_price(value):
+    try:
+        price = float(value)
+    except (TypeError, ValueError):
+        return None
+    if price < 0:
+        return None
+    return price
+
+
+def parse_quantity(value):
+    try:
+        quantity = int(value)
+    except (TypeError, ValueError):
+        return None
+    if quantity <= 0:
+        return None
+    return quantity
+
+
 @app.route("/")
 def home():
-    return "MongoDB Connected ✅"
+    return "MongoDB Connected"
 
 
 @app.route("/api/health", methods=["GET"])
@@ -63,6 +88,10 @@ def register_user():
         return jsonify({"error": "Invalid email"}), 400
     if len(password) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
+    if role not in ALLOWED_ROLES:
+        return jsonify({"error": "Invalid role"}), 400
+    if role != "Customer" and not business_name:
+        return jsonify({"error": "businessName is required for this role"}), 400
 
     existing_user = users_col.find_one({"email": email})
     if existing_user:
@@ -80,17 +109,19 @@ def register_user():
     inserted = users_col.insert_one(user_doc)
     created = users_col.find_one({"_id": inserted.inserted_id})
 
-    return jsonify({
-        "message": "Account created successfully",
-        "user": {
-            "id": str(created["_id"]),
-            "name": created.get("name", ""),
-            "email": created.get("email", ""),
-            "role": created.get("role", "Customer"),
-            "businessName": created.get("businessName", ""),
-            "customerId": created.get("customerId", ""),
-        },
-    }), 201
+    return jsonify(
+        {
+            "message": "Account created successfully",
+            "user": {
+                "id": str(created["_id"]),
+                "name": created.get("name", ""),
+                "email": created.get("email", ""),
+                "role": created.get("role", "Customer"),
+                "businessName": created.get("businessName", ""),
+                "customerId": created.get("customerId", ""),
+            },
+        }
+    ), 201
 
 
 @app.route("/api/auth/login", methods=["POST"])
@@ -106,17 +137,19 @@ def login_user():
     if not user or not check_password_hash(user.get("passwordHash", ""), password):
         return jsonify({"error": "Invalid email or password"}), 401
 
-    return jsonify({
-        "message": "Login successful",
-        "user": {
-            "id": str(user["_id"]),
-            "name": user.get("name", ""),
-            "email": user.get("email", ""),
-            "role": user.get("role", "Customer"),
-            "businessName": user.get("businessName", ""),
-            "customerId": user.get("customerId", derive_customer_id(email)),
-        },
-    })
+    return jsonify(
+        {
+            "message": "Login successful",
+            "user": {
+                "id": str(user["_id"]),
+                "name": user.get("name", ""),
+                "email": user.get("email", ""),
+                "role": user.get("role", "Customer"),
+                "businessName": user.get("businessName", ""),
+                "customerId": user.get("customerId", derive_customer_id(email)),
+            },
+        }
+    )
 
 
 @app.route("/api/products", methods=["GET"])
@@ -135,10 +168,18 @@ def create_product():
     if missing:
         return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
 
+    name = str(data.get("name", "")).strip()
+    shop_name = str(data.get("shopName", "")).strip()
+    price = parse_price(data.get("price"))
+    if not name or not shop_name:
+        return jsonify({"error": "name and shopName are required"}), 400
+    if price is None:
+        return jsonify({"error": "price must be a non-negative number"}), 400
+
     payload = {
-        "name": data["name"],
-        "price": float(data["price"]),
-        "shopName": data["shopName"],
+        "name": name,
+        "price": price,
+        "shopName": shop_name,
         "description": data.get("description", ""),
         "unit": data.get("unit", "1 pc"),
     }
@@ -157,7 +198,10 @@ def update_product(product_id):
     allowed = ["name", "price", "shopName", "description", "unit"]
     updates = {key: data[key] for key in allowed if key in data}
     if "price" in updates:
-        updates["price"] = float(updates["price"])
+        parsed_price = parse_price(updates["price"])
+        if parsed_price is None:
+            return jsonify({"error": "price must be a non-negative number"}), 400
+        updates["price"] = parsed_price
     if not updates:
         return jsonify({"error": "No valid fields provided"}), 400
 
@@ -193,9 +237,11 @@ def get_cart(customer_id):
 def add_to_cart(customer_id):
     data = request.get_json(silent=True) or {}
     product_id = data.get("productId")
-    quantity = int(data.get("quantity", 1))
+    quantity = parse_quantity(data.get("quantity", 1))
     if not product_id:
         return jsonify({"error": "productId is required"}), 400
+    if quantity is None:
+        return jsonify({"error": "quantity must be a positive integer"}), 400
 
     object_id = parse_object_id(product_id)
     if not object_id:
@@ -255,7 +301,13 @@ def create_order():
         return jsonify({"error": "Cart is empty"}), 400
 
     items = cart.get("items", [])
-    total = sum(float(item.get("price", 0)) * int(item.get("quantity", 1)) for item in items)
+    total = 0.0
+    for item in items:
+        quantity = parse_quantity(item.get("quantity", 1))
+        price = parse_price(item.get("price", 0))
+        if quantity is None or price is None:
+            return jsonify({"error": "Cart contains invalid item values"}), 400
+        total += price * quantity
 
     order_doc = {
         "customerId": customer_id,
@@ -278,5 +330,10 @@ def list_orders(customer_id):
     ]
     return jsonify(orders)
 
+
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(
+        debug=os.getenv("FLASK_DEBUG", "0") == "1",
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", "5000")),
+    )
