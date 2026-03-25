@@ -5,15 +5,39 @@ from bson.objectid import ObjectId
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 import os
+import socket
 
 load_dotenv() 
 
 app = Flask(__name__)
 CORS(app)
 
-MONGO_URI = os.getenv("MONGO_URI")
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('8.8.8.8', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
 
-client = MongoClient(MONGO_URI)
+MONGO_URI = os.getenv("MONGO_URI")
+if not MONGO_URI:
+    print("❌ ERROR: MONGO_URI not found in .env file!")
+else:
+    print(f"📡 Attempting to connect to MongoDB...")
+
+try:
+    client = MongoClient(MONGO_URI)
+    # The ismaster command is cheap and does not require auth.
+    client.admin.command('ismaster')
+    print("✅ MongoDB Connected Successfully")
+except Exception as e:
+    print(f"❌ MongoDB Connection Failed: {e}")
+
 db = client["local_commerce"]
 
 products_col = db["products"]
@@ -40,7 +64,7 @@ def derive_customer_id(email):
 
 @app.route("/")
 def home():
-    return "MongoDB Connected ✅"
+    return f"Backend is running and MongoDB is connected ✅. Local IP: {get_local_ip()}"
 
 
 @app.route("/api/health", methods=["GET"])
@@ -57,6 +81,8 @@ def register_user():
     role = str(data.get("role", "Customer")).strip()
     business_name = str(data.get("businessName", "")).strip()
 
+    print(f"📝 Registration attempt: {email} as {role}")
+
     if not name or not email or not password:
         return jsonify({"error": "name, email and password are required"}), 400
     if "@" not in email:
@@ -66,6 +92,7 @@ def register_user():
 
     existing_user = users_col.find_one({"email": email})
     if existing_user:
+        print(f"⚠️ Registration failed: {email} already exists")
         return jsonify({"error": "Account already exists for this email"}), 409
 
     customer_id = derive_customer_id(email)
@@ -80,6 +107,7 @@ def register_user():
     inserted = users_col.insert_one(user_doc)
     created = users_col.find_one({"_id": inserted.inserted_id})
 
+    print(f"✅ User registered: {email}")
     return jsonify({
         "message": "Account created successfully",
         "user": {
@@ -99,13 +127,21 @@ def login_user():
     email = str(data.get("email", "")).strip().lower()
     password = str(data.get("password", ""))
 
+    print(f"🔑 Login attempt: {email}")
+
     if not email or not password:
         return jsonify({"error": "email and password are required"}), 400
 
     user = users_col.find_one({"email": email})
-    if not user or not check_password_hash(user.get("passwordHash", ""), password):
+    if not user:
+        print(f"❌ Login failed: User {email} not found")
         return jsonify({"error": "Invalid email or password"}), 401
 
+    if not check_password_hash(user.get("passwordHash", ""), password):
+        print(f"❌ Login failed: Incorrect password for {email}")
+        return jsonify({"error": "Invalid email or password"}), 401
+
+    print(f"✅ Login successful: {email} ({user.get('role')})")
     return jsonify({
         "message": "Login successful",
         "user": {
@@ -279,4 +315,10 @@ def list_orders(customer_id):
     return jsonify(orders)
 
 if __name__ == "__main__":
+    local_ip = get_local_ip()
+    print("\n" + "="*50)
+    print(f"🚀 SERVER STARTING...")
+    print(f"🏠 Local: http://127.0.0.1:5000")
+    print(f"📌 ON PHYSICAL PHONE, USE THIS IP: http://{local_ip}:5000")
+    print("="*50 + "\n")
     app.run(debug=True, host="0.0.0.0", port=5000)

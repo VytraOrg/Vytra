@@ -1,48 +1,29 @@
 import 'package:flutter/foundation.dart';
 
-// Optional override: flutter run --dart-define=API_BASE_URL=http://<host>:5000
+/// --- CONNECTIVITY GUIDE ---
+/// 
+/// 1. EMULATOR: Use '10.0.2.2'
+/// 2. PHYSICAL PHONE: 
+///    - Connect phone and PC to the SAME Wi-Fi.
+///    - Find your PC IP (Windows: 'ipconfig', Mac: 'ifconfig').
+///    - Look for "IPv4 Address" (usually starts with 192.168...).
+///    - Replace '10.0.2.2' with that IP below.
+/// 3. BACKEND: Ensure you run using 'python app.py' NOT 'flask run'.
+
 String get apiBaseUrl {
-  if (kIsWeb) {
-    final fromQuery = Uri.base.queryParameters['apiBase'];
-    if (fromQuery != null && fromQuery.isNotEmpty) {
-      return fromQuery;
-    }
+  if (kIsWeb) return 'http://localhost:5000';
+
+  // --- EDIT THIS LINE ---
+  // Change to your PC IP if using a real phone (e.g., '192.168.1.5')
+  // We remove 'const' to ensure Flutter doesn't cache an old IP.
+  String hostIp = '192.168.0.104';
+  // ----------------------
+
+  final url = 'http://$hostIp:5000';
+  
+  if (kDebugMode) {
+    print('📡 Attempting to connect to: $url');
   }
-
-  const configuredUrl = String.fromEnvironment('API_BASE_URL');
-  if (configuredUrl.isNotEmpty) {
-    return configuredUrl;
-  }
-
-  if (kIsWeb) {
-    final baseUri = Uri.base;
-    final host = baseUri.host;
-    if (host.isEmpty || host == 'localhost' || host == '127.0.0.1') {
-      return 'http://localhost:5000';
-    }
-
-    // For forwarded hosts like "name-43253.app.github.dev", map the app port
-    // segment to backend port 5000 => "name-5000.app.github.dev".
-    final mappedHost = _mapForwardedHostToPort(host, 5000);
-    if (mappedHost != null) {
-      return '${baseUri.scheme}://$mappedHost';
-    }
-
-    return '${baseUri.scheme}://$host:5000';
-  }
-
-  return 'http://10.0.2.2:5000';
-}
-
-String? _mapForwardedHostToPort(String host, int port) {
-  final match = RegExp(r'^(.*)-\d+(\..+)$').firstMatch(host);
-  if (match == null) {
-    return null;
-  }
-  final prefix = match.group(1);
-  final suffix = match.group(2);
-  if (prefix == null || suffix == null) {
-    return null;
-  }
-  return '$prefix-$port$suffix';
+  
+  return url;
 }

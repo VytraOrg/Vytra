@@ -55,10 +55,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'role': selectedRole,
           'businessName': selectedRole == 'Customer' ? '' : businessName,
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
 
-      if (!mounted) {
-        return;
+      if (!mounted) return;
+
+      // Check if the response is actually JSON
+      if (response.headers['content-type']?.contains('application/json') != true) {
+        throw 'Server returned HTML instead of data. Check your IP address in api_config.dart. (Status: ${response.statusCode})';
       }
 
       final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -73,17 +76,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       Navigator.pop(context);
     } catch (e) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to connect to server: $e')),
+        SnackBar(content: Text('Error: $e'), duration: const Duration(seconds: 10)),
       );
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -97,7 +96,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Column(
           children: [
             DropdownButtonFormField<String>(
-              initialValue: selectedRole,
+              value: selectedRole,
               decoration: const InputDecoration(labelText: 'I am a...', border: OutlineInputBorder()),
               items: ['Customer', 'Shopkeeper', 'Distributor']
                   .map((role) => DropdownMenuItem(value: role, child: Text(role)))
@@ -114,8 +113,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               controller: _emailController,
               decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
             ),
-            
-            // Show Shop Name only if they aren't a basic Customer
             if (selectedRole != 'Customer') ...[
               const SizedBox(height: 15),
               TextField(
@@ -126,23 +123,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
             ],
-            
             const SizedBox(height: 15),
             TextField(
               controller: _passwordController,
               obscureText: true,
-              decoration: InputDecoration(labelText: 'Password', border: OutlineInputBorder())),
+              decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder())),
             const SizedBox(height: 30),
-            
             ElevatedButton(
               style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 55)),
               onPressed: _isLoading ? null : _registerAccount,
               child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Text("Register"),
             ),
             const SizedBox(height: 12),

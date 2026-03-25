@@ -21,7 +21,6 @@ class LocalCommerceApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
-        // Using a modern font if possible, or sticking to clean Sans-Serif
       ),
       home: const LoginScreen(),
     );
@@ -49,6 +48,31 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _checkServer() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await http.get(Uri.parse(apiBaseUrl)).timeout(const Duration(seconds: 5));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Server Response: ${response.body}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cannot connect to $apiBaseUrl. Error: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 10),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _handleLogin() async {
     final email = _emailController.text.trim().toLowerCase();
     final password = _passwordController.text;
@@ -64,12 +88,14 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
+    final loginUrl = '$apiBaseUrl/api/auth/login';
+
     try {
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/auth/login'),
+        Uri.parse(loginUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
-      );
+      ).timeout(const Duration(seconds: 10));
 
       if (!mounted) {
         return;
@@ -86,38 +112,28 @@ class _LoginScreenState extends State<LoginScreen> {
       final role = (user['role'] ?? '').toString();
       if (role != selectedRole) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('This account is registered as $role')),
+          SnackBar(content: Text('This account is registered as $role. Please select the correct role.')),
         );
         return;
       }
 
       if (selectedRole == 'Customer') {
         final customerId = (user['customerId'] ?? '').toString();
-        if (customerId.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Customer id missing for this account')),
-          );
-          return;
-        }
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => CustomerHome(customerId: customerId),
-          ),
+          MaterialPageRoute(builder: (context) => CustomerHome(customerId: customerId)),
         );
       } else if (selectedRole == 'Shopkeeper') {
         Navigator.push(context, MaterialPageRoute(builder: (context) => const ShopkeeperDash()));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Distributor dashboard will be added soon')),
-        );
       }
     } catch (e) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to connect to server: $e')),
+        SnackBar(
+          content: Text('Connection failed to $loginUrl\nError: $e'),
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(label: 'Retry', onPressed: _handleLogin),
+        ),
       );
     } finally {
       if (mounted) {
@@ -131,25 +147,25 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50], // Soft background for the "Floating Card" effect
+      backgroundColor: Colors.grey[50],
       body: Stack(
         children: [
-          // 1. GRADIENT HEADER BACKGROUND
           _buildHeaderBackground(),
-
-          // 2. MAIN CONTENT
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
                 children: [
-                  const SizedBox(height: 60),
-                  // Branding Section
-                  _buildBranding(),
                   const SizedBox(height: 40),
-
-                  // 3. FLOATING LOGIN CARD
+                  _buildBranding(),
+                  const SizedBox(height: 30),
                   _buildLoginCard(context),
+                  const SizedBox(height: 20),
+                  TextButton.icon(
+                    onPressed: _isLoading ? null : _checkServer,
+                    icon: const Icon(Icons.lan_outlined),
+                    label: const Text("Troubleshoot Connection"),
+                  ),
                 ],
               ),
             ),
@@ -158,8 +174,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
-  // --- UI WIDGETS ---
 
   Widget _buildHeaderBackground() {
     return Container(
@@ -176,12 +190,6 @@ class _LoginScreenState extends State<LoginScreen> {
           bottomRight: Radius.circular(50),
         ),
       ),
-      child: Center(
-        child: Opacity(
-          opacity: 0.1,
-          child: const Icon(Icons.local_mall, size: 200, color: Colors.white),
-        ),
-      ),
     );
   }
 
@@ -190,12 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Text(
           "Local Commerce",
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 1,
-          ),
+          style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         SizedBox(height: 8),
         Text(
@@ -214,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -223,28 +226,17 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Login to your account",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 25),
-
-          // Role Selector
-          const Text("Select Role", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          _buildRoleDropdown(),
-
+          const Text("Login to your account", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
-
-          // Email Field
+          _buildRoleDropdown(),
+          const SizedBox(height: 20),
           _buildTextField(
             label: "Email Address",
             icon: Icons.email_outlined,
             hint: "example@mail.com",
             controller: _emailController,
           ),
-
           const SizedBox(height: 20),
-
-          // Password Field
           _buildTextField(
             label: "Password",
             icon: Icons.lock_outline,
@@ -252,49 +244,27 @@ class _LoginScreenState extends State<LoginScreen> {
             isPassword: true,
             controller: _passwordController,
           ),
-
           const SizedBox(height: 30),
-
-          // Login Button
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 58),
               backgroundColor: Colors.indigo.shade700,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              elevation: 4,
             ),
             onPressed: _isLoading ? null : _handleLogin,
             child: _isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : Text("Login as $selectedRole",
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : Text("Login as $selectedRole", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(height: 14),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
               minimumSize: const Size(double.infinity, 54),
-              side: BorderSide(color: Colors.indigo.shade300),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const RegisterScreen()),
-              );
-            },
-            child: Text(
-              "Don't have an account? Register",
-              style: TextStyle(
-                color: Colors.indigo.shade700,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterScreen())),
+            child: const Text("Don't have an account? Register"),
           ),
         ],
       ),
@@ -304,10 +274,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildRoleDropdown() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: selectedRole,
@@ -347,14 +314,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 : null,
             filled: true,
             fillColor: Colors.grey[50],
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade200),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
       ],
