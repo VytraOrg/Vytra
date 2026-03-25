@@ -99,7 +99,9 @@ class _ProductListState extends State<ProductList> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const CartPage()),
+                  MaterialPageRoute(
+                    builder: (context) => CartPage(customerId: widget.customerId),
+                  ),
                 );
               },
               icon: const Icon(Icons.shopping_cart_outlined, color: Colors.indigo),
