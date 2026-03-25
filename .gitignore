@@ -11,6 +11,7 @@
 .pub-cache/
 .pub/
 /build/
+/frontend/build/
 coverage/
 
 # =========================
@@ -85,6 +86,8 @@ Thumbs.db
 *.log
 *.tmp
 *.swp
+__pycache__/
+*.pyc
 
 # =========================
 

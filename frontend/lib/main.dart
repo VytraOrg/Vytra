@@ -1,7 +1,10 @@
 import 'register.dart';
 import 'customer_home.dart';
 import 'shopkeeper_dash.dart';
+import 'api_config.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const LocalCommerceApp());
@@ -35,6 +38,95 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   String selectedRole = 'Customer';
   bool _obscureText = true;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim().toLowerCase();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter email and password')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/api/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode != 200) {
+        final error = (body['error'] ?? 'Login failed').toString();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+        return;
+      }
+
+      final user = (body['user'] as Map<String, dynamic>? ?? {});
+      final role = (user['role'] ?? '').toString();
+      if (role != selectedRole) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('This account is registered as $role')),
+        );
+        return;
+      }
+
+      if (selectedRole == 'Customer') {
+        final customerId = (user['customerId'] ?? '').toString();
+        if (customerId.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Customer id missing for this account')),
+          );
+          return;
+        }
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CustomerHome(customerId: customerId),
+          ),
+        );
+      } else if (selectedRole == 'Shopkeeper') {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const ShopkeeperDash()));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Distributor dashboard will be added soon')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to connect to server: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,20 +150,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // 3. FLOATING LOGIN CARD
                   _buildLoginCard(context),
-
-                  const SizedBox(height: 20),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const RegisterScreen()),
-                      );
-                    },
-                    child: Text(
-                      "Don't have an account? Create one",
-                      style: TextStyle(color: Colors.indigo[800], fontWeight: FontWeight.bold),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -136,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -161,6 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
             label: "Email Address",
             icon: Icons.email_outlined,
             hint: "example@mail.com",
+            controller: _emailController,
           ),
 
           const SizedBox(height: 20),
@@ -171,6 +250,7 @@ class _LoginScreenState extends State<LoginScreen> {
             icon: Icons.lock_outline,
             hint: "••••••••",
             isPassword: true,
+            controller: _passwordController,
           ),
 
           const SizedBox(height: 30),
@@ -184,15 +264,37 @@ class _LoginScreenState extends State<LoginScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
               elevation: 4,
             ),
+            onPressed: _isLoading ? null : _handleLogin,
+            child: _isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : Text("Login as $selectedRole",
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(height: 14),
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 54),
+              side: BorderSide(color: Colors.indigo.shade300),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            ),
             onPressed: () {
-              if (selectedRole == 'Customer') {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const CustomerHome()));
-              } else if (selectedRole == 'Shopkeeper') {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const ShopkeeperDash()));
-              }
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const RegisterScreen()),
+              );
             },
-            child: Text("Login as $selectedRole",
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            child: Text(
+              "Don't have an account? Register",
+              style: TextStyle(
+                color: Colors.indigo.shade700,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
@@ -224,6 +326,7 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     required String hint,
     bool isPassword = false,
+    TextEditingController? controller,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,6 +334,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(label, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         TextField(
+          controller: controller,
           obscureText: isPassword ? _obscureText : false,
           decoration: InputDecoration(
             hintText: hint,

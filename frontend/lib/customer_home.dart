@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'product_list.dart';
+import 'account_page.dart';
 
 class CustomerHome extends StatelessWidget {
-  const CustomerHome({super.key});
+  final String customerId;
+
+  const CustomerHome({super.key, required this.customerId});
 
   @override
   Widget build(BuildContext context) {
@@ -17,6 +20,20 @@ class CustomerHome extends StatelessWidget {
             pinned: true,
             elevation: 0,
             backgroundColor: Colors.indigo.shade900,
+            actions: [
+              IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AccountPage(customerId: customerId),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.account_circle_outlined),
+                tooltip: 'Account',
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               title: const Text(
                 "Discover Local Shops",
@@ -34,7 +51,7 @@ class CustomerHome extends StatelessWidget {
                   child: Icon(
                     Icons.storefront_rounded,
                     size: 100,
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                   ),
                 ),
               ),
@@ -54,7 +71,7 @@ class CustomerHome extends StatelessWidget {
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         )
@@ -113,7 +130,10 @@ class CustomerHome extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ProductList(shopName: "Premium Mart #${index + 1}"),
+            builder: (context) => ProductList(
+              shopName: "Premium Mart #${index + 1}",
+              customerId: customerId,
+            ),
           ),
         );
       },
@@ -124,7 +144,7 @@ class CustomerHome extends StatelessWidget {
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 25,
               offset: const Offset(0, 12),
             )
@@ -149,7 +169,7 @@ class CustomerHome extends StatelessWidget {
                   child: Icon(
                     Icons.store_mall_directory_rounded,
                     size: 60,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Colors.white.withValues(alpha: 0.4),
                   ),
                 ),
                 Positioned(
@@ -158,7 +178,7 @@ class CustomerHome extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
