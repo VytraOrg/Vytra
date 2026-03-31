@@ -106,3 +106,7 @@ app.*.map.json
 
 .history/
 .svn/
+
+
+# Enviroment
+project/
