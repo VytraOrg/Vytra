@@ -1,9 +1,82 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'cart_page.dart';
+import 'api_config.dart';
 
-class ProductList extends StatelessWidget {
+class ProductList extends StatefulWidget {
   final String shopName;
-  const ProductList({super.key, required this.shopName});
+  final String customerId;
+
+  const ProductList({
+    super.key,
+    required this.shopName,
+    required this.customerId,
+  });
+
+  @override
+  State<ProductList> createState() => _ProductListState();
+}
+
+class _ProductListState extends State<ProductList> {
+  late Future<List<ProductItem>> _productsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _productsFuture = _fetchProducts();
+  }
+
+  Future<List<ProductItem>> _fetchProducts() async {
+    final uri = Uri.parse('$apiBaseUrl/api/products').replace(
+      queryParameters: {'shop': widget.shopName},
+    );
+
+    final response = await http.get(uri);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load products (${response.statusCode})');
+    }
+
+    final decoded = jsonDecode(response.body) as List<dynamic>;
+    return decoded
+        .map((item) => ProductItem.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> _addToCart(ProductItem product) async {
+    final uri = Uri.parse('$apiBaseUrl/api/cart/${widget.customerId}/items');
+    http.Response response;
+    try {
+      response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'productId': product.id, 'quantity': 1}),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not add item to cart: $e')),
+      );
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    if (response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${product.name} added to cart')),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Could not add item to cart (${response.statusCode})')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,7 +84,7 @@ class ProductList extends StatelessWidget {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
-          shopName,
+          widget.shopName,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         backgroundColor: Colors.white,
@@ -31,7 +104,7 @@ class ProductList extends StatelessWidget {
               },
               icon: const Icon(Icons.shopping_cart_outlined, color: Colors.indigo),
               style: IconButton.styleFrom(
-                backgroundColor: Colors.indigo.withOpacity(0.05),
+                backgroundColor: Colors.indigo.withValues(alpha: 0.05),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
@@ -55,12 +128,51 @@ class ProductList extends StatelessWidget {
           ),
           
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.all(20),
-              itemCount: 10,
-              separatorBuilder: (context, index) => const SizedBox(height: 20),
-              itemBuilder: (context, index) {
-                return _buildProductItem(context, index);
+            child: FutureBuilder<List<ProductItem>>(
+              future: _productsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  final message = snapshot.error?.toString() ?? 'unknown error';
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        'Unable to load products: $message',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey.shade700),
+                      ),
+                    ),
+                  );
+                }
+
+                final products = snapshot.data ?? [];
+                if (products.isEmpty) {
+                  return const Center(
+                    child: Text('No products found for this shop'),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    final refreshed = _fetchProducts();
+                    setState(() {
+                      _productsFuture = refreshed;
+                    });
+                    await refreshed;
+                  },
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(20),
+                    itemCount: products.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 20),
+                    itemBuilder: (context, index) {
+                      return _buildProductItem(context, products[index]);
+                    },
+                  ),
+                );
               },
             ),
           ),
@@ -88,7 +200,7 @@ class ProductList extends StatelessWidget {
     );
   }
 
-  Widget _buildProductItem(BuildContext context, int index) {
+  Widget _buildProductItem(BuildContext context, ProductItem product) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -96,7 +208,7 @@ class ProductList extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 15,
             offset: const Offset(0, 8),
           )
@@ -111,7 +223,7 @@ class ProductList extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Colors.indigo.withOpacity(0.05),
+                color: Colors.indigo.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: const Icon(Icons.fastfood_rounded, color: Colors.indigo, size: 30),
@@ -124,17 +236,17 @@ class ProductList extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Premium Product #${index + 1}",
+                    product.name,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "High quality • 500g",
+                    '${product.description} • ${product.unit}',
                     style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "₹${(index + 1) * 45}",
+                    '₹${product.price.toStringAsFixed(0)}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold, 
                       fontSize: 18, 
@@ -147,11 +259,7 @@ class ProductList extends StatelessWidget {
             
             // Add Button
             ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Added to Cart!")),
-                );
-              },
+              onPressed: () => _addToCart(product),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.indigo,
                 foregroundColor: Colors.white,
@@ -164,6 +272,32 @@ class ProductList extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class ProductItem {
+  final String id;
+  final String name;
+  final String description;
+  final String unit;
+  final double price;
+
+  ProductItem({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.unit,
+    required this.price,
+  });
+
+  factory ProductItem.fromJson(Map<String, dynamic> json) {
+    return ProductItem(
+      id: (json['id'] ?? '').toString(),
+      name: (json['name'] ?? 'Unnamed Product').toString(),
+      description: (json['description'] ?? 'No description').toString(),
+      unit: (json['unit'] ?? '1 pc').toString(),
+      price: (json['price'] as num?)?.toDouble() ?? 0,
     );
   }
 }
