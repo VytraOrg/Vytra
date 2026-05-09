@@ -6,12 +6,14 @@ class CartPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF8F9FA), // Clean off-white background
       appBar: AppBar(
-        title: const Text("Your Cart", 
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text(
+          "Your Cart", 
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: -0.5),
+        ),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        foregroundColor: const Color(0xFF38240D), // Dark Chocolate
         elevation: 0,
         centerTitle: false,
       ),
@@ -45,11 +47,12 @@ class CartPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           )
         ],
       ),
@@ -59,10 +62,10 @@ class CartPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.indigo.shade50,
+              color: const Color(0xFF38240D).withValues(alpha: 0.05), // Subtle chocolate tint
               borderRadius: BorderRadius.circular(15),
             ),
-            child: const Icon(Icons.shopping_bag_outlined, color: Colors.indigo),
+            child: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF38240D)), // Dark Chocolate
           ),
           const SizedBox(width: 16),
           
@@ -71,20 +74,20 @@ class CartPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF38240D))),
                 const SizedBox(height: 4),
-                Text("₹$price", style: TextStyle(color: Colors.indigo.shade700, fontWeight: FontWeight.bold)),
+                Text("₹$price", style: const TextStyle(color: Color(0xFF38240D), fontWeight: FontWeight.w900)),
               ],
             ),
           ),
           
-          // Quantity Adjuster (Standard Startup UX)
+          // Quantity Adjuster
           Row(
             children: [
               _buildQtyBtn(Icons.remove),
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10.0),
-                child: Text("1", style: TextStyle(fontWeight: FontWeight.bold)),
+                padding: EdgeInsets.symmetric(horizontal: 12.0),
+                child: Text("1", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF38240D))),
               ),
               _buildQtyBtn(Icons.add),
             ],
@@ -96,12 +99,13 @@ class CartPage extends StatelessWidget {
 
   Widget _buildQtyBtn(IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
+        color: const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Icon(icon, size: 18, color: Colors.black87),
+      child: Icon(icon, size: 16, color: const Color(0xFF38240D)),
     );
   }
 
@@ -125,35 +129,35 @@ class CartPage extends StatelessWidget {
             const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Subtotal", style: TextStyle(color: Colors.grey, fontSize: 16)),
-                Text("₹490", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text("Subtotal", style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500)),
+                Text("₹490", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF38240D))),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Delivery Fee", style: TextStyle(color: Colors.grey, fontSize: 16)),
+                Text("Delivery Fee", style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500)),
                 Text("FREE", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
               ],
             ),
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 15.0),
-              child: Divider(),
+              padding: EdgeInsets.symmetric(vertical: 18.0),
+              child: Divider(color: Color(0xFFF8F9FA), thickness: 1.5),
             ),
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Total Amount", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text("Total Amount", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF38240D))),
                 Text("₹490", 
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.indigo.shade800)),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF38240D))), // Dark Chocolate
               ],
             ),
             const SizedBox(height: 25),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 60),
-                backgroundColor: Colors.indigo.shade800,
+                backgroundColor: const Color(0xFF38240D), // Dark Chocolate
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                 elevation: 0,
@@ -172,35 +176,45 @@ class CartPage extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
       builder: (context) => Container(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.green, size: 80),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 60),
+            ),
             const SizedBox(height: 24),
             const Text("Order Successful!", 
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF38240D), letterSpacing: -0.5)),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               "Your order has been sent to the shopkeeper. You'll be notified once it's out for delivery.",
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, height: 1.5),
+              style: TextStyle(color: Colors.grey.shade600, height: 1.5, fontSize: 15),
             ),
             const SizedBox(height: 32),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 58),
-                backgroundColor: Colors.indigo.shade800,
+                backgroundColor: const Color(0xFF38240D), // Dark Chocolate
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
               ),
               onPressed: () {
                 Navigator.pop(context); // Close sheet
                 Navigator.pop(context); // Go back
               },
               child: const Text("Track My Order", 
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
           ],
         ),

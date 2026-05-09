@@ -18,7 +18,7 @@ import 'package:testapp/main.dart';
 void main() {
   testWidgets('Login screen displays correctly', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const LocalCommerceApp());
+    await tester.pumpWidget(const VycenApp());
 
     // Verify that the login screen elements are present.
     expect(find.text('Login to your account'), findsOneWidget);

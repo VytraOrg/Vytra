@@ -81,20 +81,20 @@ class _ProductListState extends State<ProductList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F9FA), // Clean off-white background
       appBar: AppBar(
         title: Text(
           widget.shopName,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        foregroundColor: const Color(0xFF38240D), // Dark Chocolate
         elevation: 0,
         centerTitle: false,
         actions: [
           // Glass-style Cart Button
           Padding(
-            padding: const EdgeInsets.only(right: 12.0),
+            padding: const EdgeInsets.only(right: 16.0),
             child: IconButton(
               onPressed: () {
                 Navigator.push(
@@ -102,7 +102,7 @@ class _ProductListState extends State<ProductList> {
                   MaterialPageRoute(builder: (context) => const CartPage()),
                 );
               },
-              icon: const Icon(Icons.shopping_cart_outlined, color: Colors.indigo),
+              icon: const Icon(Icons.shopping_cart_outlined, color: Color(0xFF38240D)),
               style: IconButton.styleFrom(
                 backgroundColor: Colors.indigo.withValues(alpha: 0.05),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -113,17 +113,21 @@ class _ProductListState extends State<ProductList> {
       ),
       body: Column(
         children: [
-          // Category Chips (Startup UX: Quick Filtering)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                _buildCategoryChip("All Items", true),
-                _buildCategoryChip("Popular", false),
-                _buildCategoryChip("Discounts", false),
-                _buildCategoryChip("New Arrivals", false),
-              ],
+          // Category Chips (Quick Filtering)
+          Container(
+            color: Colors.white, // Keep chips area crisp white
+            width: double.infinity,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                children: [
+                  _buildCategoryChip("All Items", true),
+                  _buildCategoryChip("Popular", false),
+                  _buildCategoryChip("Discounts", false),
+                  _buildCategoryChip("New Arrivals", false),
+                ],
+              ),
             ),
           ),
           
@@ -181,18 +185,24 @@ class _ProductListState extends State<ProductList> {
     );
   }
 
+  // --- UI COMPONENTS ---
+
   Widget _buildCategoryChip(String label, bool isSelected) {
     return Container(
       margin: const EdgeInsets.only(right: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: isSelected ? Colors.indigo : Colors.grey[100],
+        color: isSelected ? const Color(0xFF38240D) : Colors.white, // Dark chocolate if selected
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isSelected ? const Color(0xFF38240D) : Colors.grey.shade300,
+          width: 1,
+        ),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: isSelected ? Colors.white : Colors.grey[600],
+          color: isSelected ? Colors.white : Colors.grey.shade700,
           fontWeight: FontWeight.bold,
           fontSize: 13,
         ),
@@ -215,7 +225,7 @@ class _ProductListState extends State<ProductList> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(16.0),
         child: Row(
           children: [
             // Product Placeholder Image
@@ -226,9 +236,9 @@ class _ProductListState extends State<ProductList> {
                 color: Colors.indigo.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: const Icon(Icons.fastfood_rounded, color: Colors.indigo, size: 30),
+              child: const Icon(Icons.fastfood_rounded, color: Color(0xFF38240D), size: 32),
             ),
-            const SizedBox(width: 15),
+            const SizedBox(width: 16),
             
             // Product Details
             Expanded(
@@ -244,13 +254,13 @@ class _ProductListState extends State<ProductList> {
                     '${product.description} • ${product.unit}',
                     style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Text(
                     '₹${product.price.toStringAsFixed(0)}',
                     style: const TextStyle(
-                      fontWeight: FontWeight.bold, 
+                      fontWeight: FontWeight.w900, 
                       fontSize: 18, 
-                      color: Colors.indigo
+                      color: Color(0xFF38240D) // Dark Chocolate Price
                     ),
                   ),
                 ],
@@ -261,13 +271,13 @@ class _ProductListState extends State<ProductList> {
             ElevatedButton(
               onPressed: () => _addToCart(product),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo,
+                backgroundColor: const Color(0xFF38240D), // Dark Chocolate
                 foregroundColor: Colors.white,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(horizontal: 15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
-              child: const Text("Add"),
+              child: const Text("Add", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

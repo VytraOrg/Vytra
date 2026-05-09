@@ -11,12 +11,14 @@ class _InventoryPageState extends State<InventoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF8F9FA), // Clean off-white background
       appBar: AppBar(
-        title: const Text("Inventory Manager", 
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text(
+          "Inventory Manager", 
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: -0.5),
+        ),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        foregroundColor: const Color(0xFF38240D), // Dark Chocolate
         elevation: 0,
         actions: [
           IconButton(
@@ -39,7 +41,7 @@ class _InventoryPageState extends State<InventoryPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddProductSheet(context),
-        backgroundColor: Colors.indigo.shade800,
+        backgroundColor: const Color(0xFF38240D), // Dark Chocolate
         label: const Text("Add Item", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         icon: const Icon(Icons.add, color: Colors.white),
       ),
@@ -52,9 +54,10 @@ class _InventoryPageState extends State<InventoryPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 15,
             offset: const Offset(0, 8),
           )
@@ -65,32 +68,33 @@ class _InventoryPageState extends State<InventoryPage> {
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.indigo.shade50,
+            color: const Color(0xFF38240D).withValues(alpha: 0.05), // Subtle chocolate tint
             borderRadius: BorderRadius.circular(15),
           ),
-          child: const Icon(Icons.inventory_2_outlined, color: Colors.indigo),
+          child: const Icon(Icons.inventory_2_outlined, color: Color(0xFF38240D)),
         ),
         title: Text(
           "Product Item #${index + 1}",
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF38240D)),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text("Price: ₹${(index + 1) * 20}", style: const TextStyle(color: Colors.grey)),
+            Text("Price: ₹${(index + 1) * 20}", style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
             // Stock Badge
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: isLowStock ? Colors.red.shade50 : Colors.green.shade50,
+                // Using the theme's Rust/Orange for low stock warning instead of generic red
+                color: isLowStock ? const Color(0xFFC05800).withValues(alpha: 0.1) : Colors.green.shade50,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 "$stock Units left",
                 style: TextStyle(
-                  color: isLowStock ? Colors.red.shade700 : Colors.green.shade700,
+                  color: isLowStock ? const Color(0xFFC05800) : Colors.green.shade700,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -107,11 +111,11 @@ class _InventoryPageState extends State<InventoryPage> {
             );
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(value: 'Edit', child: Text('Edit Product')),
-            const PopupMenuItem(value: 'Stock', child: Text('Update Stock')),
+            const PopupMenuItem(value: 'Edit', child: Text('Edit Product', style: TextStyle(fontWeight: FontWeight.w500))),
+            const PopupMenuItem(value: 'Stock', child: Text('Update Stock', style: TextStyle(fontWeight: FontWeight.w500))),
             const PopupMenuItem(
               value: 'Delete', 
-              child: Text('Delete', style: TextStyle(color: Colors.red)),
+              child: Text('Delete', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -123,6 +127,7 @@ class _InventoryPageState extends State<InventoryPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
       builder: (context) => Padding(
         padding: EdgeInsets.only(
@@ -133,8 +138,10 @@ class _InventoryPageState extends State<InventoryPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Add New Product", 
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text(
+              "Add New Product", 
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF38240D), letterSpacing: -0.5),
+            ),
             const SizedBox(height: 25),
             _buildSheetTextField("Product Name", Icons.edit_note_rounded),
             const SizedBox(height: 15),
@@ -149,12 +156,13 @@ class _InventoryPageState extends State<InventoryPage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 58),
-                backgroundColor: Colors.indigo.shade800,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                backgroundColor: const Color(0xFF38240D), // Dark Chocolate
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
               ),
               onPressed: () => Navigator.pop(context),
               child: const Text("Add to Inventory", 
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
             ),
             const SizedBox(height: 30),
           ],
@@ -165,18 +173,24 @@ class _InventoryPageState extends State<InventoryPage> {
 
   Widget _buildSheetTextField(String label, IconData icon) {
     return TextField(
+      style: const TextStyle(fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: Colors.indigo),
+        labelStyle: TextStyle(color: Colors.grey.shade500),
+        prefixIcon: Icon(icon, color: const Color(0xFF38240D)), // Dark Chocolate
         filled: true,
-        fillColor: Colors.grey.shade50,
+        fillColor: const Color(0xFFF8F9FA),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFF38240D), width: 1.5),
         ),
       ),
     );
