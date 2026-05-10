@@ -88,3 +88,10 @@ app.*.map.json
 .svn/
 migrate_working_dir/
 project/
+server/node_modules/
+server/dist/
+.env
+
+server/node_modules/
+server/dist/
+.env

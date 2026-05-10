@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'main.dart'; // To navigate to LoginScreen
-import 'register.dart'; // To navigate to RegisterScreen
+import 'package:flutter_animate/flutter_animate.dart';
+import 'core/design_system.dart';
+import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/auth/presentation/screens/register_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -8,119 +10,113 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // Light fallback color
       body: Stack(
         children: [
-          // 1. THE WAVY BACKGROUND IMAGE
-          // NOTE: Make sure to add your image to the assets folder and pubspec.yaml!
+          // Background Image with Ken Burns effect
           Positioned.fill(
             child: Image.asset(
-              'assets/bg_image.jpg', // Make sure this matches your image file name
+              'assets/bg_image.jpg',
               fit: BoxFit.cover,
-            ),
-          ),
-
-          // 2. MAIN TEXT CONTENT
-          SafeArea(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Welcome Back!",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF38240D), // Dark chocolate from your earthy theme
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    Text(
-                      "Enter personal details to your\nemployee account",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: const Color(0xFF38240D).withValues(alpha: 0.7),
-                        height: 1.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+            ).animate().scale(
+                  begin: const Offset(1.1, 1.1),
+                  end: const Offset(1.0, 1.0),
+                  duration: 10.seconds,
+                  curve: Curves.linear,
                 ),
-              ),
-            ),
           ),
 
-          // 3. THE BOTTOM WHITE BAR (Sign in / Sign up)
-          Align(
-            alignment: Alignment.bottomCenter,
+          // Dark Gradient Overlay for readability
+          Positioned.fill(
             child: Container(
-              height: 100, // Height of the bottom button bar
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.black.withOpacity(0.8),
+                    Colors.black.withOpacity(0.2),
+                    Colors.black.withOpacity(0.9),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, -5),
-                  )
-                ]
               ),
-              child: Row(
+            ),
+          ),
+
+          // Content
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left Side: Sign In (Black text)
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const LoginScreen()),
-                        );
-                      },
-                      child: Container(
-                        alignment: Alignment.center,
-                        child: const Text(
-                          "Sign in",
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 56, 36, 13), 
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  const Spacer(flex: 3),
                   
-                  // Right Side: Sign Up (Orange/Rust text)
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
+                  // App Branding
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                    ),
+                    child: const Icon(
+                      Icons.storefront_outlined,
+                      size: 40,
+                      color: AppColors.primary,
+                    ),
+                  ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.2),
+
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Headline
+                  Text(
+                    "Shop Local.\nThink Premium.",
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                          color: Colors.white,
+                          height: 1.1,
+                        ),
+                  ).animate().fadeIn(delay: 200.ms, duration: 800.ms).slideX(begin: -0.1),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Subtitle
+                  Text(
+                    "Experience the best neighborhood products delivered with care and elegance.",
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                  ).animate().fadeIn(delay: 400.ms, duration: 800.ms),
+
+                  const Spacer(flex: 2),
+
+                  // Action Buttons
+                  Column(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
-                        );
-                      },
-                      child: Container(
-                        alignment: Alignment.center,
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        ),
+                        child: const Text("Get Started"),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 56),
+                        ),
                         child: const Text(
-                          "Sign up",
-                          style: TextStyle(
-                            color: Color.fromARGB(255, 56, 36, 13), // Dark chocolate from your earthy theme
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          "Create an Account",
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
-                    ),
-                  ),
+                    ],
+                  ).animate().fadeIn(delay: 600.ms, duration: 800.ms).slideY(begin: 0.1),
+                  
+                  const SizedBox(height: AppSpacing.xl),
                 ],
               ),
             ),
