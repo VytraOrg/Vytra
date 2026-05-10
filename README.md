@@ -1,45 +1,47 @@
-# 🛒 Local Commerce App
+# ?? Local Commerce App
 
-A modern, full-stack commerce solution connecting local shopkeepers, distributors, and customers. Built with **Flutter** (Frontend), **Flask** (Backend), and **MongoDB Atlas** (Database).
-
----
-
-## 🚀 Features
-
-- **Multi-Role Support**: Custom interfaces for Customers, Shopkeepers, and Distributors.
-- **Real-time Inventory**: Shopkeepers can manage stock levels with low-stock alerts.
-- **Premium UI**: Modern Glassmorphism and Neumorphic design elements.
-- **Secure Auth**: Password hashing with Werkzeug and secure document verification.
-- **Order Management**: End-to-end order flow from cart to confirmation.
-- **Analytics**: Performance insights and weekly sales trends for business owners.
+A modern, full-stack commerce solution connecting local shopkeepers, distributors, and customers. Built with **Flutter** (Frontend), **NestJS** (Backend), and **MongoDB Atlas** (Database).
 
 ---
 
-## 🛠️ Tech Stack
+## ?? Features
 
-- **Frontend**: Flutter (Dart)
-- **Backend**: Flask (Python)
+- **Multi-Role Support**: Custom interfaces and logic for Customers, Shopkeepers, and Distributors.
+- **Smart Global Search**: Customers can search across all nearby shops, or use intelligent category chips (Staples, Dairy, Veggies, Snacks) to instantly find products.
+- **Premium UI**: Modern Glassmorphism, Neumorphic design elements, haptic feedback, and dynamic profile headers.
+- **Secure Auth**: JWT-based authentication with role guards, offline session persistence via Hive, and robust logout workflows.
+- **High-Performance Architecture**: Backend powered by NestJS (TypeScript) with Mongoose, supporting parallel request processing and clean module boundaries.
+- **Real-time Discovery**: Geolocation-ready shop indexing and dynamic product discovery (Swiggy/Zomato style).
+
+---
+
+## ??? Tech Stack
+
+- **Frontend**: Flutter (Dart) with Provider & Hive
+- **Backend**: NestJS (TypeScript, Node.js)
 - **Database**: MongoDB Atlas (Cloud)
-- **Authentication**: Werkzeug Security
-- **Connectivity**: Automated IP Syncing for local development.
+- **Authentication**: JWT (JSON Web Tokens) & bcrypt
+- **Caching & State**: Hive (Local NoSQL) for lightning-fast user sessions
 
 ---
 
-## ⚙️ Setup Instructions
+## ?? Setup Instructions
 
-### 1. Backend Setup (Python)
-Navigate to the `backend` folder:
+### 1. Backend Setup (NestJS)
+Navigate to the `server` folder:
 ```bash
-cd backend
-pip install -r requirements.txt
+cd server
+npm install
 ```
-Create a `.env` file with your MongoDB URI:
+Create a `.env` file with your environment variables:
 ```env
+PORT=5014
 MONGO_URI=mongodb+srv://your_credentials...
+JWT_SECRET=your_super_secret_key_here
 ```
-Start the server:
+Start the server in development mode:
 ```bash
-python app.py
+npm run start:dev
 ```
 
 ### 2. Frontend Setup (Flutter)
@@ -49,13 +51,10 @@ cd frontend
 flutter pub get
 ```
 
-#### **📲 Connecting a Physical Device**
-If you are using a real phone (not an emulator), your app needs to know your computer's IP address.
-1. Ensure your phone and PC are on the **same Wi-Fi**.
-2. Run the **Auto-Sync** script:
-   ```bash
-   dart lib/sync_ip.dart
-   ```
+#### **?? Connecting to the Local Backend**
+The app communicates with the backend via `frontend/lib/api_config.dart`.
+1. If using an emulator, it defaults to `10.0.2.2`.
+2. If using a physical device, update `ApiConfig.baseUrl` to your computer's local Wi-Fi IP address (e.g., `192.168.x.x`).
 3. Run the app:
    ```bash
    flutter run
@@ -63,29 +62,31 @@ If you are using a real phone (not an emulator), your app needs to know your com
 
 ---
 
-## 📁 Project Structure
+## ?? Project Structure
 
 ```text
 LocalCommerceApp/
-├── backend/            # Flask API & MongoDB Logic
-│   ├── app.py          # Main Server
-│   └── .env            # Private Credentials
-├── frontend/           # Flutter Mobile Application
-│   ├── lib/
-│   │   ├── main.dart       # Login & Auth
-│   │   ├── register.dart   # Account Creation
-│   │   ├── api_config.dart # Connection Settings
-│   │   └── sync_ip.dart    # IP Auto-Config Tool
-│   └── pubspec.yaml    # Dependencies
-└── README.md
++-- server/             # NestJS API & MongoDB Logic
+�   +-- src/            # Auth, Users, Shops, Products, Orders Modules
+�   +-- scratch/        # Database seeding scripts
+�   +-- .env            # Private Credentials
++-- frontend/           # Flutter Mobile Application
+�   +-- lib/
+�   �   +-- core/       # Network, Theme, Design System, Cache
+�   �   +-- features/   # Auth, Account, Shop, Cart logic and screens
+�   �   +-- widgets/    # Reusable UI components
+�   �   +-- main.dart   # App Entrypoint
+�   +-- pubspec.yaml    # Dependencies
++-- README.md
 ```
 
 ---
 
-## 🤝 Contributing
+## ?? Contributing
 Feel free to fork this project and submit pull requests for any features or bug fixes.
 
 ---
 
-## 📄 License
+## ?? License
 This project is licensed under the MIT License.
+
