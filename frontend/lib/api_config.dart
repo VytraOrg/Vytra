@@ -19,7 +19,7 @@ String get apiBaseUrl {
   String hostIp = '192.168.0.104';
   // ----------------------
 
-  final url = 'http://$hostIp:5001';
+  final url = 'http://$hostIp:5014/api/v1'; // Force refresh port
   
   if (kDebugMode) {
     print('📡 Attempting to connect to: $url');
