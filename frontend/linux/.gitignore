@@ -1,1 +1,23 @@
-flutter/ephemeral
+flutter/ephemeral/
+flutter/generated_plugins.cmake
+flutter/generated_plugin_registrant.cc
+flutter/generated_plugin_registrant.h
+
+# CMake related
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+
+# Generated files
+GeneratedPluginRegistrant.cc
+GeneratedPluginRegistrant.h
+
+# IDE
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+

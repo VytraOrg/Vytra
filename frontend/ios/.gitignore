@@ -27,8 +27,22 @@ Flutter/flutter_export_environment.sh
 ServiceDefinitions.json
 Runner/GeneratedPluginRegistrant.*
 
+# CocoaPods
+/Pods/
+Podfile.lock
+
+# Xcode workspace
+*.xcworkspace/xcuserdata/
+
+# Build output
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
 # Exceptions to above rules.
 !default.mode1v3
 !default.mode2v3
 !default.pbxuser
 !default.perspectivev3
+

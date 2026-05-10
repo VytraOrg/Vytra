@@ -1,7 +1,36 @@
 # Flutter-related
 **/Flutter/ephemeral/
 **/Pods/
+Podfile.lock
 
 # Xcode-related
 **/dgph
 **/xcuserdata/
+**/*.mode1v3
+**/*.mode2v3
+**/*.pbxuser
+**/*.perspectivev3
+**/*sync/
+**/DerivedData/
+
+# Build output
+build/
+*.app
+*.app.dSYM/
+*.dSYM
+
+# Generated files
+Flutter/GeneratedPluginRegistrant.swift
+GeneratedPluginRegistrant.swift
+
+# CocoaPods
+Pods/
+.symlinks/
+
+# IDE
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store

@@ -1,5 +1,9 @@
 flutter/ephemeral/
+flutter/generated_plugins.cmake
+flutter/generated_plugin_registrant.cc
+flutter/generated_plugin_registrant.h
 
+# Flutter Dart/Pub related
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -8,18 +12,47 @@ flutter/ephemeral/
 .pub/
 build/
 coverage/
-# Visual Studio user-specific files.
+
+# Visual Studio user-specific files
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
 
-# Visual Studio build-related files.
+# Visual Studio build-related files
 x64/
 x86/
 
 # Visual Studio cache files
-# files ending in .cache can be ignored
 *.[Cc]ache
-# but keep track of directories ending in .cache
 !*.[Cc]ache/
+
+# Visual Studio
+.vs/
+.vscode/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Build directories
+build/
+
+# Generated files
+GeneratedPluginRegistrant.cc
+GeneratedPluginRegistrant.h
+
+# IDE
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+
