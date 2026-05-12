@@ -3,6 +3,9 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Product, ProductDocument } from './schemas/product.schema';
 import { CacheService } from '../cache/cache.service';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
+import { ProductQueryDto } from './dto/product-query.dto';
 
 @Injectable()
 export class ProductsService {
@@ -11,7 +14,7 @@ export class ProductsService {
     private cacheService: CacheService,
   ) {}
 
-  async findAll(query: any) {
+  async findAll(query: ProductQueryDto) {
     const { page = 1, limit = 10, category, shopId, search } = query;
     const skip = (page - 1) * limit;
 
@@ -25,7 +28,10 @@ export class ProductsService {
       }
     }
     if (search) {
-      filter.$text = { $search: search };
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
     }
 
     const [items, total] = await Promise.all([
@@ -61,14 +67,14 @@ export class ProductsService {
     return product;
   }
 
-  async create(createProductDto: any) {
+  async create(createProductDto: CreateProductDto) {
     const product = new this.productModel(createProductDto);
     const saved = await product.save();
     await this.cacheService.clearPattern('products:*'); // Invalidate list cache
     return saved;
   }
 
-  async update(id: string, updateProductDto: any) {
+  async update(id: string, updateProductDto: UpdateProductDto) {
     const updated = await this.productModel.findByIdAndUpdate(id, updateProductDto, { new: true });
     if (!updated) throw new NotFoundException('Product not found');
     

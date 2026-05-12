@@ -1,23 +1,20 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import * as compression from 'compression';
 import helmet from 'helmet';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
   // 1. Security & Optimization
   app.use(helmet());
+  app.use(compression());
   app.enableCors();
-
-  // Logging Middleware
-  app.use((req, res, next) => {
-    console.log(`🚀 [${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
-    next();
-  });
 
   // 2. Global Prefix & Versioning
   app.setGlobalPrefix('api');
@@ -26,7 +23,8 @@ async function bootstrap() {
     defaultVersion: '1',
   });
 
-  // 3. Global Validation Pipe
+  // 3. Global Filters & Pipes
+  app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -50,8 +48,9 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 5001);
+  
   await app.listen(port);
-  console.log(`🚀 Server running on: http://localhost:${port}/api/v1`);
-  console.log(`📝 Swagger documentation: http://localhost:${port}/docs`);
+  logger.log(`🚀 Server running on: http://localhost:${port}/api/v1`);
+  logger.log(`📝 Swagger documentation: http://localhost:${port}/docs`);
 }
 bootstrap();

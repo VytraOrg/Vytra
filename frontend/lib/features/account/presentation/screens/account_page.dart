@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../../core/network/api_client.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/design_system.dart';
-import '../../../auth/data/user_model.dart';
-import '../../../auth/presentation/auth_controller.dart';
-import '../../../../welcome_screen.dart';
+import 'package:testapp/core/design_system.dart';
+import 'package:testapp/features/auth/data/user_model.dart';
+import 'package:testapp/features/auth/presentation/auth_controller.dart';
+import 'package:testapp/features/orders/presentation/screens/orders_page.dart';
+import 'package:testapp/features/auth/presentation/screens/welcome_screen.dart';
+import '../controllers/account_controller.dart';
 
 class AccountPage extends StatefulWidget {
   final String customerId;
@@ -18,36 +19,12 @@ class AccountPage extends StatefulWidget {
 }
 
 class _AccountPageState extends State<AccountPage> {
-  int _totalOrders = 0;
-  double _totalSpent = 0;
-  bool _loadingStats = true;
-
   @override
   void initState() {
     super.initState();
-    _loadOrderStats();
-  }
-
-  Future<void> _loadOrderStats() async {
-    try {
-      final apiClient = context.read<ApiClient>();
-      final response = await apiClient.get('/orders/my');
-      
-      final orders = response as List<dynamic>;
-      double spent = 0;
-      for (final o in orders) {
-        spent += (o['totalAmount'] as num?)?.toDouble() ?? 0;
-      }
-      if (mounted) {
-        setState(() {
-          _totalOrders = orders.length;
-          _totalSpent = spent;
-          _loadingStats = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _loadingStats = false);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AccountController>().loadStats();
+    });
   }
 
   String get _displayName {
@@ -55,13 +32,6 @@ class _AccountPageState extends State<AccountPage> {
     if (widget.user?.email.isNotEmpty == true) return widget.user!.email.split('@')[0];
     return 'Customer';
   }
-
-  String get _displayEmail => widget.user?.email ?? '';
-
-  String get _displayPhone => widget.user?.phone ?? '';
-
-  bool get _isProfileComplete =>
-      _displayPhone.isNotEmpty;
 
   String get _initials {
     final name = _displayName;
@@ -72,19 +42,19 @@ class _AccountPageState extends State<AccountPage> {
 
   @override
   Widget build(BuildContext context) {
+    final accountController = context.watch<AccountController>();
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         physics: const ClampingScrollPhysics(),
         slivers: [
-          _buildHeader(),
+          _buildHeader(accountController),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // Personal info card
                 _buildInfoCard(),
                 const SizedBox(height: AppSpacing.lg),
 
@@ -95,6 +65,7 @@ class _AccountPageState extends State<AccountPage> {
                   subtitle: 'Track current & past orders',
                   color: AppColors.freshGreen,
                   delay: 100,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => OrdersPage())),
                 ),
                 _buildMenuTile(
                   icon: Icons.location_on_outlined,
@@ -109,13 +80,6 @@ class _AccountPageState extends State<AccountPage> {
                   subtitle: 'Items you love',
                   color: AppColors.error,
                   delay: 200,
-                ),
-                _buildMenuTile(
-                  icon: Icons.local_offer_outlined,
-                  title: 'Coupons & Offers',
-                  subtitle: 'Your available discounts',
-                  color: AppColors.organicAmber,
-                  delay: 250,
                 ),
 
                 const SizedBox(height: AppSpacing.md),
@@ -134,30 +98,6 @@ class _AccountPageState extends State<AccountPage> {
                   color: AppColors.citrusOrange,
                   delay: 350,
                 ),
-                _buildMenuTile(
-                  icon: Icons.lock_outline_rounded,
-                  title: 'Privacy & Security',
-                  subtitle: 'Password, Biometrics',
-                  color: AppColors.secondary,
-                  delay: 400,
-                ),
-
-                const SizedBox(height: AppSpacing.md),
-                _buildSectionTitle('Support'),
-                _buildMenuTile(
-                  icon: Icons.help_outline_rounded,
-                  title: 'Help & Support',
-                  subtitle: 'FAQs, Contact us',
-                  color: AppColors.skyBlue,
-                  delay: 450,
-                ),
-                _buildMenuTile(
-                  icon: Icons.info_outline_rounded,
-                  title: 'About App',
-                  subtitle: 'Version 1.0.0',
-                  color: AppColors.textSecondary,
-                  delay: 500,
-                ),
 
                 const SizedBox(height: AppSpacing.xl),
                 _buildLogoutButton(),
@@ -170,7 +110,7 @@ class _AccountPageState extends State<AccountPage> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AccountController controller) {
     return SliverToBoxAdapter(
       child: Container(
         padding: EdgeInsets.fromLTRB(
@@ -193,120 +133,37 @@ class _AccountPageState extends State<AccountPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top bar
             Row(
               children: [
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: const Icon(Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white, size: 18),
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadius.md)),
+                    child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
-                const Text(
-                  'My Profile',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () {},
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: const Icon(Icons.edit_outlined,
-                        color: Colors.white, size: 20),
-                  ),
-                ),
+                const Text('My Profile', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
               ],
             ).animate().fadeIn(duration: 400.ms),
 
             const SizedBox(height: AppSpacing.xl),
 
-            // Avatar + Name
             Row(
               children: [
-                Hero(
-                  tag: 'profile_avatar',
-                  child: Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: AppColors.accent,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        _initials,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ).animate().scale(
-                    delay: 100.ms, duration: 500.ms, curve: Curves.easeOutBack),
+                CircleAvatar(
+                  radius: 36,
+                  backgroundColor: AppColors.accent,
+                  child: Text(_initials, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
+                ).animate().scale(delay: 100.ms, duration: 500.ms, curve: Curves.easeOutBack),
                 const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        _displayName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        widget.user?.email ?? '',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.accent.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                              color: AppColors.accent.withOpacity(0.5)),
-                        ),
-                        child: const Text(
-                          '🛒  Customer',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600),
-                        ),
-                      ),
+                      Text(_displayName, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text(widget.user?.email ?? '', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
                     ],
                   ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1),
                 ),
@@ -315,29 +172,18 @@ class _AccountPageState extends State<AccountPage> {
 
             const SizedBox(height: AppSpacing.xl),
 
-            // Stats Row
-            _loadingStats
-                ? const Center(
-                    child: SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2),
-                    ),
-                  )
-                : Row(
-                    children: [
-                      _buildStatCard(
-                          '$_totalOrders', 'Orders', Icons.shopping_bag_outlined),
-                      _buildStatDivider(),
-                      _buildStatCard(
-                          '₹${_totalSpent.toStringAsFixed(0)}',
-                          'Spent',
-                          Icons.currency_rupee_rounded),
-                      _buildStatDivider(),
-                      _buildStatCard('4.8', 'Rating', Icons.star_rounded),
-                    ],
-                  ).animate().fadeIn(delay: 350.ms),
+            if (controller.isLoading)
+              const Center(child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
+            else
+              Row(
+                children: [
+                  _buildStatCard('${controller.totalOrders}', 'Orders', Icons.shopping_bag_outlined),
+                  _buildStatDivider(),
+                  _buildStatCard('₹${controller.totalSpent.toStringAsFixed(0)}', 'Spent', Icons.currency_rupee_rounded),
+                  _buildStatDivider(),
+                  _buildStatCard('4.8', 'Rating', Icons.star_rounded),
+                ],
+              ).animate().fadeIn(delay: 350.ms),
           ],
         ),
       ),
@@ -350,100 +196,38 @@ class _AccountPageState extends State<AccountPage> {
         children: [
           Icon(icon, color: AppColors.accent, size: 18),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 11,
-            ),
-          ),
+          Text(value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11)),
         ],
       ),
     );
   }
 
-  Widget _buildStatDivider() {
-    return Container(
-      width: 1,
-      height: 40,
-      color: Colors.white.withOpacity(0.2),
-    );
-  }
+  Widget _buildStatDivider() => Container(width: 1, height: 40, color: Colors.white.withOpacity(0.2));
 
   Widget _buildInfoCard() {
+    final phone = widget.user?.phone ?? '';
+    final isComplete = phone.isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: _isProfileComplete
-            ? AppColors.freshGreen.withOpacity(0.08)
-            : Colors.white,
+        color: isComplete ? AppColors.freshGreen.withOpacity(0.08) : Colors.white,
         borderRadius: BorderRadius.circular(AppRadius.xl),
         boxShadow: AppShadows.soft,
-        border: _isProfileComplete
-            ? Border.all(color: AppColors.freshGreen.withOpacity(0.2))
-            : null,
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: _isProfileComplete
-                  ? AppColors.freshGreen.withOpacity(0.15)
-                  : AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Icon(
-              _isProfileComplete
-                  ? Icons.check_circle_outline_rounded
-                  : Icons.person_outline_rounded,
-              color: _isProfileComplete
-                  ? AppColors.freshGreen
-                  : AppColors.primary,
-              size: 22,
-            ),
-          ),
+          Icon(isComplete ? Icons.check_circle_outline_rounded : Icons.person_outline_rounded, color: isComplete ? AppColors.freshGreen : AppColors.primary),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _isProfileComplete ? 'Profile Complete!' : 'Complete your profile',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: _isProfileComplete
-                        ? AppColors.freshGreen
-                        : AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _isProfileComplete
-                      ? _displayPhone
-                      : 'Add phone number to get faster delivery',
-                  style: const TextStyle(
-                      fontSize: 12, color: AppColors.textSecondary),
-                ),
+                Text(isComplete ? 'Profile Complete!' : 'Complete your profile', style: TextStyle(fontWeight: FontWeight.bold, color: isComplete ? AppColors.freshGreen : AppColors.textPrimary)),
+                Text(isComplete ? phone : 'Add phone to get faster delivery', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               ],
             ),
-          ),
-          Icon(
-            _isProfileComplete
-                ? Icons.verified_rounded
-                : Icons.chevron_right_rounded,
-            color: _isProfileComplete
-                ? AppColors.freshGreen
-                : AppColors.textMuted,
           ),
         ],
       ),
@@ -453,54 +237,20 @@ class _AccountPageState extends State<AccountPage> {
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md, left: 4),
-      child: Text(
-        title.toUpperCase(),
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textMuted,
-          letterSpacing: 1.2,
-        ),
-      ),
+      child: Text(title.toUpperCase(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textMuted, letterSpacing: 1.2)),
     );
   }
 
-  Widget _buildMenuTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    int delay = 0,
-  }) {
+  Widget _buildMenuTile({required IconData icon, required String title, required String subtitle, required Color color, int delay = 0, VoidCallback? onTap}) {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: AppShadows.soft,
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.lg), boxShadow: AppShadows.soft),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-        leading: Container(
-          padding: const EdgeInsets.all(9),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(AppRadius.md),
-          ),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        title: Text(title,
-            style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: AppColors.textPrimary)),
-        subtitle: Text(subtitle,
-            style: const TextStyle(
-                fontSize: 12, color: AppColors.textSecondary)),
-        trailing: const Icon(Icons.chevron_right_rounded,
-            color: AppColors.textMuted, size: 20),
-        onTap: () {},
+        leading: Container(padding: const EdgeInsets.all(9), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(AppRadius.md)), child: Icon(icon, color: color, size: 20)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary)),
+        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
+        onTap: onTap,
       ),
     ).animate().fadeIn(delay: delay.ms).slideX(begin: 0.05);
   }
@@ -509,34 +259,17 @@ class _AccountPageState extends State<AccountPage> {
     return GestureDetector(
       onTap: () async {
         await context.read<AuthController>().logout();
-        if (context.mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-            (route) => false,
-          );
-        }
+        if (mounted) Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => WelcomeScreen()), (route) => false);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.error.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.error.withOpacity(0.2)),
-        ),
+        decoration: BoxDecoration(color: AppColors.error.withOpacity(0.08), borderRadius: BorderRadius.circular(AppRadius.lg), border: Border.all(color: AppColors.error.withOpacity(0.2))),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
             SizedBox(width: 8),
-            Text(
-              'Log Out',
-              style: TextStyle(
-                color: AppColors.error,
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-            ),
+            Text('Log Out', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold, fontSize: 15)),
           ],
         ),
       ),

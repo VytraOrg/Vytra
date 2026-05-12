@@ -63,25 +63,36 @@ The app communicates with the backend via `frontend/lib/api_config.dart`.
 
 ---
 
-## 🏗️ Project Structure
+## 🏗️ Project Structure & Architecture
+
+The project has been recently refactored into an **Enterprise-Grade Architecture** following Clean Architecture principles and Domain-Driven Design (DDD).
+
+### Backend (NestJS)
+- **Modular Design**: Each feature is encapsulated in its own module with dedicated Controllers, Services, and Schemas.
+- **Strict Input Validation**: Every request payload is validated using **DTOs (Data Transfer Objects)** and `class-validator`.
+- **Global Error Handling**: Standardized error responses across the entire API via a custom `AllExceptionsFilter`.
+- **Security**: Hardened with **Helmet**, **Compression**, and JWT-based Role Guards.
+- **Documentation**: Integrated **Swagger/OpenAPI** for real-time API exploration.
+
+### Frontend (Flutter)
+- **Controller-Based State Management**: Logic is decoupled from UI using the **Controller/ChangeNotifier** pattern.
+- **Domain-Driven Repository Pattern**: All data access is abstracted through Repositories that return strongly-typed **Entities** and **Models**.
+- **Unified Network Layer**: A generic `ApiClient` handles all HTTP communication with standardized error mapping and session management.
+- **Widget Modularization**: Large screens have been broken down into small, reusable feature-specific widgets.
 
 ```text
 LocalCommerceApp/
 ├── server/             # NestJS API & MongoDB Logic
-│   ├── src/            # Auth, Users, Shops, Products, Cart, Orders Modules
-│   ├── seed.ts         # Database seeding scripts for development
-│   └── .env            # Private Credentials
-└── frontend/           # Flutter Mobile Application
-    └── lib/
-        ├── core/       # Network (ApiClient), Theme, Design System, Cache
-        ├── features/   
-        │   ├── auth/   # Login, Signup, Session persistence
-        │   ├── shop/   # Home dashboard, Discovery, Shop/Product lists
-        │   ├── cart/   # Shopping cart management
-        │   ├── orders/ # Checkout flow and Order tracking
-        │   └── account/# User profile and statistics
-        ├── widgets/    # Reusable UI components
-        └── main.dart   # App Entrypoint
+│   ├── src/            
+│   │   ├── common/     # Filters, Guards, Interceptors, DTOs
+│   │   ├── modules/    # Auth, Users, Shops, Products, Cart, Orders Modules
+│   │   └── main.ts     # Bootstrap with Global Filters/Pipes
+├── frontend/           # Flutter Mobile Application
+│   └── lib/
+│       ├── core/       # Network (ApiClient), Theme, Design System, Constants
+│       ├── features/   # Feature-sliced modules (Data/Domain/Presentation)
+│       ├── shared/     # Reusable global widgets (NetworkImage, Buttons)
+│       └── main.dart   # App Entrypoint & Provider registration
 ```
 
 ---

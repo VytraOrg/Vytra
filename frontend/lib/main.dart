@@ -9,8 +9,10 @@ import 'features/orders/domain/order_repository.dart';
 import 'features/orders/presentation/controllers/order_controller.dart';
 import 'features/cart/domain/cart_repository.dart';
 import 'features/cart/presentation/controllers/cart_controller.dart';
+import 'features/account/presentation/controllers/account_controller.dart';
+import 'features/shop/presentation/controllers/shop_controller.dart';
 import 'features/shop/presentation/screens/customer_home.dart';
-import 'welcome_screen.dart';
+import 'features/auth/presentation/screens/welcome_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'core/cache/cache_manager.dart';
 
@@ -38,7 +40,13 @@ void main() async {
           create: (context) => AuthController(context.read<AuthRepository>()),
         ),
         ChangeNotifierProvider(
+          create: (context) => ShopController(context.read<ShopRepository>()),
+        ),
+        ChangeNotifierProvider(
           create: (context) => OrderController(context.read<OrderRepository>()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => AccountController(context.read<OrderRepository>()),
         ),
         ChangeNotifierProvider(
           create: (context) => CartController(context.read<CartRepository>()),

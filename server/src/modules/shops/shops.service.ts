@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Shop, ShopDocument } from './schemas/shop.schema';
+import { CreateShopDto } from './dto/create-shop.dto';
 
 @Injectable()
 export class ShopsService {
@@ -9,26 +10,32 @@ export class ShopsService {
     @InjectModel(Shop.name) private shopModel: Model<ShopDocument>,
   ) {}
 
+  async findAll() {
+    return this.shopModel.find().exec();
+  }
+
   async findFiltered(category?: string, shopType?: string, search?: string) {
-    const query: any = {};
-    if (category && category !== 'All') {
-      query.category = category;
+    const filter: any = {};
+    if (category) filter.category = category;
+    if (shopType) filter.shopType = shopType;
+    if (search) {
+      filter.name = { $regex: search, $options: 'i' };
     }
-    if (shopType) {
-      query.shopType = shopType;
-    }
-    if (search && search.trim() !== '') {
-      query.name = { $regex: search, $options: 'i' };
-    }
-    return this.shopModel.find(query).sort({ name: 1 }).exec();
+    return this.shopModel.find(filter).exec();
+  }
+
+  async findOne(id: string) {
+    const shop = await this.shopModel.findById(id).exec();
+    if (!shop) throw new NotFoundException('Shop not found');
+    return shop;
+  }
+
+  async create(createShopDto: CreateShopDto) {
+    const shop = new this.shopModel(createShopDto);
+    return shop.save();
   }
 
   async findByOwner(ownerId: string) {
     return this.shopModel.findOne({ owner: ownerId }).exec();
-  }
-
-  async create(shopData: any) {
-    const shop = new this.shopModel(shopData);
-    return shop.save();
   }
 }

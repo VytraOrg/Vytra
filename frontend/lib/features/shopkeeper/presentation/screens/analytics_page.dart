@@ -67,7 +67,7 @@ class AnalyticsPage extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             // FIXED: Used withValues to avoid deprecation warnings
-            color: Colors.black.withValues(alpha: 0.03), 
+            color: Colors.black.withOpacity(0.03), 
             blurRadius: 10,
           )
         ],
@@ -92,7 +92,7 @@ class AnalyticsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.teal.withValues(alpha: 0.05),
+            color: Colors.teal.withOpacity(0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           )
@@ -144,7 +144,7 @@ class AnalyticsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02), 
+            color: Colors.black.withOpacity(0.02), 
             blurRadius: 10,
           )
         ],
@@ -154,7 +154,7 @@ class AnalyticsPage extends StatelessWidget {
         leading: Container(
           width: 35,
           height: 35,
-          decoration: BoxDecoration(color: rankColor.withValues(alpha: 0.2), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: rankColor.withOpacity(0.2), shape: BoxShape.circle),
           child: Center(
             child: Text(rank, style: TextStyle(color: rankColor, fontWeight: FontWeight.bold)),
           ),

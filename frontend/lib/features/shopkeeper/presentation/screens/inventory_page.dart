@@ -57,7 +57,7 @@ class _InventoryPageState extends State<InventoryPage> {
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 15,
             offset: const Offset(0, 8),
           )
@@ -68,7 +68,7 @@ class _InventoryPageState extends State<InventoryPage> {
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFF38240D).withValues(alpha: 0.05), // Subtle chocolate tint
+            color: const Color(0xFF38240D).withOpacity(0.05), // Subtle chocolate tint
             borderRadius: BorderRadius.circular(15),
           ),
           child: const Icon(Icons.inventory_2_outlined, color: Color(0xFF38240D)),
@@ -88,7 +88,7 @@ class _InventoryPageState extends State<InventoryPage> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 // Using the theme's Rust/Orange for low stock warning instead of generic red
-                color: isLowStock ? const Color(0xFFC05800).withValues(alpha: 0.1) : Colors.green.shade50,
+                color: isLowStock ? const Color(0xFFC05800).withOpacity(0.1) : Colors.green.shade50,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
