@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'distributor_orders_page.dart';
-import 'distributor_inventory_page.dart';
-import 'distributor_sales_report.dart';
+import 'orders_page.dart';
+import 'inventory_page.dart';
+import 'sales_report_page.dart';
 
 class DistributorDash extends StatelessWidget {
   const DistributorDash({super.key});
@@ -22,7 +22,6 @@ class DistributorDash extends StatelessWidget {
                   const Text("Business Overview", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 15),
                   
-                  // Summary Cards from your notes
                   Row(
                     children: [
                       _buildSummaryCard(context, "Total Items", "150+", Icons.inventory, Colors.blue),
@@ -51,7 +50,7 @@ class DistributorDash extends StatelessWidget {
 
   Widget _buildAgencyHeader() {
     return SliverAppBar(
-      expandedHeight: 220,
+      expandedHeight: 200,
       pinned: true,
       backgroundColor: Colors.indigo[900],
       flexibleSpace: FlexibleSpaceBar(
@@ -63,11 +62,9 @@ class DistributorDash extends StatelessWidget {
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Distributor", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              Text("Distributor Dashboard", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
-              Text("Owner: ", style: TextStyle(color: Colors.white70)),
-              Text("GST: ", style: TextStyle(color: Colors.white70)),
-              Text("Area: ", style: TextStyle(color: Colors.white70)),
+              Text("Managed Agency View", style: TextStyle(color: Colors.white70)),
             ],
           ),
         ),
@@ -79,7 +76,7 @@ class DistributorDash extends StatelessWidget {
     Widget card = Container(
       width: isFullWidth ? double.infinity : null,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)]),
       child: Column(children: [
         Icon(icon, color: color),
         const SizedBox(height: 8),

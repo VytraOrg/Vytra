@@ -4,6 +4,8 @@ import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 
 @ApiTags('Orders')
 @ApiBearerAuth()
@@ -14,8 +16,8 @@ export class OrdersController {
 
   @Post()
   @ApiOperation({ summary: 'Place a new order from current cart' })
-  createOrder(@Request() req, @Body() body: { deliveryAddress: any }) {
-    return this.ordersService.createOrder(req.user._id, body.deliveryAddress);
+  createOrder(@Request() req, @Body() createOrderDto: CreateOrderDto) {
+    return this.ordersService.createOrder(req.user._id, createOrderDto.deliveryAddress);
   }
 
   @Get('my')
@@ -28,7 +30,7 @@ export class OrdersController {
   @UseGuards(RolesGuard)
   @Roles('Shopkeeper', 'Admin')
   @ApiOperation({ summary: 'Update order status (Shopkeepers/Admin only)' })
-  updateStatus(@Param('id') id: string, @Body() body: { status: string }) {
-    return this.ordersService.updateOrderStatus(id, body.status);
+  updateStatus(@Param('id') id: string, @Body() updateOrderStatusDto: UpdateOrderStatusDto) {
+    return this.ordersService.updateOrderStatus(id, updateOrderStatusDto.status);
   }
 }

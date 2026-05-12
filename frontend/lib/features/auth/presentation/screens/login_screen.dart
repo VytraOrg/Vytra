@@ -5,7 +5,8 @@ import '../../../../core/design_system.dart';
 import '../auth_controller.dart';
 import '../widgets/auth_text_field.dart';
 import '../../../shop/presentation/screens/customer_home.dart';
-import '../../../../shopkeeper_dash.dart';
+import '../../../shopkeeper/presentation/screens/shopkeeper_dash.dart';
+import '../../../distributor/presentation/screens/distributor_dash.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -37,10 +38,15 @@ class _LoginScreenState extends State<LoginScreen> {
             builder: (context) => CustomerHome(customerId: authController.currentUser!.id),
           ),
         );
-      } else {
+      } else if (selectedRole == 'Shopkeeper') {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const ShopkeeperDash()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DistributorDash()),
         );
       }
     } else {

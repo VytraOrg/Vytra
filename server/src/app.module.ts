@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ShopsModule } from './modules/shops/shops.module';
@@ -17,7 +18,13 @@ import { CartModule } from './modules/cart/cart.module';
       envFilePath: '.env',
     }),
 
-    // 2. Database Connection
+    // 2. Security (Rate Limiting)
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 100,
+    }]),
+
+    // 3. Database Connection
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -29,7 +36,7 @@ import { CartModule } from './modules/cart/cart.module';
       inject: [ConfigService],
     }),
 
-    // 3. Feature Modules
+    // 4. Feature Modules
     AuthModule,
     UsersModule,
     ShopsModule,

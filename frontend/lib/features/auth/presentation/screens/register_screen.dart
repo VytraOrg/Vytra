@@ -1,13 +1,12 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/design_system.dart';
-import '../../../../api_config.dart';
 import '../widgets/auth_text_field.dart';
 import '../auth_controller.dart';
 import '../../../shop/presentation/screens/customer_home.dart';
-import '../../../../shopkeeper_dash.dart';
+import '../../../shopkeeper/presentation/screens/shopkeeper_dash.dart';
+import '../../../distributor/presentation/screens/distributor_dash.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -69,10 +68,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           (route) => false,
         );
-      } else {
+      } else if (selectedRole == 'Shopkeeper') {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const ShopkeeperDash()),
+          (route) => false,
+        );
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const DistributorDash()),
           (route) => false,
         );
       }
