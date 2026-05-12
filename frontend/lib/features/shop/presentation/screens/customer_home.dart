@@ -235,6 +235,19 @@ class _CustomerHomeState extends State<CustomerHome> {
     );
   }
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) {
+      return "Good Morning,";
+    } else if (hour >= 12 && hour < 17) {
+      return "Good Afternoon,";
+    } else if (hour >= 17 && hour < 21) {
+      return "Good Evening,";
+    } else {
+      return "Good Night,";
+    }
+  }
+
   Widget _buildHeader(String name, bool isShopkeeper) {
     final user = context.read<AuthController>().currentUser;
     final nameParts = name.trim().split(' ');
@@ -248,7 +261,7 @@ class _CustomerHomeState extends State<CustomerHome> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              isShopkeeper ? "B2B Sourcing" : "Good Morning,",
+              isShopkeeper ? "B2B Sourcing" : _getGreeting(),
               style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
             Text(
