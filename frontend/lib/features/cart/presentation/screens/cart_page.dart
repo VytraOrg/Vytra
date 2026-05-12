@@ -1,108 +1,94 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/design_system.dart';
+import '../../../orders/presentation/controllers/order_controller.dart';
+import '../../../orders/presentation/screens/orders_page.dart';
+import '../controllers/cart_controller.dart';
 
-class CartPage extends StatelessWidget {
+import '../../domain/cart_model.dart';
+
+class CartPage extends StatefulWidget {
   const CartPage({super.key});
 
   @override
+  State<CartPage> createState() => _CartPageState();
+}
+
+class _CartPageState extends State<CartPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CartController>().fetchCart();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final cartController = context.watch<CartController>();
+    final cart = cartController.cart;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text("My Shopping Cart"),
+        title: const Text("My Cart"),
         centerTitle: true,
       ),
-      body: Column(
+      body: cartController.isLoading && cart == null
+          ? const Center(child: CircularProgressIndicator())
+          : cart == null || cart.items.isEmpty
+              ? _buildEmptyCart()
+              : Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        itemCount: cart.items.length,
+                        itemBuilder: (context, index) {
+                          final item = cart.items[index];
+                          return _buildCartItem(context, item, index);
+                        },
+                      ),
+                    ),
+                    _buildCheckoutSection(context, cart),
+                  ],
+                ),
+    );
+  }
+
+  Widget _buildEmptyCart() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Checkout Progress Indicator
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildProgressStep("Cart", true),
-                _buildProgressLine(true),
-                _buildProgressStep("Address", false),
-                _buildProgressLine(false),
-                _buildProgressStep("Payment", false),
-              ],
-            ),
+          Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey.shade300),
+          const SizedBox(height: AppSpacing.lg),
+          const Text("Your cart is empty", style: TextStyle(fontSize: 18, color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.md),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Go Shopping"),
           ),
-
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              itemCount: 3,
-              itemBuilder: (context, index) {
-                final items = ["Organic Basmati Rice", "Fresh Farm Milk", "Premium Whole Wheat"];
-                final units = ["5kg", "1L", "10kg"];
-                final prices = [550.0, 65.0, 420.0];
-                return _buildCartItem(context, items[index], units[index], prices[index], index);
-              },
-            ),
-          ),
-
-          _buildOrderSummary(context),
         ],
       ),
     );
   }
 
-  Widget _buildProgressStep(String label, bool isCompleted) {
-    return Column(
-      children: [
-        Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            color: isCompleted ? AppColors.primary : Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isCompleted ? AppColors.primary : Colors.grey.shade300,
-              width: 2,
-            ),
-          ),
-          child: isCompleted
-              ? const Icon(Icons.check, size: 14, color: Colors.white)
-              : null,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: isCompleted ? FontWeight.bold : FontWeight.normal,
-            color: isCompleted ? AppColors.primary : Colors.grey.shade400,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProgressLine(bool isCompleted) {
-    return Container(
-      width: 40,
-      height: 2,
-      margin: const EdgeInsets.only(left: 4, right: 4, bottom: 14),
-      color: isCompleted ? AppColors.primary : Colors.grey.shade300,
-    );
-  }
-
-  Widget _buildCartItem(BuildContext context, String title, String unit, double price, int index) {
+  Widget _buildCartItem(BuildContext context, CartItemModel item, int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         boxShadow: AppShadows.soft,
       ),
       child: Row(
         children: [
-          // Leading Image Placeholder
           Container(
-            width: 70,
-            height: 70,
+            width: 60,
+            height: 60,
             decoration: BoxDecoration(
               color: AppColors.primaryLight,
               borderRadius: BorderRadius.circular(AppRadius.md),
@@ -110,88 +96,87 @@ class CartPage extends StatelessWidget {
             child: const Icon(Icons.shopping_bag_outlined, color: AppColors.primary),
           ),
           const SizedBox(width: AppSpacing.md),
-          
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text(unit, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                const SizedBox(height: 8),
-                Text("₹$price", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.primary)),
+                Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text("₹${item.price} per unit", style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
               ],
             ),
           ),
-          
-          // Quantity Selector
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Row(
-              children: [
-                IconButton(onPressed: () {}, icon: const Icon(Icons.remove, size: 16)),
-                const Text("1", style: TextStyle(fontWeight: FontWeight.bold)),
-                IconButton(onPressed: () {}, icon: const Icon(Icons.add, size: 16)),
-              ],
-            ),
+          Row(
+            children: [
+              _buildQtyBtn(Icons.remove, () {
+                if (item.quantity > 1) {
+                  context.read<CartController>().addToCart(item.productId, quantity: -1);
+                } else {
+                  context.read<CartController>().removeFromCart(item.productId);
+                }
+              }),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text("${item.quantity}", style: const TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              _buildQtyBtn(Icons.add, () {
+                context.read<CartController>().addToCart(item.productId, quantity: 1);
+              }),
+            ],
           ),
         ],
       ),
-    ).animate().fadeIn(delay: (index * 100).ms).slideX(begin: 0.1);
+    ).animate().fadeIn(delay: (index * 50).ms).slideX(begin: 0.05);
   }
 
-  Widget _buildOrderSummary(BuildContext context) {
+  Widget _buildQtyBtn(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Icon(icon, size: 16, color: AppColors.primary),
+      ),
+    );
+  }
+
+  Widget _buildCheckoutSection(BuildContext context, dynamic cart) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -5))],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text("Total Amount", style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+              Text("₹${cart.totalAmount.toStringAsFixed(2)}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary)),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          ElevatedButton(
+            onPressed: () async {
+              final orderController = context.read<OrderController>();
+              final success = await orderController.placeOrder({
+                'address': '123 Green Valley, Sector 5, Kolkata',
+              });
+              if (success && mounted) {
+                context.read<CartController>().fetchCart(); // Clear local cart
+                _showOrderSuccess(context);
+              }
+            },
+            child: context.watch<OrderController>().isLoading
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text("Checkout Now"),
           ),
         ],
-      ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Subtotal", style: TextStyle(color: AppColors.textSecondary)),
-                Text("₹1,035.00", style: TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Delivery", style: TextStyle(color: AppColors.textSecondary)),
-                Text("FREE", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.success)),
-              ],
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-              child: Divider(),
-            ),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Total", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text("₹1,035.00", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.primary)),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            ElevatedButton(
-              onPressed: () => _showOrderSuccess(context),
-              child: const Text("Checkout Now"),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -200,40 +185,31 @@ class CartPage extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl))),
+      backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(AppSpacing.xxl),
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        padding: const EdgeInsets.all(30),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.xl),
-              decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 64),
-            ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
-            const SizedBox(height: AppSpacing.lg),
-            const Text(
-              "Order Placed!",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5),
-            ).animate().fadeIn(delay: 300.ms),
-            const SizedBox(height: AppSpacing.md),
-            const Text(
-              "Your order is being processed and will be delivered shortly.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary, height: 1.5),
-            ).animate().fadeIn(delay: 500.ms),
-            const SizedBox(height: AppSpacing.xl),
+            const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 100),
+            const SizedBox(height: 20),
+            const Text("Order Placed!", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            const Text("Your items are on their way to you.", textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
+            const SizedBox(height: 40),
             ElevatedButton(
               onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context);
+                Navigator.pop(context); // Close sheet
+                Navigator.pop(context); // Go back home
+                Navigator.push(context, MaterialPageRoute(builder: (_) => OrdersPage()));
               },
               child: const Text("Track Order"),
-            ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2),
+            ),
           ],
         ),
       ),

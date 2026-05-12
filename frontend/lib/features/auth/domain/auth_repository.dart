@@ -15,14 +15,14 @@ class AuthRepository {
     });
 
     final user = UserModel.fromJson(response);
-    await CacheManager.saveUser(user.toJson()); // Only save user data, not access_token
+    await CacheManager.saveUser(user.toJson()); 
     return user;
   }
 
   Future<UserModel> register(Map<String, dynamic> userData) async {
     final response = await _apiClient.post('/auth/register', userData);
     final user = UserModel.fromJson(response);
-    await CacheManager.saveUser(user.toJson()); // Only save user data
+    await CacheManager.saveUser(user.toJson()); 
     return user;
   }
 

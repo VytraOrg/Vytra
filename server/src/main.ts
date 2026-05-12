@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as compression from 'compression';
@@ -11,7 +12,7 @@ async function bootstrap() {
   // 1. Security & Optimization
   app.use(helmet());
   app.enableCors();
-  
+
   // Logging Middleware
   app.use((req, res, next) => {
     console.log(`🚀 [${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);

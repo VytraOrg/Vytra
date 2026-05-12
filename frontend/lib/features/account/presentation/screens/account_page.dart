@@ -1,10 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_client.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:http/http.dart' as http;
-import '../../../../core/design_system.dart';
 import 'package:provider/provider.dart';
-import '../../../../api_config.dart';
+import '../../../../core/design_system.dart';
 import '../../../auth/data/user_model.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import '../../../../welcome_screen.dart';
@@ -32,23 +30,20 @@ class _AccountPageState extends State<AccountPage> {
 
   Future<void> _loadOrderStats() async {
     try {
-      final uri = Uri.parse('$apiBaseUrl/orders/my');
-      final response = await http.get(uri).timeout(const Duration(seconds: 5));
-      if (response.statusCode == 200) {
-        final orders = jsonDecode(response.body) as List<dynamic>;
-        double spent = 0;
-        for (final o in orders) {
-          spent += (o['totalAmount'] as num?)?.toDouble() ?? 0;
-        }
-        if (mounted) {
-          setState(() {
-            _totalOrders = orders.length;
-            _totalSpent = spent;
-            _loadingStats = false;
-          });
-        }
-      } else {
-        if (mounted) setState(() => _loadingStats = false);
+      final apiClient = context.read<ApiClient>();
+      final response = await apiClient.get('/orders/my');
+      
+      final orders = response as List<dynamic>;
+      double spent = 0;
+      for (final o in orders) {
+        spent += (o['totalAmount'] as num?)?.toDouble() ?? 0;
+      }
+      if (mounted) {
+        setState(() {
+          _totalOrders = orders.length;
+          _totalSpent = spent;
+          _loadingStats = false;
+        });
       }
     } catch (_) {
       if (mounted) setState(() => _loadingStats = false);

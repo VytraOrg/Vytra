@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../../core/design_system.dart';
 import '../../../cart/presentation/screens/cart_page.dart';
+import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../../../../api_config.dart';
 
 class ProductList extends StatefulWidget {
@@ -32,44 +34,40 @@ class _ProductListState extends State<ProductList> {
   }
 
   Future<List<ProductItem>> _fetchProducts() async {
-    final uri = Uri.parse('$apiBaseUrl/products').replace(
-      queryParameters: {'shopId': widget.shopId},
-    );
-
-    final response = await http.get(uri);
-    if (response.statusCode != 200) {
-      throw Exception('Failed to load products');
+    try {
+      final apiClient = context.read<ApiClient>();
+      final response = await apiClient.get('/products?shopId=${widget.shopId}');
+      
+      final List<dynamic> list = (response is Map && response.containsKey('items')) 
+          ? response['items'] 
+          : (response is List ? response : []);
+          
+      return list
+          .map((item) => ProductItem.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception('Failed to load products: $e');
     }
-
-    final decoded = jsonDecode(response.body);
-    // Handle both direct list or wrapper object
-    final List<dynamic> list = (decoded is Map && decoded.containsKey('items')) 
-        ? decoded['items'] 
-        : (decoded is List ? decoded : []);
-        
-    return list
-        .map((item) => ProductItem.fromJson(item as Map<String, dynamic>))
-        .toList();
   }
 
   Future<void> _addToCart(ProductItem product) async {
-    final uri = Uri.parse('$apiBaseUrl/cart/items');
     try {
-      final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'productId': product.id, 'quantity': 1}),
-      ).timeout(const Duration(seconds: 5));
+      final cartController = context.read<CartController>();
+      await cartController.addToCart(product.id, quantity: 1);
 
       if (!mounted) return;
 
-      if (response.statusCode == 201) {
+      if (cartController.error == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${product.name} added to cart'),
             behavior: SnackBarBehavior.floating,
             backgroundColor: AppColors.success,
           ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${cartController.error}'), backgroundColor: AppColors.error),
         );
       }
     } catch (e) {

@@ -9,6 +9,9 @@ import '../../domain/shop_repository.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import '../../../auth/data/user_model.dart';
 import '../../../account/presentation/screens/account_page.dart';
+import '../../../cart/presentation/controllers/cart_controller.dart';
+import '../../../cart/presentation/screens/cart_page.dart';
+import '../../../orders/presentation/screens/orders_page.dart';
 import 'product_list.dart';
 
 class CustomerHome extends StatefulWidget {
@@ -60,27 +63,28 @@ class _CustomerHomeState extends State<CustomerHome> {
   };
 
   void _loadShops() {
-    final role = context.read<AuthController>().currentUser?.role;
-    final shopType = role == 'Shopkeeper' ? 'Distributor' : 'Retailer';
+    final user = context.read<AuthController>().currentUser;
+    final isShopkeeper = user?.role == 'Shopkeeper';
+    final shopType = isShopkeeper ? 'Distributor' : 'Retailer';
 
-    // When a category chip is selected (not All), search products for that category
-    final categoryQuery = selectedCategory != 'All'
-        ? _categorySearchMap[selectedCategory] ?? selectedCategory
-        : null;
+    // Effective search = user typed query
+    final effectiveQuery = _searchQuery.trim();
 
-    // Effective search = user typed query OR category keyword
-    final effectiveQuery = _searchQuery.isNotEmpty
-        ? _searchQuery
-        : categoryQuery ?? '';
+    // 1. Fetch filtered shops if searching, or all shops if not
+    _shopsFuture = context.read<ShopRepository>().getShops(
+      shopType: shopType,
+      search: effectiveQuery.isNotEmpty ? effectiveQuery : null,
+      category: selectedCategory != 'All' ? selectedCategory : null,
+    );
 
-    // Always load shops (unfiltered — category filter happens via product search)
-    _shopsFuture = context.read<ShopRepository>().getShops(shopType: shopType);
+    // 2. Fetch products if there's a search query OR a category selected
+    final productQuery = effectiveQuery.isNotEmpty 
+        ? effectiveQuery 
+        : (selectedCategory != 'All' ? (_categorySearchMap[selectedCategory] ?? selectedCategory) : '');
 
-    // Show product search results if there's a query (typed OR category)
-    if (effectiveQuery.isNotEmpty) {
+    if (productQuery.isNotEmpty) {
       _productsFuture = context.read<ShopRepository>().searchGlobalProducts(
-        query: effectiveQuery,
-        // Removed shopType filter so we can see products from ALL shops (including Distributors like Snack Corner)
+        query: productQuery,
       );
     } else {
       _productsFuture = null;
@@ -177,17 +181,22 @@ class _CustomerHomeState extends State<CustomerHome> {
             ),
 
             // 6. DYNAMIC LIST (Vertical Cards)
-            FutureBuilder<List<Map<String, dynamic>>>(
-              future: (_searchQuery.isNotEmpty || selectedCategory != 'All') ? _productsFuture : _shopsFuture,
-              builder: (context, snapshot) {
+            FutureBuilder(
+              future: Future.wait([
+                _shopsFuture,
+                _productsFuture ?? Future.value(<Map<String, dynamic>>[]),
+              ]),
+              builder: (context, AsyncSnapshot<List<List<Map<String, dynamic>>>> snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const SliverToBoxAdapter(
                     child: Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator())),
                   );
                 }
                 
-                final items = snapshot.data ?? [];
-                if (items.isEmpty) {
+                final shops = snapshot.data?[0] ?? [];
+                final products = snapshot.data?[1] ?? [];
+                
+                if (shops.isEmpty && products.isEmpty) {
                   return SliverFillRemaining(
                     child: Center(
                       child: Column(
@@ -202,17 +211,24 @@ class _CustomerHomeState extends State<CustomerHome> {
                   );
                 }
 
+                // Merge results: Shops first, then Products
+                final List<Map<String, dynamic>> combined = [];
+                for (var s in shops) combined.add({...s, 'isShop': true});
+                for (var p in products) combined.add({...p, 'isShop': false});
+
                 return SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        final item = items[index];
-                        return (_searchQuery.isNotEmpty || selectedCategory != 'All')
-                          ? _buildGlobalProductCard(item, index)
-                          : _buildShopCard(item, index);
+                        final item = combined[index];
+                        if (item['isShop'] == true) {
+                          return _buildShopCard(item, index);
+                        } else {
+                          return _buildGlobalProductCard(item, index);
+                        }
                       },
-                      childCount: items.length,
+                      childCount: combined.length,
                     ),
                   ),
                 );
@@ -227,7 +243,10 @@ class _CustomerHomeState extends State<CustomerHome> {
   ),
       bottomNavigationBar: _buildBottomNav(),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CartPage()),
+        ),
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
       ),
@@ -584,15 +603,30 @@ class _CustomerHomeState extends State<CustomerHome> {
                       "₹${item['price']} / ${item['unit']}",
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.freshGreen),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: const Text(
-                        "ADD",
-                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                    GestureDetector(
+                      onTap: () async {
+                        final cartController = context.read<CartController>();
+                        await cartController.addToCart(item['_id'] ?? item['id'], quantity: 1);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${item['name']} added to cart'),
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: AppColors.success,
+                            ),
+                          );
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        child: const Text(
+                          "ADD",
+                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                   ],
@@ -632,7 +666,14 @@ class _CustomerHomeState extends State<CustomerHome> {
     final user = context.read<AuthController>().currentUser;
     return GestureDetector(
       onTap: () {
-        if (index == 3) {
+        if (index == 1) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => OrdersPage(),
+            ),
+          );
+        } else if (index == 3) {
           Navigator.push(
             context,
             MaterialPageRoute(
