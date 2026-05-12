@@ -11,7 +11,7 @@ import 'package:flutter/foundation.dart';
 /// 3. BACKEND: Ensure you run using 'python app.py' NOT 'flask run'.
 
 String get apiBaseUrl {
-  if (kIsWeb) return 'http://localhost:5001';
+  if (kIsWeb) return 'http://localhost:5014/api/v1';
 
   // --- EDIT THIS LINE ---
   // Change to your PC IP if using a real phone (e.g., '192.168.1.5')
