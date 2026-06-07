@@ -27,8 +27,12 @@ class ShopRepository {
 
   Future<List<ProductModel>> getProducts(String shopId) async {
     try {
-      final response = await _apiClient.get('/products?shopId=$shopId');
-      return (response as List).map((e) => ProductModel.fromJson(Map<String, dynamic>.from(e))).toList();
+      final response = await _apiClient.get('/products?shopId=$shopId&limit=100');
+      // Backend returns paginated { items: [...], meta: {...} }
+      final List<dynamic> items = response is Map
+          ? (response['items'] as List? ?? [])
+          : (response as List? ?? []);
+      return items.map((e) => ProductModel.fromJson(Map<String, dynamic>.from(e))).toList();
     } catch (e) {
       rethrow;
     }
@@ -47,7 +51,9 @@ class ShopRepository {
               ? '/products/search?q=$q&shopType=$shopType'
               : '/products/search?q=$q';
           final response = await _apiClient.get(endpoint);
-          return (response as List).map((e) => ProductModel.fromJson(Map<String, dynamic>.from(e))).toList();
+          // searchGlobal returns a raw array
+          final List<dynamic> items = response is List ? response : [];
+          return items.map((e) => ProductModel.fromJson(Map<String, dynamic>.from(e))).toList();
         } catch (_) {
           return <ProductModel>[];
         }

@@ -9,7 +9,11 @@ class OrderRepository {
   Future<List<OrderModel>> getMyOrders() async {
     try {
       final response = await _apiClient.get('/orders/my');
-      return (response as List).map((e) => OrderModel.fromJson(Map<String, dynamic>.from(e))).toList();
+      // Safely handle both raw List and paginated {items, meta} Map
+      final List<dynamic> items = response is List
+          ? response
+          : (response is Map ? (response['items'] as List? ?? []) : []);
+      return items.map((e) => OrderModel.fromJson(Map<String, dynamic>.from(e))).toList();
     } catch (e) {
       rethrow;
     }

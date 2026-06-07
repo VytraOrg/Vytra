@@ -37,7 +37,14 @@ class _DistributorInventoryPageState extends State<DistributorInventoryPage> {
       final response = await _apiClient.get('/products?shopId=$shopId');
       
       setState(() {
-        _products = response['items'] as List<dynamic>;
+        // Backend returns paginated { items: [...], meta: {...} }
+        if (response is Map) {
+          _products = (response['items'] as List<dynamic>? ?? []);
+        } else if (response is List) {
+          _products = response;
+        } else {
+          _products = [];
+        }
         _isLoading = false;
       });
     } catch (e) {
