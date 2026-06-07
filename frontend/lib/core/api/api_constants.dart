@@ -11,11 +11,15 @@ import 'package:flutter/foundation.dart';
 /// 3. BACKEND: Ensure you run using 'python app.py' NOT 'flask run'.
 
 String get apiBaseUrl {
+  // If the app is compiled in Release/Production mode, point directly to the deployed Render URL
+  if (kReleaseMode) {
+    return 'https://local-commerce-backend.onrender.com/api/v1'; // Replace with your actual Render URL once deployed
+  }
+
   if (kIsWeb) return 'http://localhost:5001/api/v1';
 
   // --- EDIT THIS LINE ---
   // Change to your PC IP if using a real phone (e.g., '192.168.1.5')
-  // We remove 'const' to ensure Flutter doesn't cache an old IP.
   String hostIp = '10.0.2.2';
   // ----------------------
 
