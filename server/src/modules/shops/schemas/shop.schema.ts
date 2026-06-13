@@ -47,6 +47,15 @@ export class Shop {
 
   @Prop({ default: 'Open' })
   status: string;
+
+  @Prop({ required: true, enum: ['Unverified', 'Pending', 'Verified', 'Rejected'], default: 'Unverified' })
+  verificationStatus: string;
+
+  @Prop()
+  gstCertificateUrl?: string;
+
+  @Prop()
+  tradeLicenseUrl?: string;
 }
 
 export const ShopSchema = SchemaFactory.createForClass(Shop);

@@ -8,6 +8,9 @@ class Shop {
   final double rating;
   final int totalReviews;
   final String status;
+  final String verificationStatus;
+  final String? gstCertificateUrl;
+  final String? tradeLicenseUrl;
 
   Shop({
     required this.id,
@@ -19,5 +22,8 @@ class Shop {
     this.rating = 0.0,
     this.totalReviews = 0,
     this.status = 'Open',
+    this.verificationStatus = 'Unverified',
+    this.gstCertificateUrl,
+    this.tradeLicenseUrl,
   });
 }

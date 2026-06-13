@@ -38,4 +38,13 @@ export class ShopsService {
   async findByOwner(ownerId: string) {
     return this.shopModel.findOne({ owner: ownerId }).exec();
   }
+
+  async verifyShop(ownerId: string, gstCertificateUrl: string, tradeLicenseUrl: string) {
+    const shop = await this.shopModel.findOne({ owner: ownerId }).exec();
+    if (!shop) throw new NotFoundException('Shop not found');
+    shop.gstCertificateUrl = gstCertificateUrl;
+    shop.tradeLicenseUrl = tradeLicenseUrl;
+    shop.verificationStatus = 'Pending';
+    return shop.save();
+  }
 }

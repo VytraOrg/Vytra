@@ -11,6 +11,9 @@ class ShopModel extends Shop {
     super.rating,
     super.totalReviews,
     super.status,
+    super.verificationStatus,
+    super.gstCertificateUrl,
+    super.tradeLicenseUrl,
   });
 
   factory ShopModel.fromJson(Map<String, dynamic> json) {
@@ -24,6 +27,9 @@ class ShopModel extends Shop {
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       totalReviews: (json['totalReviews'] as num?)?.toInt() ?? 0,
       status: json['status'] ?? 'Open',
+      verificationStatus: json['verificationStatus'] ?? 'Unverified',
+      gstCertificateUrl: json['gstCertificateUrl'],
+      tradeLicenseUrl: json['tradeLicenseUrl'],
     );
   }
 
@@ -37,5 +43,8 @@ class ShopModel extends Shop {
     'rating': rating,
     'totalReviews': totalReviews,
     'status': status,
+    'verificationStatus': verificationStatus,
+    'gstCertificateUrl': gstCertificateUrl,
+    'tradeLicenseUrl': tradeLicenseUrl,
   };
 }

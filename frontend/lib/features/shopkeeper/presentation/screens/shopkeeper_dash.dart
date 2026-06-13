@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/design_system.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import '../../../auth/presentation/screens/welcome_screen.dart';
 import '../../../distributor/presentation/screens/distributor_list.dart';
 import '../../../auth/presentation/screens/verification_page.dart';
+import '../../../shop/data/shop_model.dart';
 import 'inventory_page.dart';
 import 'analytics_page.dart';
 
@@ -19,6 +21,49 @@ class ShopkeeperDash extends StatefulWidget {
 class _ShopkeeperDashState extends State<ShopkeeperDash> {
   int _currentIndex = 0;
   bool _isShopOpen = true;
+  ShopModel? _myShop;
+  bool _isLoadingShop = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMyShop();
+    });
+  }
+
+  Future<void> _loadMyShop() async {
+    setState(() {
+      _isLoadingShop = true;
+    });
+
+    try {
+      final apiClient = context.read<ApiClient>();
+      final response = await apiClient.get('/shops/my');
+      setState(() {
+        _myShop = ShopModel.fromJson(Map<String, dynamic>.from(response));
+        _isLoadingShop = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading shop details: $e');
+      setState(() {
+        _isLoadingShop = false;
+      });
+    }
+  }
+
+  Color _getVerificationColor(String? status) {
+    switch (status) {
+      case 'Verified':
+        return AppColors.freshGreen;
+      case 'Pending':
+        return AppColors.warning;
+      case 'Rejected':
+        return AppColors.error;
+      default:
+        return AppColors.textMuted;
+    }
+  }
 
   // Mock Notifications
   final List<Map<String, dynamic>> _notifications = [
@@ -682,9 +727,21 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           Icons.verified_user_rounded,
           "Verification",
           AppColors.skyBlue,
-          badgeText: "Pending",
-          badgeColor: AppColors.warning,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const VerificationPage())),
+          badgeText: _isLoadingShop 
+              ? "Loading..." 
+              : (_myShop?.verificationStatus ?? "Unverified"),
+          badgeColor: _isLoadingShop 
+              ? AppColors.textMuted 
+              : _getVerificationColor(_myShop?.verificationStatus),
+          onTap: () async {
+            final result = await Navigator.push(
+              context, 
+              MaterialPageRoute(builder: (context) => const VerificationPage())
+            );
+            if (result == true) {
+              _loadMyShop();
+            }
+          },
         ),
         _buildMenuCard(
           Icons.star_rounded,
@@ -772,15 +829,44 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryPage())),
         ),
         const SizedBox(height: AppSpacing.sm),
-        _buildAlertCard(
-          "Profile Verification Pending",
-          "Complete your business registration process to unlock online payments & higher daily limits.",
-          Icons.verified_user_outlined,
-          AppColors.warning,
-          actionLabel: "Verify Profile",
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const VerificationPage())),
-        ),
-        const SizedBox(height: AppSpacing.sm),
+        if (!_isLoadingShop) ...[
+          if (_myShop?.verificationStatus == 'Pending')
+            _buildAlertCard(
+              "Profile Verification Under Review",
+              "Your business registration documents are currently under review. This usually takes 24 hours.",
+              Icons.hourglass_empty_rounded,
+              AppColors.warning,
+            )
+          else if (_myShop?.verificationStatus == 'Rejected')
+            _buildAlertCard(
+              "Verification Rejected",
+              "Your documents were rejected. Please click here to re-upload valid business credentials.",
+              Icons.error_outline_rounded,
+              AppColors.error,
+              actionLabel: "Re-verify Profile",
+              onTap: () async {
+                final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const VerificationPage()));
+                if (result == true) {
+                  _loadMyShop();
+                }
+              },
+            )
+          else if (_myShop?.verificationStatus != 'Verified')
+            _buildAlertCard(
+              "Profile Verification Pending",
+              "Complete your business registration process to unlock online payments & higher daily limits.",
+              Icons.verified_user_outlined,
+              AppColors.warning,
+              actionLabel: "Verify Profile",
+              onTap: () async {
+                final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const VerificationPage()));
+                if (result == true) {
+                  _loadMyShop();
+                }
+              },
+            ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
         _buildAlertCard(
           "Best Seller Product",
           "Kurkure Masala is your top-grossing item this week, generating 35 sales units.",
