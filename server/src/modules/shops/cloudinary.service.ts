@@ -21,7 +21,10 @@ export class CloudinaryService {
           resource_type: 'auto', // Handles both images and PDFs automatically
         },
         (error, result) => {
-          if (error) return reject(error);
+          if (error) {
+            console.error('Cloudinary upload error:', error);
+            return reject(new Error(error.message || JSON.stringify(error)));
+          }
           if (!result) return reject(new Error('Cloudinary upload result was empty'));
           resolve(result.secure_url);
         },
