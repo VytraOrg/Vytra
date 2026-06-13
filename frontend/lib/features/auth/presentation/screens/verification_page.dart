@@ -7,7 +7,8 @@ import '../../../../core/cache/cache_manager.dart';
 import '../../../../core/api/api_constants.dart';
 
 class VerificationPage extends StatefulWidget {
-  const VerificationPage({super.key});
+  final String? initialStatus;
+  const VerificationPage({super.key, this.initialStatus});
 
   @override
   State<VerificationPage> createState() => _VerificationPageState();
@@ -19,6 +20,13 @@ class _VerificationPageState extends State<VerificationPage> {
   Uint8List? licenseBytes;
   String? licenseFileName;
   bool isUploading = false;
+  String? _currentStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentStatus = widget.initialStatus;
+  }
 
   Future<void> _pickGstFile() async {
     try {
@@ -101,6 +109,9 @@ class _VerificationPageState extends State<VerificationPage> {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
+        setState(() {
+          _currentStatus = 'Pending';
+        });
         _showSuccessModal();
       } else {
         String message = 'Failed to submit verification';
@@ -128,20 +139,32 @@ class _VerificationPageState extends State<VerificationPage> {
   Widget build(BuildContext context) {
     bool isReady = gstBytes != null && licenseBytes != null;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text("Business Verification", 
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
+    Widget bodyContent;
+    if (_currentStatus == 'Pending') {
+      bodyContent = _buildStatusView(
+        icon: Icons.hourglass_empty_rounded,
+        iconColor: Colors.orange.shade800,
+        bgColor: Colors.orange.shade50,
+        title: "Under Review",
+        subtitle: "Photo has uploaded and held under review. Our team will verify your business details within 24 hours.",
+        buttonText: "Go to Dashboard",
+      );
+    } else if (_currentStatus == 'Verified') {
+      bodyContent = _buildStatusView(
+        icon: Icons.verified_user_rounded,
+        iconColor: Colors.green.shade800,
+        bgColor: Colors.green.shade50,
+        title: "Verified Business",
+        subtitle: "Your business has been successfully verified! You now have access to premium features, higher transaction limits, and secure online payments.",
+        buttonText: "Go to Dashboard",
+      );
+    } else {
+      bodyContent = SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_currentStatus == 'Rejected') _buildRejectedBanner(),
             // 1. Security & Trust Header
             _buildSecurityHeader(),
             const SizedBox(height: 32),
@@ -213,6 +236,105 @@ class _VerificationPageState extends State<VerificationPage> {
             ),
           ],
         ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text("Business Verification", 
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+      ),
+      body: bodyContent,
+    );
+  }
+
+  Widget _buildStatusView({
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required String title,
+    required String subtitle,
+    required String buttonText,
+  }) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: bgColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 70),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 15, color: Colors.grey, height: 1.6),
+            ),
+            const SizedBox(height: 48),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 58),
+                backgroundColor: Colors.indigo.shade800,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 2,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(buttonText, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRejectedBanner() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline_rounded, color: Colors.red.shade800, size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Verification Rejected",
+                  style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Your previous documents were not accepted. Please upload valid, high-resolution photos or scans of your credentials and try again.",
+                  style: TextStyle(color: Colors.red.shade800, fontSize: 13, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -327,7 +449,7 @@ class _VerificationPageState extends State<VerificationPage> {
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             const Text(
-              "Your shop details are being verified by our team. This usually takes 24 hours.",
+              "Photo has uploaded and held under review. Our team will verify your business details within 24 hours.",
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey, height: 1.5),
             ),

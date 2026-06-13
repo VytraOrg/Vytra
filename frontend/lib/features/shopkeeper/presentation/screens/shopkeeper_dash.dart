@@ -736,7 +736,7 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           onTap: () async {
             final result = await Navigator.push(
               context, 
-              MaterialPageRoute(builder: (context) => const VerificationPage())
+              MaterialPageRoute(builder: (context) => VerificationPage(initialStatus: _myShop?.verificationStatus))
             );
             if (result == true) {
               _loadMyShop();
@@ -845,7 +845,7 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
               AppColors.error,
               actionLabel: "Re-verify Profile",
               onTap: () async {
-                final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const VerificationPage()));
+                final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => VerificationPage(initialStatus: _myShop?.verificationStatus)));
                 if (result == true) {
                   _loadMyShop();
                 }
@@ -859,7 +859,7 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
               AppColors.warning,
               actionLabel: "Verify Profile",
               onTap: () async {
-                final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const VerificationPage()));
+                final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => VerificationPage(initialStatus: _myShop?.verificationStatus)));
                 if (result == true) {
                   _loadMyShop();
                 }
