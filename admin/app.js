@@ -55,6 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupKeyboardShortcuts();
   setupSidebarCollapse();
   setupProfileDropdown();
+  setupPasswordToggle();
+  loadRememberedEmail();
 });
 
 function checkAuth() {
@@ -86,6 +88,33 @@ function logout() {
   adminUser = null;
   document.getElementById('auth-screen').classList.remove('hidden');
   document.getElementById('dashboard-screen').classList.add('hidden');
+}
+
+// Password show/hide toggle
+function setupPasswordToggle() {
+  const toggleBtn = document.getElementById('toggle-password');
+  const passwordInput = document.getElementById('password');
+  if (!toggleBtn || !passwordInput) return;
+
+  toggleBtn.addEventListener('click', () => {
+    const isHidden = passwordInput.type === 'password';
+    passwordInput.type = isHidden ? 'text' : 'password';
+    const icon = toggleBtn.querySelector('i');
+    icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+    initIcons();
+    toggleBtn.title = isHidden ? 'Hide password' : 'Show password';
+  });
+}
+
+// Pre-fill email if remember-me was checked previously
+function loadRememberedEmail() {
+  const remembered = localStorage.getItem('admin_remembered_email');
+  if (remembered) {
+    const emailInput = document.getElementById('email');
+    const rememberCheckbox = document.getElementById('remember-me');
+    if (emailInput) emailInput.value = remembered;
+    if (rememberCheckbox) rememberCheckbox.checked = true;
+  }
 }
 
 // Keyboard Shortcuts setup
@@ -183,6 +212,14 @@ function setupEventListeners() {
         throw new Error('Access denied. Admin role required.');
       }
       
+      // Handle remember-me
+      const rememberMe = document.getElementById('remember-me');
+      if (rememberMe && rememberMe.checked) {
+        localStorage.setItem('admin_remembered_email', email);
+      } else {
+        localStorage.removeItem('admin_remembered_email');
+      }
+
       // Save session credentials
       token = data.access_token;
       adminUser = data.user;
@@ -199,6 +236,15 @@ function setupEventListeners() {
       initIcons();
     }
   });
+
+  // Forgot password — show toast (no backend endpoint yet)
+  const forgotLink = document.getElementById('forgot-link');
+  if (forgotLink) {
+    forgotLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      showToast('Contact your system administrator to reset your password.', 'info');
+    });
+  }
 
   // Logout Button (bound inside CheckAuth as well as here)
   const logoutBtn = document.getElementById('logout-btn');
