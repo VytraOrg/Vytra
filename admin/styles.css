@@ -83,13 +83,13 @@ body {
 .gradient-bg { display: none; }   /* kill the animated blob divs */
 
 /* ─── CARD BASE ──────────────────────────────────────────────────────────── */
-.glass-card {
+.card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
 
-.glass-card:hover {
+.card:hover {
   border-color: var(--border-hover);
 }
 
