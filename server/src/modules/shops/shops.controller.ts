@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Req, NotFoundException, BadRequestException, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, Req, NotFoundException, BadRequestException, UploadedFiles, UseInterceptors, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ShopsService } from './shops.service';
@@ -90,5 +90,29 @@ export class ShopsController {
     ]);
 
     return this.shopsService.verifyShop(ownerId, gstUrl, licenseUrl);
+  }
+
+  @Get('admin/all')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('Admin')
+  @ApiOperation({ summary: 'Get all shops with populated owner details (Admin only)' })
+  async getShopsAdmin() {
+    return this.shopsService.findAllAdmin();
+  }
+
+  @Post('admin/:id/verify')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('Admin')
+  @ApiOperation({ summary: 'Verify or reject a shop verification request (Admin only)' })
+  async verifyShopAdmin(
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
+    if (!['Verified', 'Rejected', 'Pending', 'Unverified'].includes(body.status)) {
+      throw new BadRequestException('Invalid verification status');
+    }
+    return this.shopsService.updateVerificationStatus(id, body.status);
   }
 }

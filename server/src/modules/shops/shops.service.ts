@@ -47,4 +47,15 @@ export class ShopsService {
     shop.verificationStatus = 'Pending';
     return shop.save();
   }
+
+  async findAllAdmin() {
+    return this.shopModel.find().populate('owner', 'name email').exec();
+  }
+
+  async updateVerificationStatus(id: string, status: string) {
+    const shop = await this.shopModel.findById(id).exec();
+    if (!shop) throw new NotFoundException('Shop not found');
+    shop.verificationStatus = status;
+    return shop.save();
+  }
 }

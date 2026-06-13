@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LocalCommerce Admin Portal</title>
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Main CSS styling -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Background Animated Gradients -->
+  <div class="gradient-bg">
+    <div class="g1"></div>
+    <div class="g2"></div>
+    <div class="g3"></div>
+  </div>
+
+  <!-- Auth Screen (Login) -->
+  <div id="auth-screen" class="auth-screen">
+    <div class="glass-card auth-card">
+      <div class="brand">
+        <div class="brand-logo">
+          <i data-lucide="shield-check"></i>
+        </div>
+        <h1>LocalCommerce</h1>
+        <p>Admin Control Panel</p>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">Admin Email</label>
+          <div class="input-wrapper">
+            <i data-lucide="mail"></i>
+            <input type="email" id="email" placeholder="admin@localcommerce.com" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrapper">
+            <i data-lucide="lock"></i>
+            <input type="password" id="password" placeholder="••••••••" required>
+          </div>
+        </div>
+
+        <button type="submit" id="login-btn" class="primary-btn">
+          <span>Sign In</span>
+          <i data-lucide="arrow-right"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Dashboard Screen -->
+  <div id="dashboard-screen" class="dashboard-screen hidden">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="mini-logo">
+          <i data-lucide="shield-check"></i>
+        </div>
+        <span>LocalCommerce Admin</span>
+      </div>
+
+      <nav class="sidebar-menu">
+        <a href="#" class="menu-item active" data-tab="verifications">
+          <i data-lucide="file-check"></i>
+          <span>Shop Verifications</span>
+        </a>
+        <a href="#" class="menu-item" data-tab="all-shops">
+          <i data-lucide="store"></i>
+          <span>All Stores</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="admin-profile">
+          <div class="avatar">
+            <i data-lucide="user"></i>
+          </div>
+          <div class="profile-info">
+            <h4 id="admin-name">Admin</h4>
+            <p id="admin-email">admin@commerce.com</p>
+          </div>
+        </div>
+        <button id="logout-btn" class="logout-btn">
+          <i data-lucide="log-out"></i>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="top-bar">
+        <div class="search-bar">
+          <i data-lucide="search"></i>
+          <input type="text" id="shop-search" placeholder="Search shops by name, category, or owner...">
+        </div>
+        <div class="header-actions">
+          <span class="api-indicator online">
+            <span class="dot"></span> Backend Connected
+          </span>
+        </div>
+      </header>
+
+      <!-- Dashboard View: Verifications -->
+      <div id="verifications-view" class="view-tab active">
+        <div class="view-header">
+          <div>
+            <h2>Shop Verifications</h2>
+            <p>Review and verify submitted business credentials</p>
+          </div>
+        </div>
+
+        <!-- Metric Grid -->
+        <section class="metrics-grid">
+          <div class="glass-card metric-card">
+            <div class="metric-icon pending">
+              <i data-lucide="clock"></i>
+            </div>
+            <div class="metric-data">
+              <span class="num" id="pending-count">0</span>
+              <span class="label">Pending Verification</span>
+            </div>
+          </div>
+
+          <div class="glass-card metric-card">
+            <div class="metric-icon verified">
+              <i data-lucide="check-circle2"></i>
+            </div>
+            <div class="metric-data">
+              <span class="num" id="verified-count">0</span>
+              <span class="label">Approved Stores</span>
+            </div>
+          </div>
+
+          <div class="glass-card metric-card">
+            <div class="metric-icon rejected">
+              <i data-lucide="x-circle"></i>
+            </div>
+            <div class="metric-data">
+              <span class="num" id="rejected-count">0</span>
+              <span class="label">Rejected Submissions</span>
+            </div>
+          </div>
+
+          <div class="glass-card metric-card">
+            <div class="metric-icon total">
+              <i data-lucide="store"></i>
+            </div>
+            <div class="metric-data">
+              <span class="num" id="total-count">0</span>
+              <span class="label">Total Registered</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Dynamic Content Section -->
+        <section class="content-section">
+          <div class="glass-card table-card">
+            <div class="table-header">
+              <h3>Verification Queue</h3>
+              <div class="filters">
+                <button class="filter-btn active" data-filter="Pending">Pending</button>
+                <button class="filter-btn" data-filter="all">All Submissions</button>
+              </div>
+            </div>
+
+            <div class="table-container">
+              <table id="verification-table">
+                <thead>
+                  <tr>
+                    <th>Shop Info</th>
+                    <th>Owner Contact</th>
+                    <th>GST Certificate</th>
+                    <th>Trade License</th>
+                    <th>Submitted At</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="verification-list">
+                  <tr>
+                    <td colspan="7" class="loading-state">
+                      <div class="spinner"></div>
+                      <span>Loading shops...</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Document View Modal -->
+  <div id="doc-modal" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="glass-card modal-container">
+      <div class="modal-header">
+        <h3 id="modal-title">Document Preview</h3>
+        <button class="close-btn" id="close-modal-btn">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-doc-container">
+          <!-- Dynamically populated document image/pdf frame -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Dialog -->
+  <div id="confirm-modal" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="glass-card confirm-container">
+      <div class="confirm-header">
+        <i id="confirm-icon" data-lucide="alert-triangle"></i>
+        <h3 id="confirm-title">Confirm Action</h3>
+      </div>
+      <p id="confirm-message">Are you sure you want to proceed?</p>
+      <div class="confirm-actions">
+        <button id="confirm-cancel-btn" class="secondary-btn">Cancel</button>
+        <button id="confirm-ok-btn" class="primary-btn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Logic Javascript -->
+  <script src="app.js"></script>
+</body>
+</html>
