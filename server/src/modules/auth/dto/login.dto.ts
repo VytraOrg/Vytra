@@ -11,7 +11,7 @@ export class LoginDto {
   @IsString()
   password: string;
 
-  @ApiProperty({ enum: ['Customer', 'Shopkeeper', 'Distributor'] })
-  @IsEnum(['Customer', 'Shopkeeper', 'Distributor'])
+  @ApiProperty({ enum: ['Customer', 'Shopkeeper', 'Distributor', 'Admin'] })
+  @IsEnum(['Customer', 'Shopkeeper', 'Distributor', 'Admin'])
   role: string;
 }
