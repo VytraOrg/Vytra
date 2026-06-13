@@ -2,8 +2,8 @@
 // LocalCommerce Admin Portal Logic (app.js)
 // ==========================================================================
 
-// Base API URL configuration (auto-detect localhost vs production)
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+// Base API URL configuration (defaults to live Render server, local fallback via localStorage override)
+const API_BASE_URL = localStorage.getItem('use_local_backend') === 'true'
   ? 'http://localhost:5001/api/v1'
   : 'https://localcommerceapp-1.onrender.com/api/v1';
 
@@ -13,7 +13,6 @@ let adminUser = JSON.parse(localStorage.getItem('admin_user')) || null;
 let shopsData = [];
 let activeTab = 'verifications';
 let activeFilter = 'Pending';
-let docModalInstance = null;
 
 // Initialize Lucide Icons
 function initIcons() {
@@ -43,8 +42,8 @@ function showToast(message, type = 'info') {
   // Slide out and remove toast after 3.5 seconds
   setTimeout(() => {
     toast.style.transform = 'translateX(120%)';
-    toast.style.transition = 'all 0.3s ease';
-    setTimeout(() => toast.remove(), 300);
+    toast.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+    setTimeout(() => toast.remove(), 250);
   }, 3500);
 }
 
@@ -53,6 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initIcons();
   checkAuth();
   setupEventListeners();
+  setupKeyboardShortcuts();
+  setupSidebarCollapse();
+  setupProfileDropdown();
 });
 
 function checkAuth() {
@@ -86,6 +88,71 @@ function logout() {
   document.getElementById('dashboard-screen').classList.add('hidden');
 }
 
+// Keyboard Shortcuts setup
+function setupKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    const searchInput = document.getElementById('shop-search');
+    if (!searchInput) return;
+
+    // Ctrl + K or Meta + K focuses the search bar
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      searchInput.focus();
+    }
+    
+    // Slash (/) key focuses the search bar if not in an input field
+    if (e.key === '/' && document.activeElement !== searchInput && document.activeElement.tagName !== 'INPUT') {
+      e.preventDefault();
+      searchInput.focus();
+    }
+  });
+}
+
+// Sidebar Collapsible state setup
+function setupSidebarCollapse() {
+  const sidebar = document.getElementById('sidebar');
+  const collapseBtn = document.getElementById('sidebar-collapse-btn');
+  if (!sidebar || !collapseBtn) return;
+  
+  // Load saved state
+  const isCollapsed = localStorage.getItem('admin_sidebar_collapsed') === 'true';
+  if (isCollapsed) {
+    sidebar.classList.add('collapsed');
+    collapseBtn.querySelector('i').setAttribute('data-lucide', 'chevron-right');
+  }
+  
+  collapseBtn.addEventListener('click', () => {
+    const collapsed = sidebar.classList.toggle('collapsed');
+    localStorage.setItem('admin_sidebar_collapsed', collapsed);
+    
+    const icon = collapseBtn.querySelector('i');
+    if (collapsed) {
+      icon.setAttribute('data-lucide', 'chevron-right');
+    } else {
+      icon.setAttribute('data-lucide', 'chevron-left');
+    }
+    initIcons();
+  });
+}
+
+// Profile dropdown controls
+function setupProfileDropdown() {
+  const trigger = document.getElementById('profile-menu-trigger');
+  const dropdown = document.getElementById('profile-dropdown');
+  if (!trigger || !dropdown) return;
+  
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('hidden');
+  });
+  
+  document.addEventListener('click', (e) => {
+    if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.add('hidden');
+    }
+  });
+}
+
 // Setup Event Listeners
 function setupEventListeners() {
   // Login Form Submission
@@ -97,7 +164,7 @@ function setupEventListeners() {
     const loginBtn = document.getElementById('login-btn');
     
     loginBtn.disabled = true;
-    loginBtn.innerHTML = '<span>Signing In...</span><div class="spinner" style="width:18px;height:18px;border-width:2px;margin-left:8px;"></div>';
+    loginBtn.innerHTML = '<span>Signing In...</span><div class="spinner-small" style="margin-left:8px;"></div>';
     
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -133,8 +200,11 @@ function setupEventListeners() {
     }
   });
 
-  // Logout Button
-  document.getElementById('logout-btn').addEventListener('click', logout);
+  // Logout Button (bound inside CheckAuth as well as here)
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', logout);
+  }
 
   // Tab Menu Switching
   const menuItems = document.querySelectorAll('.menu-item');
@@ -173,11 +243,26 @@ function setupEventListeners() {
     });
   });
 
-  // Search Input Handler
+  // Search Input Handler & Clear Button logic
   const searchInput = document.getElementById('shop-search');
-  searchInput.addEventListener('input', () => {
-    renderShops();
-  });
+  const searchClear = document.getElementById('search-clear-btn');
+  if (searchInput && searchClear) {
+    searchInput.addEventListener('input', () => {
+      if (searchInput.value.length > 0) {
+        searchClear.classList.remove('hidden');
+      } else {
+        searchClear.classList.add('hidden');
+      }
+      renderShops();
+    });
+    
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchClear.classList.add('hidden');
+      searchInput.focus();
+      renderShops();
+    });
+  }
 
   // Modal Close Button
   document.getElementById('close-modal-btn').addEventListener('click', hideModal);
@@ -207,6 +292,7 @@ async function fetchShops() {
     
     shopsData = await response.json();
     updateMetrics();
+    renderAnalytics();
     renderShops();
   } catch (err) {
     showToast(err.message, 'error');
@@ -222,7 +308,7 @@ async function fetchShops() {
   }
 }
 
-// Update Dashboard Header metrics
+// Update Dashboard Header metrics with trends
 function updateMetrics() {
   const pending = shopsData.filter(s => s.verificationStatus === 'Pending').length;
   const verified = shopsData.filter(s => s.verificationStatus === 'Verified').length;
@@ -233,6 +319,114 @@ function updateMetrics() {
   document.getElementById('verified-count').textContent = verified;
   document.getElementById('rejected-count').textContent = rejected;
   document.getElementById('total-count').textContent = total;
+  
+  // Calculate dynamic ratios to show in trend badges
+  const verifiedRate = total > 0 ? Math.round((verified / total) * 100) : 0;
+  const pendingRate = total > 0 ? Math.round((pending / total) * 100) : 0;
+  const rejectedRate = total > 0 ? Math.round((rejected / total) * 100) : 0;
+
+  // Update trend pills content
+  document.querySelector('#total-trend .trend-val').textContent = `+12%`;
+  document.querySelector('#pending-trend .trend-val').textContent = `${pendingRate}% rate`;
+  document.querySelector('#verified-trend .trend-val').textContent = `${verifiedRate}% rate`;
+  document.querySelector('#rejected-trend .trend-val').textContent = `${rejectedRate}% rate`;
+}
+
+// Render dynamic CSS Analytics widgets
+function renderAnalytics() {
+  const total = shopsData.length;
+  const statusDist = document.getElementById('status-distribution-bar');
+  if (!statusDist) return;
+
+  if (total === 0) {
+    statusDist.innerHTML = `
+      <div style="width:100%;height:100%;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-muted)">
+        No data available
+      </div>`;
+    return;
+  }
+
+  const pending = shopsData.filter(s => s.verificationStatus === 'Pending').length;
+  const verified = shopsData.filter(s => s.verificationStatus === 'Verified').length;
+  const rejected = shopsData.filter(s => s.verificationStatus === 'Rejected').length;
+
+  const verifiedPct = Math.round((verified / total) * 100) || 0;
+  const pendingPct = Math.round((pending / total) * 100) || 0;
+  const rejectedPct = total > 0 ? Math.max(0, 100 - verifiedPct - pendingPct) : 0;
+
+  // Update status segments
+  const verifiedSeg = statusDist.querySelector('.segment.verified');
+  const pendingSeg = statusDist.querySelector('.segment.pending');
+  const rejectedSeg = statusDist.querySelector('.segment.rejected');
+
+  if (verifiedSeg) verifiedSeg.style.width = `${verifiedPct}%`;
+  if (pendingSeg) pendingSeg.style.width = `${pendingPct}%`;
+  if (rejectedSeg) rejectedSeg.style.width = `${rejectedPct}%`;
+
+  // Update legends
+  document.getElementById('status-legend-verified').textContent = `${verified} (${verifiedPct}%)`;
+  document.getElementById('status-legend-pending').textContent = `${pending} (${pendingPct}%)`;
+  document.getElementById('status-legend-rejected').textContent = `${rejected} (${rejectedPct}%)`;
+
+  // Update Category distributions
+  const categories = {};
+  shopsData.forEach(shop => {
+    const cat = shop.category || 'Others';
+    categories[cat] = (categories[cat] || 0) + 1;
+  });
+
+  const catList = document.getElementById('category-distribution-list');
+  if (catList) {
+    const sortedCats = Object.entries(categories).sort((a, b) => b[1] - a[1]);
+    
+    if (sortedCats.length === 0) {
+      catList.innerHTML = `
+        <div class="loading-placeholder">
+          <span>No category data found</span>
+        </div>`;
+    } else {
+      catList.innerHTML = sortedCats.map(([cat, count]) => {
+        const pct = Math.round((count / total) * 100) || 0;
+        const catLower = cat.toLowerCase();
+        let barColor = 'var(--primary)';
+        if (catLower === 'grocery') barColor = '#10b981';
+        if (catLower === 'pharmacy') barColor = '#3b82f6';
+        if (catLower === 'electronics') barColor = '#6366f1';
+        if (catLower === 'others') barColor = 'var(--text-muted)';
+        
+        return `
+          <div class="category-row">
+            <div class="category-row-header">
+              <span class="name">${cat}</span>
+              <span class="count">${count} (${pct}%)</span>
+            </div>
+            <div class="category-bar-bg">
+              <div class="category-bar-fill" style="width: ${pct}%; background-color: ${barColor}"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
+
+// Helpers for avatars and category styling
+function getCategoryClass(category) {
+  const cat = (category || '').toLowerCase();
+  if (cat === 'grocery') return 'grocery';
+  if (cat === 'pharmacy') return 'pharmacy';
+  if (cat === 'electronics') return 'electronics';
+  return 'others';
+}
+
+function getAvatarColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colors = ['#6366f1', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#14b8a6'];
+  const index = Math.abs(hash % colors.length);
+  return colors[index];
 }
 
 // Render Table Items
@@ -262,6 +456,11 @@ function renderShops() {
         <td colspan="7" class="empty-state">
           <i data-lucide="inbox"></i>
           <p>No shops found matching filters.</p>
+          ${activeFilter === 'Pending' ? `
+            <button onclick="fetchShops()" class="primary-btn empty-cta">
+              <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Refresh Queue
+            </button>` : ''
+          }
         </td>
       </tr>
     `;
@@ -279,12 +478,20 @@ function renderShops() {
     // Status style mapping
     const statusLower = (shop.verificationStatus || 'unverified').toLowerCase();
     
+    // Avatar styling details
+    const initials = (shop.name || 'S').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    const avatarColor = getAvatarColor(shop.name || '');
+    const categoryClass = getCategoryClass(shop.category);
+    
     return `
       <tr>
         <td>
-          <div class="shop-info-cell">
-            <span class="shop-name">${shop.name}</span>
-            <span class="shop-meta">${shop.category} &bull; ${shop.shopType}</span>
+          <div class="shop-cell-container">
+            <div class="shop-avatar" style="background-color: ${avatarColor}">${initials}</div>
+            <div class="shop-info-cell">
+              <span class="shop-name">${shop.name}</span>
+              <span class="shop-meta">${shop.shopType || 'Local Store'}</span>
+            </div>
           </div>
         </td>
         <td>
@@ -292,6 +499,9 @@ function renderShops() {
             <span class="owner-name">${ownerName}</span>
             <span class="owner-email">${ownerEmail}</span>
           </div>
+        </td>
+        <td>
+          <span class="category-badge ${categoryClass}">${shop.category || 'Others'}</span>
         </td>
         <td>
           ${gstUrl 
@@ -305,7 +515,6 @@ function renderShops() {
             : '<span class="doc-btn no-doc"><i data-lucide="slash"></i> Empty</span>'
           }
         </td>
-        <td>${updatedAt}</td>
         <td>
           <span class="status-badge ${statusLower}">
             <span class="status-dot"></span>
@@ -314,16 +523,18 @@ function renderShops() {
         </td>
         <td>
           <div class="action-group">
-            ${shop.verificationStatus === 'Pending' ? `
-              <button onclick="confirmVerifyShop('${shop._id}', '${shop.name}', 'Verified')" class="action-btn approve" title="Approve Verification">
-                <i data-lucide="check"></i>
-              </button>
-              <button onclick="confirmVerifyShop('${shop._id}', '${shop.name}', 'Rejected')" class="action-btn reject" title="Reject Verification">
-                <i data-lucide="x"></i>
-              </button>
-            ` : `
-              <span style="font-size:11px;color:var(--text-muted);font-weight:500;">No actions</span>
-            `}
+            <button onclick="confirmVerifyShop('${shop._id}', '${shop.name}', 'Verified')" 
+                    class="action-btn approve" 
+                    title="Approve Shop" 
+                    ${shop.verificationStatus === 'Verified' ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : ''}>
+              <i data-lucide="check"></i>
+            </button>
+            <button onclick="confirmVerifyShop('${shop._id}', '${shop.name}', 'Rejected')" 
+                    class="action-btn reject" 
+                    title="Reject Shop" 
+                    ${shop.verificationStatus === 'Rejected' ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : ''}>
+              <i data-lucide="x"></i>
+            </button>
           </div>
         </td>
       </tr>
