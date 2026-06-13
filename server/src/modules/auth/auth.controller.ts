@@ -25,9 +25,4 @@ export class AuthController {
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
-
-  @Post('temp-make-admin')
-  tempMakeAdmin(@Body() body: { email: string }) {
-    return this.authService.promoteToAdmin(body.email);
-  }
 }
