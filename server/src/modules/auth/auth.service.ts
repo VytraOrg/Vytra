@@ -80,6 +80,11 @@ export class AuthService {
     return this.generateToken(user);
   }
 
+  async promoteToAdmin(email: string) {
+    const result = await this.userModel.updateOne({ email }, { role: 'Admin' });
+    return { success: result.modifiedCount > 0 };
+  }
+
   private generateToken(user: UserDocument) {
     const payload = { sub: user._id, email: user.email, role: user.role };
     return {
