@@ -6,10 +6,16 @@ import { Readable } from 'stream';
 @Injectable()
 export class CloudinaryService {
   constructor(private configService: ConfigService) {
+    const cloudName = this.configService.get<string>('CLOUDINARY_CLOUD_NAME');
+    const apiKey = this.configService.get<string>('CLOUDINARY_API_KEY');
+    const apiSecret = this.configService.get<string>('CLOUDINARY_API_SECRET');
+
+    console.log(`Cloudinary Config - CloudName: "${cloudName}", APIKey: "${apiKey}", Secret length: ${apiSecret?.length ?? 0}`);
+
     cloudinary.config({
-      cloud_name: this.configService.get<string>('CLOUDINARY_CLOUD_NAME'),
-      api_key: this.configService.get<string>('CLOUDINARY_API_KEY'),
-      api_secret: this.configService.get<string>('CLOUDINARY_API_SECRET'),
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
     });
   }
 
