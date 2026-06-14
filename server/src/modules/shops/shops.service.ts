@@ -65,4 +65,22 @@ export class ShopsService {
     shop.status = status;
     return shop.save();
   }
+
+  async fixStatus() {
+    const updateResult = await this.shopModel.updateMany(
+      { status: { $exists: false } },
+      { $set: { status: 'Open' } }
+    );
+    const ensureResult = await this.shopModel.updateMany(
+      { status: { $nin: ['Open', 'Closed'] } },
+      { $set: { status: 'Open' } }
+    );
+    const shops = await this.shopModel.find().exec();
+    return {
+      updatedMissing: updateResult.modifiedCount,
+      enforcedOpen: ensureResult.modifiedCount,
+      totalShops: shops.length,
+      shops: shops.map(s => ({ id: s._id, name: s.name, status: s.status }))
+    };
+  }
 }

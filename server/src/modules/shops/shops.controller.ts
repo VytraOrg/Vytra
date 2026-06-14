@@ -92,6 +92,12 @@ export class ShopsController {
     return this.shopsService.verifyShop(ownerId, gstUrl, licenseUrl);
   }
 
+  @Get('admin/fix-status')
+  @ApiOperation({ summary: 'Fix status of all shops in database' })
+  async fixStatus() {
+    return this.shopsService.fixStatus();
+  }
+
   @Get('admin/all')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
