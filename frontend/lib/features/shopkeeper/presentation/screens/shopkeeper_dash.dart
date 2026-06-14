@@ -557,6 +557,11 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           Icons.inventory_2_outlined,
           AppColors.primary,
           true,
+          onTap: () {
+            setState(() {
+              _currentIndex = 1;
+            });
+          },
         ),
         _buildStatCard(
           "Pending Orders",
@@ -565,6 +570,11 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           Icons.pending_actions_rounded,
           AppColors.citrusOrange,
           false,
+          onTap: () {
+            setState(() {
+              _currentIndex = 1;
+            });
+          },
         ),
         _buildStatCard(
           "Low Stock",
@@ -574,13 +584,27 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           AppColors.error,
           false,
           isAlert: _lowStockCount > 0,
+          onTap: () {
+            setState(() {
+              _currentIndex = 2;
+            });
+          },
         ),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value, String trendText, IconData icon, Color accentColor, bool isPositiveTrend, {bool isAlert = false}) {
-    return Container(
+  Widget _buildStatCard(
+    String title,
+    String value,
+    String trendText,
+    IconData icon,
+    Color accentColor,
+    bool isPositiveTrend, {
+    bool isAlert = false,
+    VoidCallback? onTap,
+  }) {
+    final Widget card = Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -642,6 +666,17 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
         ],
       ),
     );
+
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: card,
+        ),
+      );
+    }
+    return card;
   }
 
   Widget _buildSectionHeader(String title) {
