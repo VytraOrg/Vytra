@@ -1324,107 +1324,124 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
                   padding: const EdgeInsets.all(AppSpacing.md),
                   itemCount: _orders.length,
                   itemBuilder: (context, index) {
-                    final order = _orders[index];
-                    Color statusColor = _getOrderStatusColor(order.status);
-                    
-                    String actionLabel = '';
-                    String nextStatus = '';
-                    if (order.status == 'Placed') {
-                      actionLabel = 'Accept Order';
-                      nextStatus = 'Processing';
-                    } else if (order.status == 'Processing') {
-                      actionLabel = 'Mark Dispatched';
-                      nextStatus = 'Dispatched';
-                    } else if (order.status == 'Dispatched') {
-                      actionLabel = 'Mark Delivered';
-                      nextStatus = 'Delivered';
-                    }
+                    try {
+                      final order = _orders[index];
+                      Color statusColor = _getOrderStatusColor(order.status);
+                      
+                      String actionLabel = '';
+                      String nextStatus = '';
+                      if (order.status == 'Placed') {
+                        actionLabel = 'Accept Order';
+                        nextStatus = 'Processing';
+                      } else if (order.status == 'Processing') {
+                        actionLabel = 'Mark Dispatched';
+                        nextStatus = 'Dispatched';
+                      } else if (order.status == 'Dispatched') {
+                        actionLabel = 'Mark Delivered';
+                        nextStatus = 'Delivered';
+                      }
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                        side: BorderSide(color: AppColors.primaryLight.withOpacity(0.5), width: 1.2),
-                      ),
-                      elevation: 0,
-                      color: Colors.white,
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '#${order.id.substring(order.id.length - 6).toUpperCase()}',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(8),
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          side: BorderSide(color: AppColors.primaryLight.withOpacity(0.5), width: 1.2),
+                        ),
+                        elevation: 0,
+                        color: Colors.white,
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '#${order.id.substring(order.id.length - 6).toUpperCase()}',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
                                   ),
-                                  child: Text(
-                                    order.status,
-                                    style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 10),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: statusColor.withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      order.status,
+                                      style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 10),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              "Customer: ${order.customerInfo?['name'] ?? 'Unknown Customer'}",
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  "${order.items.length} items • ${_getFormattedTimeAgo(order.createdAt)}",
-                                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                                ),
-                                Text(
-                                  "₹${order.totalAmount.toStringAsFixed(0)}",
-                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.primary),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            const Divider(),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: () => _showOrderDetailsDialog(order),
-                                  style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: AppColors.primaryLight),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                "Customer: ${order.customerInfo?['name'] ?? 'Unknown Customer'}",
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "${order.items.length} items • ${_getFormattedTimeAgo(order.createdAt)}",
+                                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                                   ),
-                                  child: const Text("Details", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                                ),
-                                if (actionLabel.isNotEmpty) ...[
-                                  const SizedBox(width: 8),
-                                  ElevatedButton(
-                                    onPressed: () => _updateOrderStatus(order.id, nextStatus),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
+                                  Text(
+                                    "₹${order.totalAmount.toStringAsFixed(0)}",
+                                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.primary),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              const Divider(),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  OutlinedButton(
+                                    onPressed: () => _showOrderDetailsDialog(order),
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(color: AppColors.primaryLight),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                       padding: const EdgeInsets.symmetric(horizontal: 16),
                                     ),
-                                    child: Text(actionLabel, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                    child: const Text("Details", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                                   ),
+                                  if (actionLabel.isNotEmpty) ...[
+                                    const SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: () => _updateOrderStatus(order.id, nextStatus),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                      ),
+                                      child: Text(actionLabel, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                    ),
+                                  ],
                                 ],
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    } catch (e, stack) {
+                      debugPrint('ERROR in orders list itemBuilder: $e\n$stack');
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                        ),
+                        child: Text(
+                          'Error rendering order: $e',
+                          style: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      );
+                    }
                   },
                 ),
     );
