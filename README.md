@@ -1,106 +1,109 @@
 # 🛒 Local Commerce App
 
-A modern, full-stack commerce solution connecting local shopkeepers, distributors, and customers. Built with **Flutter** (Frontend), **NestJS** (Backend), and **MongoDB Atlas** (Database).
+A full-stack hyperlocal commerce platform connecting **Customers**, **Shopkeepers**, and **Distributors**. Built with **Flutter** (Frontend), **NestJS** (Backend), and **MongoDB Atlas** (Database).
 
 ---
 
 ## 🚀 Features
 
-- **Multi-Role Support**: Custom interfaces and logic for Customers, Shopkeepers, and Distributors.
-- **Combined Global Search**: Unified search bar that simultaneously scans for **Shop Names** and **Product Names**, displaying them together for faster discovery.
-- **Full-Stack Cart System**: Real-time cart management with backend persistence. Add, update, or remove items from any shop globally.
-- **Order Lifecycle Tracking**: Complete checkout flow from cart to order creation, including detailed order status tracking (Processing, Shipped, Delivered).
-- **Premium UI**: Modern Glassmorphism, Neumorphic design elements, haptic feedback, and dynamic profile headers.
-- **Secure Auth**: JWT-based authentication with role guards, offline session persistence, and robust logout workflows.
-- **High-Performance Architecture**: Backend powered by NestJS (TypeScript) with Mongoose, supporting parallel request processing and clean module boundaries.
+- **Multi-Role Auth**: Separate dashboards and flows for Customers, Shopkeepers, and Distributors (JWT + Role Guards).
+- **Customer App**: Browse shops, search products/shops, manage cart, place orders, and track order status.
+- **Shopkeeper Dashboard**: Incoming order management with one-tap status updates (Placed → Processing → Dispatched → Delivered), inventory management, analytics, and shop verification.
+- **Distributor Module**: List and connect with local distributors.
+- **Full-Stack Cart**: Real-time cart with backend persistence per user.
+- **Order Lifecycle**: Complete order flow — cart → checkout → status tracking (Placed, Processing, Dispatched, Delivered).
+- **Inventory Management**: Add/edit/delete products with stock tracking and low-stock alerts.
+- **Shop Verification**: Document upload and admin review workflow.
+- **Premium UI**: Glassmorphism, animated cards, custom design system with dark tokens.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Flutter (Dart) with **Provider** (State Management) & **Hive** (Local Persistence)
-- **Backend**: NestJS (TypeScript, Node.js)
-- **Database**: MongoDB Atlas (Cloud)
-- **Authentication**: JWT (JSON Web Tokens) & bcrypt
-- **Design System**: Custom design tokens with support for animations and glassmorphism.
+| Layer | Tech |
+|---|---|
+| Frontend | Flutter (Dart), Provider, Hive, flutter_animate |
+| Backend | NestJS (TypeScript), Mongoose |
+| Database | MongoDB Atlas |
+| Auth | JWT + bcrypt, Role-based Guards |
+| Media | Cloudinary (product images) |
+| Docs | Swagger/OpenAPI (`/api`) |
 
 ---
 
-## ⚙️ Setup Instructions
+## ⚙️ Setup
 
-### 1. Backend Setup (NestJS)
-Navigate to the `server` folder:
+### 1. Backend (NestJS)
 ```bash
 cd server
 npm install
 ```
-Create a `.env` file with your environment variables:
+Copy `.env.example` to `.env` and fill in your values:
 ```env
-PORT=5014
-MONGO_URI=mongodb+srv://your_credentials...
-JWT_SECRET=your_super_secret_key_here
+MONGODB_URI=mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/<db>
+PORT=5001
+JWT_SECRET=your_secret_here
+JWT_EXPIRES_IN=7d
 ```
-Start the server in development mode:
 ```bash
 npm run start:dev
 ```
+API docs available at `http://localhost:5001/api`
 
-### 2. Frontend Setup (Flutter)
-Navigate to the `frontend` folder:
+### 2. Frontend (Flutter)
 ```bash
 cd frontend
 flutter pub get
 ```
+Update `frontend/lib/core/network/api_client.dart` with your backend base URL:
+- **Emulator**: `http://10.0.2.2:5001`
+- **Physical device / Web**: `http://<your-local-ip>:5001`
 
-#### **🌐 Connecting to the Local Backend**
-The app communicates with the backend via `frontend/lib/api_config.dart`.
-1. If using an emulator, it defaults to `10.0.2.2`.
-2. If using a physical device, update `ApiConfig.baseUrl` to your computer's local Wi-Fi IP address (e.g., `192.168.x.x`).
-3. Run the app:
-   ```bash
-   flutter run
-   ```
-
----
-
-## 🏗️ Project Structure & Architecture
-
-The project has been recently refactored into an **Enterprise-Grade Architecture** following Clean Architecture principles and Domain-Driven Design (DDD).
-
-### Backend (NestJS)
-- **Modular Design**: Each feature is encapsulated in its own module with dedicated Controllers, Services, and Schemas.
-- **Strict Input Validation**: Every request payload is validated using **DTOs (Data Transfer Objects)** and `class-validator`.
-- **Global Error Handling**: Standardized error responses across the entire API via a custom `AllExceptionsFilter`.
-- **Security**: Hardened with **Helmet**, **Compression**, and JWT-based Role Guards.
-- **Documentation**: Integrated **Swagger/OpenAPI** for real-time API exploration.
-
-### Frontend (Flutter)
-- **Controller-Based State Management**: Logic is decoupled from UI using the **Controller/ChangeNotifier** pattern.
-- **Domain-Driven Repository Pattern**: All data access is abstracted through Repositories that return strongly-typed **Entities** and **Models**.
-- **Unified Network Layer**: A generic `ApiClient` handles all HTTP communication with standardized error mapping and session management.
-- **Widget Modularization**: Large screens have been broken down into small, reusable feature-specific widgets.
-
-```text
-LocalCommerceApp/
-├── server/             # NestJS API & MongoDB Logic
-│   ├── src/            
-│   │   ├── common/     # Filters, Guards, Interceptors, DTOs
-│   │   ├── modules/    # Auth, Users, Shops, Products, Cart, Orders Modules
-│   │   └── main.ts     # Bootstrap with Global Filters/Pipes
-├── frontend/           # Flutter Mobile Application
-│   └── lib/
-│       ├── core/       # Network (ApiClient), Theme, Design System, Constants
-│       ├── features/   # Feature-sliced modules (Data/Domain/Presentation)
-│       ├── shared/     # Reusable global widgets (NetworkImage, Buttons)
-│       └── main.dart   # App Entrypoint & Provider registration
+```bash
+flutter run -d chrome    # Web
+flutter run              # Mobile
 ```
 
 ---
 
-## 🤝 Contributing
-Feel free to fork this project and submit pull requests for any features or bug fixes.
+## 🏗️ Project Structure
+
+```
+LocalCommerceApp/
+├── server/                   # NestJS API
+│   └── src/
+│       ├── common/           # Filters, Guards, Interceptors
+│       └── modules/
+│           ├── auth/         # JWT auth, login, register
+│           ├── users/        # User profiles
+│           ├── shops/        # Shop CRUD & verification
+│           ├── products/     # Product & inventory management
+│           ├── cart/         # Cart persistence
+│           └── orders/       # Order lifecycle & status updates
+├── frontend/                 # Flutter app
+│   └── lib/
+│       ├── core/             # ApiClient, design system, constants
+│       └── features/
+│           ├── auth/         # Login, register, welcome
+│           ├── customer/     # Customer dashboard, cart, checkout
+│           ├── shopkeeper/   # Shopkeeper dashboard, inventory
+│           ├── distributor/  # Distributor listing
+│           ├── shop/         # Shop models & browsing
+│           ├── orders/       # Order models & tracking
+│           └── products/     # Product models
+└── admin/                    # Admin panel (optional)
+```
+
+---
+
+## 📦 Order Status Flow
+
+```
+Placed → Processing → Dispatched → Delivered
+```
+Shopkeepers update status from their dashboard with one tap per stage.
 
 ---
 
 ## 📜 License
-This project is licensed under the MIT License.
+MIT
