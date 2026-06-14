@@ -70,7 +70,6 @@ class _InventoryPageState extends State<InventoryPage> {
         'unit': unit,
         'stockQuantity': stockQuantity,
         'shop': widget.shopId,
-        'isAvailable': true,
       });
       
       ScaffoldMessenger.of(context).showSnackBar(
