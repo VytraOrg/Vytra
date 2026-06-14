@@ -110,6 +110,11 @@ export class ProductsService {
         },
       },
       { $unwind: '$shopInfo' },
+      {
+        $match: {
+          'shopInfo.status': 'Open',
+        },
+      },
     ];
 
     if (shopType) {

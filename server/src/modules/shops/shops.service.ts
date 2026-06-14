@@ -15,7 +15,7 @@ export class ShopsService {
   }
 
   async findFiltered(category?: string, shopType?: string, search?: string) {
-    const filter: any = {};
+    const filter: any = { status: 'Open' };
     if (category) filter.category = category;
     if (shopType) filter.shopType = shopType;
     if (search) {
