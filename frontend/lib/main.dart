@@ -14,6 +14,7 @@ import 'features/shop/presentation/controllers/shop_controller.dart';
 import 'features/shop/presentation/screens/customer_home.dart';
 import 'features/auth/presentation/screens/welcome_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/shopkeeper/presentation/screens/shopkeeper_dash.dart';
 import 'core/cache/cache_manager.dart';
 
 void main() async {
@@ -69,8 +70,7 @@ class LocalCommerceApp extends StatelessWidget {
     if (user != null) {
       // If user is already logged in, skip welcome/login
       if (user.role == 'Shopkeeper') {
-        // You can add ShopkeeperDashboard here when ready
-        home = CustomerHome(customerId: user.id); 
+        home = const ShopkeeperDash();
       } else {
         home = CustomerHome(customerId: user.id);
       }

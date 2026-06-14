@@ -122,4 +122,13 @@ export class ProductsService {
 
     return this.productModel.aggregate(pipeline).exec();
   }
+
+  async remove(id: string) {
+    const deleted = await this.productModel.findByIdAndDelete(id);
+    if (!deleted) throw new NotFoundException('Product not found');
+    
+    await this.cacheService.delete(`product:${id}`);
+    await this.cacheService.clearPattern('products:*');
+    return { success: true, message: 'Product deleted successfully' };
+  }
 }

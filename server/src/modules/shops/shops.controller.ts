@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, UseGuards, Req, NotFoundException, BadRequestException, UploadedFiles, UseInterceptors, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Query, UseGuards, Req, NotFoundException, BadRequestException, UploadedFiles, UseInterceptors, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ShopsService } from './shops.service';
@@ -114,5 +114,18 @@ export class ShopsController {
       throw new BadRequestException('Invalid verification status');
     }
     return this.shopsService.updateVerificationStatus(id, body.status);
+  }
+
+  @Put('my/status')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('Shopkeeper', 'Admin')
+  @ApiOperation({ summary: "Update current user's shop status (Open/Closed)" })
+  async updateStatus(@Req() req: any, @Body() body: { status: string }) {
+    const ownerId = req.user._id;
+    if (!['Open', 'Closed'].includes(body.status)) {
+      throw new BadRequestException('Invalid status value');
+    }
+    return this.shopsService.updateStatus(ownerId, body.status);
   }
 }

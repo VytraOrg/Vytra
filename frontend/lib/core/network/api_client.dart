@@ -103,7 +103,12 @@ class ApiClient {
       return decoded;
     }
 
-    final message = decoded['message'] ?? decoded['error'] ?? "Request failed";
+    var message = decoded['message'] ?? decoded['error'] ?? "Request failed";
+    if (message is List) {
+      message = message.join(', ');
+    } else {
+      message = message.toString();
+    }
     
     switch (response.statusCode) {
       case 400:

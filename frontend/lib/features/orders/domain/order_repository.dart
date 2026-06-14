@@ -36,4 +36,16 @@ class OrderRepository {
       rethrow;
     }
   }
+
+  Future<List<OrderModel>> getShopOrders() async {
+    try {
+      final response = await _apiClient.get('/orders/my-shop');
+      final List<dynamic> items = response is List
+          ? response
+          : (response is Map ? (response['items'] as List? ?? []) : []);
+      return items.map((e) => OrderModel.fromJson(Map<String, dynamic>.from(e))).toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

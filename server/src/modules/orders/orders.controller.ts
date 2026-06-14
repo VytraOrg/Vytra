@@ -26,6 +26,14 @@ export class OrdersController {
     return this.ordersService.getMyOrders(req.user._id);
   }
 
+  @Get('my-shop')
+  @UseGuards(RolesGuard)
+  @Roles('Shopkeeper', 'Admin')
+  @ApiOperation({ summary: 'Get orders for the shop owned by current user' })
+  getMyShopOrders(@Request() req) {
+    return this.ordersService.getMyShopOrders(req.user._id);
+  }
+
   @Put(':id/status')
   @UseGuards(RolesGuard)
   @Roles('Shopkeeper', 'Admin')

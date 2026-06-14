@@ -39,6 +39,7 @@ class OrderModel {
   final String status;
   final DateTime createdAt;
   final dynamic deliveryAddress;
+  final Map<String, dynamic>? customerInfo;
 
   OrderModel({
     required this.id,
@@ -47,6 +48,7 @@ class OrderModel {
     required this.status,
     required this.createdAt,
     this.deliveryAddress,
+    this.customerInfo,
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
@@ -60,6 +62,7 @@ class OrderModel {
       status: json['status'] ?? 'Placed',
       createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
       deliveryAddress: json['deliveryAddress'],
+      customerInfo: json['userId'] is Map ? Map<String, dynamic>.from(json['userId'] as Map) : null,
     );
   }
 
@@ -70,5 +73,6 @@ class OrderModel {
     'status': status,
     'createdAt': createdAt.toIso8601String(),
     'deliveryAddress': deliveryAddress,
+    'userId': customerInfo,
   };
 }

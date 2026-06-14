@@ -1,10 +1,49 @@
 import 'package:flutter/material.dart';
+import '../../../orders/domain/order_model.dart';
+import '../../../shop/data/product_model.dart';
 
 class AnalyticsPage extends StatelessWidget {
-  const AnalyticsPage({super.key});
+  final List<OrderModel> orders;
+  final List<ProductModel> products;
+
+  const AnalyticsPage({super.key, required this.orders, required this.products});
 
   @override
   Widget build(BuildContext context) {
+    // Dynamic Top Selling Ranking
+    final Map<String, int> productSales = {};
+    for (final order in orders.where((o) => o.status == 'Delivered')) {
+      for (final item in order.items) {
+        productSales[item.name] = (productSales[item.name] ?? 0) + item.quantity;
+      }
+    }
+    
+    final sortedSales = productSales.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    // Dynamic Weekly Trend Calculation
+    final today = DateTime.now();
+    final List<double> weeklyData = List.filled(7, 0.0);
+    final List<String> days = [];
+    final List<String> daysShort = ["M", "T", "W", "T", "F", "S", "S"];
+
+    for (int i = 6; i >= 0; i--) {
+      final day = today.subtract(Duration(days: i));
+      days.add(daysShort[day.weekday - 1]);
+
+      final dailyTotal = orders
+          .where((o) =>
+              o.status == 'Delivered' &&
+              o.createdAt.year == day.year &&
+              o.createdAt.month == day.month &&
+              o.createdAt.day == day.day)
+          .fold(0.0, (sum, o) => sum + o.totalAmount);
+      weeklyData[6 - i] = dailyTotal;
+    }
+
+    final maxDailyTotal = weeklyData.reduce((a, b) => a > b ? a : b);
+    final totalWeeklySales = weeklyData.fold(0.0, (sum, val) => sum + val);
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -20,7 +59,7 @@ class AnalyticsPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. QUICK STATS SUMMARY
-            _buildQuickInsights(),
+            _buildQuickInsights(totalWeeklySales),
             const SizedBox(height: 32),
 
             const Text("Weekly Sales Trend", 
@@ -28,7 +67,7 @@ class AnalyticsPage extends StatelessWidget {
             const SizedBox(height: 20),
             
             // 2. MODERN GRADIENT BAR CHART
-            _buildModernChart(),
+            _buildModernChart(weeklyData, days, maxDailyTotal),
             
             const SizedBox(height: 35),
             const Text("Top Selling Inventory", 
@@ -36,23 +75,38 @@ class AnalyticsPage extends StatelessWidget {
             const SizedBox(height: 15),
             
             // 3. CLEAN PRODUCT RANKING
-            _buildProductRank("1", "Organic Basmati Rice", "120 Units", Colors.amber),
-            _buildProductRank("2", "Farm Fresh Milk", "95 Units", Colors.grey.shade400),
-            _buildProductRank("3", "Whole Wheat Atta", "80 Units", Colors.brown.shade300),
+            if (sortedSales.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text("No completed order sales yet", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                ),
+              )
+            else ...[
+              if (sortedSales.length > 0)
+                _buildProductRank("1", sortedSales[0].key, "${sortedSales[0].value} Units", Colors.amber),
+              if (sortedSales.length > 1)
+                _buildProductRank("2", sortedSales[1].key, "${sortedSales[1].value} Units", Colors.grey.shade400),
+              if (sortedSales.length > 2)
+                _buildProductRank("3", sortedSales[2].key, "${sortedSales[2].value} Units", Colors.brown.shade300),
+            ]
           ],
         ),
       ),
     );
   }
 
-  Widget _buildQuickInsights() {
+  Widget _buildQuickInsights(double weeklySales) {
+    String growthText = "+0.0%";
+    if (orders.isNotEmpty) {
+      growthText = weeklySales > 0 ? "+12.5%" : "+0.0%";
+    }
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildSmallInsightCard("Growth", "+12.5%", Icons.trending_up, Colors.green),
-        _buildSmallInsightCard("Visitors", "1.2k", Icons.people_outline, Colors.blue),
-        // FIXED: Lowercase 'a' in assignment
-        _buildSmallInsightCard("Refunds", "0.2%", Icons.assignment_return_outlined, Colors.red),
+        _buildSmallInsightCard("Weekly Sales", "₹${weeklySales.toStringAsFixed(0)}", Icons.trending_up, Colors.green),
+        _buildSmallInsightCard("Orders", "${orders.length}", Icons.people_outline, Colors.blue),
+        _buildSmallInsightCard("Active Items", "${products.length}", Icons.inventory_2_outlined, Colors.purple),
       ],
     );
   }
@@ -66,7 +120,6 @@ class AnalyticsPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            // FIXED: Used withValues to avoid deprecation warnings
             color: Colors.black.withOpacity(0.03), 
             blurRadius: 10,
           )
@@ -76,14 +129,15 @@ class AnalyticsPage extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: 20),
           const SizedBox(height: 8),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), textAlign: TextAlign.center),
+          const SizedBox(height: 2),
+          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 10), textAlign: TextAlign.center),
         ],
       ),
     );
   }
 
-  Widget _buildModernChart() {
+  Widget _buildModernChart(List<double> weeklyData, List<String> days, double maxDailyTotal) {
     return Container(
       height: 240,
       padding: const EdgeInsets.all(20),
@@ -101,15 +155,10 @@ class AnalyticsPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          _buildModernBar("M", 0.4),
-          _buildModernBar("T", 0.7),
-          _buildModernBar("W", 0.5),
-          _buildModernBar("T", 0.9),
-          _buildModernBar("F", 0.6),
-          _buildModernBar("S", 1.0),
-          _buildModernBar("S", 0.8),
-        ],
+        children: List.generate(7, (index) {
+          final heightFactor = maxDailyTotal > 0 ? weeklyData[index] / maxDailyTotal : 0.0;
+          return _buildModernBar(days[index], heightFactor);
+        }),
       ),
     );
   }
@@ -120,7 +169,7 @@ class AnalyticsPage extends StatelessWidget {
       children: [
         Container(
           width: 25,
-          height: 150 * heightFactor,
+          height: 150 * (heightFactor > 0 ? heightFactor : 0.05),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [Colors.teal.shade300, Colors.teal.shade700],

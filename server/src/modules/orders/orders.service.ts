@@ -1,14 +1,18 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Order, OrderDocument } from './schemas/order.schema';
 import { CartService } from '../cart/cart.service';
+import { ShopsService } from '../shops/shops.service';
+import { Product, ProductDocument } from '../products/schemas/product.schema';
 
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
+    @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     private cartService: CartService,
+    private shopsService: ShopsService,
   ) {}
 
   async createOrder(userId: string, deliveryAddress: any) {
@@ -38,5 +42,20 @@ export class OrdersService {
 
   async updateOrderStatus(id: string, status: string) {
     return this.orderModel.findByIdAndUpdate(id, { status }, { new: true });
+  }
+
+  async getMyShopOrders(ownerId: string) {
+    const shop = await this.shopsService.findByOwner(ownerId);
+    if (!shop) throw new NotFoundException('Shop not found');
+
+    const products = await this.productModel.find({ shop: shop._id }).select('_id');
+    const productIds = products.map(p => p._id);
+
+    return this.orderModel.find({
+      'items.productId': { $in: productIds }
+    })
+    .populate('userId', 'name email phone')
+    .sort({ createdAt: -1 })
+    .exec();
   }
 }

@@ -58,4 +58,11 @@ export class ShopsService {
     shop.verificationStatus = status;
     return shop.save();
   }
+
+  async updateStatus(ownerId: string, status: string) {
+    const shop = await this.shopModel.findOne({ owner: ownerId }).exec();
+    if (!shop) throw new NotFoundException('Shop not found');
+    shop.status = status;
+    return shop.save();
+  }
 }

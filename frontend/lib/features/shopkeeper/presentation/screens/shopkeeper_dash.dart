@@ -8,6 +8,8 @@ import '../../../auth/presentation/screens/welcome_screen.dart';
 import '../../../distributor/presentation/screens/distributor_list.dart';
 import '../../../auth/presentation/screens/verification_page.dart';
 import '../../../shop/data/shop_model.dart';
+import '../../../shop/data/product_model.dart';
+import '../../../orders/domain/order_model.dart';
 import 'inventory_page.dart';
 import 'analytics_page.dart';
 
@@ -24,31 +26,142 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
   ShopModel? _myShop;
   bool _isLoadingShop = true;
 
+  List<ProductModel> _products = [];
+  List<OrderModel> _orders = [];
+  bool _isLoadingOrders = true;
+
+  double _revenue = 0.0;
+  int _totalOrdersCount = 0;
+  int _pendingOrdersCount = 0;
+  int _lowStockCount = 0;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadMyShop();
+      _loadDashboardData();
     });
   }
 
-  Future<void> _loadMyShop() async {
+  Future<void> _loadDashboardData() async {
     setState(() {
       _isLoadingShop = true;
+      _isLoadingOrders = true;
     });
 
     try {
       final apiClient = context.read<ApiClient>();
-      final response = await apiClient.get('/shops/my');
+      
+      // 1. Fetch current shop details
+      final shopResponse = await apiClient.get('/shops/my');
+      final myShop = ShopModel.fromJson(Map<String, dynamic>.from(shopResponse));
+      
       setState(() {
-        _myShop = ShopModel.fromJson(Map<String, dynamic>.from(response));
+        _myShop = myShop;
+        _isShopOpen = myShop.status == 'Open';
         _isLoadingShop = false;
+      });
+
+      // 2. Fetch products and orders for this shop
+      final productsFuture = apiClient.get('/products?shopId=${myShop.id}&limit=100');
+      final ordersFuture = apiClient.get('/orders/my-shop');
+
+      final results = await Future.wait([productsFuture, ordersFuture]);
+
+      // Parse products
+      final productsResponse = results[0];
+      final List<dynamic> productItems = productsResponse is Map
+          ? (productsResponse['items'] as List? ?? [])
+          : (productsResponse as List? ?? []);
+      final products = productItems.map((e) => ProductModel.fromJson(Map<String, dynamic>.from(e))).toList();
+
+      // Parse orders
+      final ordersResponse = results[1];
+      final List<dynamic> orderItems = ordersResponse is List
+          ? ordersResponse
+          : (ordersResponse is Map ? (ordersResponse['items'] as List? ?? []) : []);
+      final orders = orderItems.map((e) => OrderModel.fromJson(Map<String, dynamic>.from(e))).toList();
+
+      setState(() {
+        _products = products;
+        _orders = orders;
+
+        // Calculate Stats
+        _revenue = orders
+            .where((o) => o.status == 'Delivered')
+            .fold(0.0, (sum, o) => sum + o.totalAmount);
+
+        _totalOrdersCount = orders.length;
+
+        _pendingOrdersCount = orders
+            .where((o) => o.status == 'Placed' || o.status == 'Processing' || o.status == 'Dispatched')
+            .length;
+
+        _lowStockCount = products.where((p) => p.stockQuantity < 10).length;
+
+        _isLoadingOrders = false;
       });
     } catch (e) {
-      debugPrint('Error loading shop details: $e');
+      debugPrint('Error loading dashboard data: $e');
       setState(() {
         _isLoadingShop = false;
+        _isLoadingOrders = false;
       });
+    }
+  }
+
+  Future<void> _toggleShopStatus() async {
+    if (_myShop == null) return;
+
+    final newStatus = !_isShopOpen ? 'Open' : 'Closed';
+    setState(() {
+      _isShopOpen = !_isShopOpen;
+    });
+
+    try {
+      final apiClient = context.read<ApiClient>();
+      await apiClient.put('/shops/my/status', {'status': newStatus});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Shop is now ${newStatus.toUpperCase()} to customers'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: newStatus == 'Open' ? AppColors.freshGreen : AppColors.error,
+        ),
+      );
+      _loadDashboardData(); // Reload to sync state
+    } catch (e) {
+      debugPrint('Error toggling shop status: $e');
+      setState(() {
+        _isShopOpen = !_isShopOpen; // Revert
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update shop status: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _updateOrderStatus(String orderId, String nextStatus) async {
+    try {
+      final apiClient = context.read<ApiClient>();
+      await apiClient.put('/orders/$orderId/status', {'status': nextStatus});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Order status updated to $nextStatus'),
+          backgroundColor: AppColors.freshGreen,
+        ),
+      );
+      _loadDashboardData(); // Refresh order details
+    } catch (e) {
+      debugPrint('Error updating order status: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update status: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -65,22 +178,96 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
     }
   }
 
-  // Mock Notifications
-  final List<Map<String, dynamic>> _notifications = [
-    {'title': 'New order #1209 received', 'time': '2m ago', 'unread': true},
-    {'title': 'Payment of ₹1,200 received from Sayan', 'time': '15m ago', 'unread': true},
-    {'title': 'Low stock warning: Tata Salt', 'time': '1h ago', 'unread': false},
-    {'title': 'Distributor request from Premium Distributors Ltd', 'time': '3h ago', 'unread': false},
-  ];
+  String _getFormattedTimeAgo(DateTime dateTime) {
+    final difference = DateTime.now().difference(dateTime);
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else {
+      return '${difference.inDays}d ago';
+    }
+  }
 
-  // Mock Orders for Orders Tab
-  final List<Map<String, dynamic>> _mockOrders = [
-    {'id': '#ORD-1209', 'customer': 'Sayan Pandit', 'amount': '₹1,200', 'status': 'Pending', 'date': 'Today, 8:45 PM', 'items': '3 items'},
-    {'id': '#ORD-1208', 'customer': 'Guddu Kumar', 'amount': '₹450', 'status': 'Processing', 'date': 'Today, 6:15 PM', 'items': '1 item'},
-    {'id': '#ORD-1207', 'customer': 'Shoubhik Ghosh', 'amount': '₹2,300', 'status': 'Shipped', 'date': 'Yesterday', 'items': '5 items'},
-    {'id': '#ORD-1206', 'customer': 'Amit Sen', 'amount': '₹950', 'status': 'Delivered', 'date': 'Yesterday', 'items': '2 items'},
-    {'id': '#ORD-1205', 'customer': 'Joyita Roy', 'amount': '₹1,550', 'status': 'Delivered', 'date': 'June 5, 2026', 'items': '4 items'},
-  ];
+  IconData _getOrderStatusIcon(String status) {
+    switch (status) {
+      case 'Placed':
+        return Icons.shopping_bag_outlined;
+      case 'Processing':
+        return Icons.sync_rounded;
+      case 'Dispatched':
+        return Icons.local_shipping_outlined;
+      case 'Delivered':
+        return Icons.check_circle_outline_rounded;
+      default:
+        return Icons.info_outline;
+    }
+  }
+
+  Color _getOrderStatusColor(String status) {
+    switch (status) {
+      case 'Placed':
+        return AppColors.citrusOrange;
+      case 'Processing':
+        return AppColors.accent;
+      case 'Dispatched':
+        return AppColors.skyBlue;
+      case 'Delivered':
+        return AppColors.freshGreen;
+      default:
+        return AppColors.error;
+    }
+  }
+
+  List<Map<String, dynamic>> _getNotifications() {
+    final List<Map<String, dynamic>> list = [];
+    
+    // Add pending orders
+    final pending = _orders.where((o) => o.status == 'Placed').toList();
+    for (final order in pending) {
+      list.add({
+        'title': 'New order received (ID: ${order.id.substring(order.id.length - 6).toUpperCase()})',
+        'time': _getFormattedTimeAgo(order.createdAt),
+        'unread': true,
+      });
+    }
+    
+    // Add low stock alerts
+    final lowStock = _products.where((p) => p.stockQuantity < 10).toList();
+    for (final p in lowStock) {
+      list.add({
+        'title': 'Low stock warning: ${p.name} (${p.stockQuantity} remaining)',
+        'time': 'Check stock',
+        'unread': false,
+      });
+    }
+
+    if (_myShop?.verificationStatus == 'Pending') {
+      list.add({
+        'title': 'Shop verification is currently under review',
+        'time': 'Reviewing',
+        'unread': true,
+      });
+    } else if (_myShop?.verificationStatus == 'Rejected') {
+      list.add({
+        'title': 'Shop verification was rejected. Please re-upload documents.',
+        'time': 'Action needed',
+        'unread': true,
+      });
+    }
+
+    if (list.isEmpty) {
+      list.add({
+        'title': 'No new notifications',
+        'time': 'Now',
+        'unread': false,
+      });
+    }
+    
+    return list;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,14 +277,16 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
     final List<Widget> pages = [
       _buildDashboardTab(context, authController),
       _buildOrdersTab(),
-      const InventoryPage(),
-      const AnalyticsPage(),
+      InventoryPage(shopId: _myShop?.id),
+      AnalyticsPage(orders: _orders, products: _products),
       _buildProfileTab(context, authController),
     ];
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: pages[_currentIndex],
+      body: _isLoadingShop && _myShop == null
+          ? const Center(child: CircularProgressIndicator())
+          : pages[_currentIndex],
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
@@ -105,7 +294,7 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
   // --- TAB 0: DASHBOARD CONTENT ---
   Widget _buildDashboardTab(BuildContext context, AuthController authController) {
     final user = authController.currentUser;
-    final businessName = user?.businessName.isNotEmpty == true ? user!.businessName : 'Your Store';
+    final businessName = _myShop?.name ?? user?.businessName ?? 'Your Store';
 
     return MediaQuery.removePadding(
       context: context,
@@ -262,9 +451,9 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
                           color: AppColors.citrusOrange,
                           shape: BoxShape.circle,
                         ),
-                        child: const Text(
-                          "2",
-                          style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                        child: Text(
+                          _getNotifications().where((n) => n['unread'] == true).length.toString(),
+                          style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -308,18 +497,7 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
         ),
         // Toggleable Shop Status Indicator Pill
         GestureDetector(
-          onTap: () {
-            setState(() {
-              _isShopOpen = !_isShopOpen;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(_isShopOpen ? 'Shop is now OPEN to customers' : 'Shop is now CLOSED to customers'),
-                duration: const Duration(seconds: 2),
-                backgroundColor: _isShopOpen ? AppColors.freshGreen : AppColors.error,
-              ),
-            );
-          },
+          onTap: _toggleShopStatus,
           child: AnimatedContainer(
             duration: 300.ms,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -366,23 +544,23 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
       children: [
         _buildStatCard(
           "Revenue",
-          "₹12,450",
-          "+14.2% MoM",
+          "₹${_revenue.toStringAsFixed(0)}",
+          "Total sales",
           Icons.payments_outlined,
           AppColors.freshGreen,
           true,
         ),
         _buildStatCard(
           "Total Orders",
-          "25 Orders",
-          "+8.3% wk",
+          "$_totalOrdersCount Orders",
+          "All-time",
           Icons.inventory_2_outlined,
           AppColors.primary,
           true,
         ),
         _buildStatCard(
           "Pending Orders",
-          "12",
+          "$_pendingOrdersCount",
           "Action needed",
           Icons.pending_actions_rounded,
           AppColors.citrusOrange,
@@ -390,12 +568,12 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
         ),
         _buildStatCard(
           "Low Stock",
-          "4 Items",
+          "$_lowStockCount Items",
           "Reorder soon",
           Icons.warning_amber_rounded,
           AppColors.error,
           false,
-          isAlert: true,
+          isAlert: _lowStockCount > 0,
         ),
       ],
     );
@@ -490,16 +668,18 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildQuickActionBtn("Add Product", Icons.add_circle_outline_rounded, () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryPage()));
+          _buildQuickActionBtn("Add Product", Icons.add_circle_outline_rounded, () async {
+            await Navigator.push(context, MaterialPageRoute(builder: (context) => InventoryPage(shopId: _myShop?.id)));
+            _loadDashboardData();
           }),
           _buildQuickActionBtn("New Order", Icons.post_add_rounded, () {
             setState(() {
               _currentIndex = 1; // Switch to Orders Tab
             });
           }),
-          _buildQuickActionBtn("Manage Stock", Icons.grid_view_rounded, () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryPage()));
+          _buildQuickActionBtn("Manage Stock", Icons.grid_view_rounded, () async {
+            await Navigator.push(context, MaterialPageRoute(builder: (context) => InventoryPage(shopId: _myShop?.id)));
+            _loadDashboardData();
           }),
           _buildQuickActionBtn("Create Offer", Icons.local_offer_outlined, () {
             _showCreateOfferBottomSheet(context);
@@ -535,8 +715,27 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
   }
 
   Widget _buildWeeklySalesChart() {
-    final List<double> weeklyData = [0.3, 0.5, 0.8, 0.45, 0.95, 0.7, 0.6];
-    final List<String> days = ["M", "T", "W", "T", "F", "S", "S"];
+    final today = DateTime.now();
+    final List<double> weeklyData = List.filled(7, 0.0);
+    final List<String> days = [];
+    final List<String> daysShort = ["M", "T", "W", "T", "F", "S", "S"];
+
+    for (int i = 6; i >= 0; i--) {
+      final day = today.subtract(Duration(days: i));
+      days.add(daysShort[day.weekday - 1]);
+
+      final dailyTotal = _orders
+          .where((o) =>
+              o.status == 'Delivered' &&
+              o.createdAt.year == day.year &&
+              o.createdAt.month == day.month &&
+              o.createdAt.day == day.day)
+          .fold(0.0, (sum, o) => sum + o.totalAmount);
+      weeklyData[6 - i] = dailyTotal;
+    }
+
+    final maxDailyTotal = weeklyData.reduce((a, b) => a > b ? a : b);
+    final totalWeeklySales = weeklyData.fold(0.0, (sum, val) => sum + val);
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -551,12 +750,12 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Weekly Revenue", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 4),
-                  Text("₹12,450", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
+                  const Text("Weekly Revenue", style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text("₹${totalWeeklySales.toStringAsFixed(0)}", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.textPrimary)),
                 ],
               ),
               Container(
@@ -568,8 +767,8 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
                 child: const Row(
                   children: [
                     Icon(Icons.arrow_upward_rounded, color: AppColors.freshGreen, size: 12),
-                    SizedBox(width: 4),
-                    Text("+15.6% wk", style: TextStyle(color: AppColors.freshGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 4),
+                    Text("Live Data", style: TextStyle(color: AppColors.freshGreen, fontSize: 10, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -583,12 +782,13 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(7, (index) {
+                final heightFactor = maxDailyTotal > 0 ? (weeklyData[index] / maxDailyTotal) : 0.0;
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Container(
                       width: 14,
-                      height: 80 * weeklyData[index],
+                      height: 80 * (heightFactor > 0 ? heightFactor : 0.05), // Show a tiny indicator even if 0
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [AppColors.accent, AppColors.primary],
@@ -617,7 +817,7 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "June Summary: ₹48,250 total sales, showing a steady 12% MoM growth rate.",
+                  "Recent sales total ₹${totalWeeklySales.toStringAsFixed(0)} over the last 7 days across all delivered orders.",
                   style: TextStyle(color: AppColors.textSecondary.withOpacity(0.9), fontSize: 11, height: 1.4),
                 ),
               ),
@@ -629,6 +829,11 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
   }
 
   Widget _buildOrderOverviewTracker() {
+    final placedCount = _orders.where((o) => o.status == 'Placed').length.toString();
+    final processingCount = _orders.where((o) => o.status == 'Processing').length.toString();
+    final dispatchedCount = _orders.where((o) => o.status == 'Dispatched').length.toString();
+    final deliveredCount = _orders.where((o) => o.status == 'Delivered').length.toString();
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -641,13 +846,13 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildTrackerNode("Pending", "3", Icons.pending_actions_rounded, AppColors.citrusOrange),
+              _buildTrackerNode("Placed", placedCount, Icons.pending_actions_rounded, AppColors.citrusOrange),
               _buildTrackerLine(AppColors.citrusOrange),
-              _buildTrackerNode("Processing", "5", Icons.sync_rounded, AppColors.accent),
+              _buildTrackerNode("Processing", processingCount, Icons.sync_rounded, AppColors.accent),
               _buildTrackerLine(AppColors.accent),
-              _buildTrackerNode("Shipped", "2", Icons.local_shipping_outlined, AppColors.skyBlue),
+              _buildTrackerNode("Dispatched", dispatchedCount, Icons.local_shipping_outlined, AppColors.skyBlue),
               _buildTrackerLine(AppColors.skyBlue),
-              _buildTrackerNode("Delivered", "74", Icons.task_alt_rounded, AppColors.freshGreen),
+              _buildTrackerNode("Delivered", deliveredCount, Icons.task_alt_rounded, AppColors.freshGreen),
             ],
           ),
         ],
@@ -703,9 +908,12 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           Icons.inventory_2_rounded,
           "Manage Stock",
           AppColors.primary,
-          badgeText: "3 Low",
-          badgeColor: AppColors.error,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryPage())),
+          badgeText: "$_lowStockCount Low",
+          badgeColor: _lowStockCount > 0 ? AppColors.error : AppColors.freshGreen,
+          onTap: () async {
+            await Navigator.push(context, MaterialPageRoute(builder: (context) => InventoryPage(shopId: _myShop?.id)));
+            _loadDashboardData();
+          },
         ),
         _buildMenuCard(
           Icons.local_shipping_rounded,
@@ -719,9 +927,9 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           Icons.bar_chart_rounded,
           "Sales Report",
           AppColors.organicAmber,
-          badgeText: "Updated",
+          badgeText: "Real-time",
           badgeColor: AppColors.accent,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalyticsPage())),
+          onTap: () => setState(() => _currentIndex = 3), // Switch to Reports Tab
         ),
         _buildMenuCard(
           Icons.verified_user_rounded,
@@ -739,7 +947,7 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
               MaterialPageRoute(builder: (context) => VerificationPage(initialStatus: _myShop?.verificationStatus))
             );
             if (result == true) {
-              _loadMyShop();
+              _loadDashboardData();
             }
           },
         ),
@@ -755,7 +963,7 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           Icons.account_balance_wallet_rounded,
           "Payments",
           AppColors.accent,
-          badgeText: "₹12.4k",
+          badgeText: "₹${_revenue.toStringAsFixed(0)}",
           badgeColor: AppColors.freshGreen,
           onTap: () => _showPaymentsBottomSheet(context),
         ),
@@ -818,15 +1026,25 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
   }
 
   Widget _buildSmartAlertsSection(BuildContext context) {
+    final lowStockItems = _products.where((p) => p.stockQuantity < 10).toList();
+    final lowStockDesc = lowStockItems.isEmpty
+        ? "All items in your inventory are well stocked!"
+        : "${lowStockItems.take(3).map((p) => p.name).join(', ')}${lowStockItems.length > 3 ? ' and others' : ''} are running critically low in stock.";
+
     return Column(
       children: [
         _buildAlertCard(
-          "Low Stock Warning",
-          "Tata Salt, Oreo Biscuits, and Hand Sanitizer are running critically low in stock.",
-          Icons.warning_amber_rounded,
-          AppColors.error,
-          actionLabel: "Restock Now",
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const InventoryPage())),
+          lowStockItems.isEmpty ? "Inventory Healthy" : "Low Stock Warning",
+          lowStockDesc,
+          lowStockItems.isEmpty ? Icons.check_circle_outline_rounded : Icons.warning_amber_rounded,
+          lowStockItems.isEmpty ? AppColors.freshGreen : AppColors.error,
+          actionLabel: lowStockItems.isEmpty ? null : "Restock Now",
+          onTap: lowStockItems.isEmpty
+              ? null
+              : () async {
+                  await Navigator.push(context, MaterialPageRoute(builder: (context) => InventoryPage(shopId: _myShop?.id)));
+                  _loadDashboardData();
+                },
         ),
         const SizedBox(height: AppSpacing.sm),
         if (!_isLoadingShop) ...[
@@ -847,7 +1065,7 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
               onTap: () async {
                 final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => VerificationPage(initialStatus: _myShop?.verificationStatus)));
                 if (result == true) {
-                  _loadMyShop();
+                  _loadDashboardData();
                 }
               },
             )
@@ -861,19 +1079,38 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
               onTap: () async {
                 final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => VerificationPage(initialStatus: _myShop?.verificationStatus)));
                 if (result == true) {
-                  _loadMyShop();
+                  _loadDashboardData();
                 }
               },
             ),
           const SizedBox(height: AppSpacing.sm),
         ],
-        _buildAlertCard(
-          "Best Seller Product",
-          "Kurkure Masala is your top-grossing item this week, generating 35 sales units.",
-          Icons.insights_rounded,
-          AppColors.freshGreen,
-        ),
+        if (_orders.isNotEmpty) ...[
+          _buildBestSellerAlert(),
+        ],
       ],
+    );
+  }
+
+  Widget _buildBestSellerAlert() {
+    final Map<String, int> productSales = {};
+    for (final order in _orders.where((o) => o.status == 'Delivered')) {
+      for (final item in order.items) {
+        productSales[item.name] = (productSales[item.name] ?? 0) + item.quantity;
+      }
+    }
+    if (productSales.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final sortedSales = productSales.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final bestSeller = sortedSales.first;
+
+    return _buildAlertCard(
+      "Best Seller Product",
+      "${bestSeller.key} is your top-grossing item, generating ${bestSeller.value} units sold.",
+      Icons.insights_rounded,
+      AppColors.freshGreen,
     );
   }
 
@@ -928,6 +1165,24 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
   }
 
   Widget _buildRecentActivityTimeline() {
+    final recentOrders = _orders.take(4).toList();
+    if (recentOrders.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+          boxShadow: AppShadows.soft,
+        ),
+        child: const Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+            child: Text("No recent activity", style: TextStyle(color: AppColors.textSecondary)),
+          ),
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -936,15 +1191,23 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
         boxShadow: AppShadows.soft,
       ),
       child: Column(
-        children: [
-          _buildActivityItem("Order received", "Order #1209 from Sayan Pandit (3 items)", "2 mins ago", Icons.shopping_bag_outlined, AppColors.primary),
-          _buildActivityDivider(),
-          _buildActivityItem("Payment received", "₹1,200 UPI transaction settled successfully", "15 mins ago", Icons.payment_rounded, AppColors.freshGreen),
-          _buildActivityDivider(),
-          _buildActivityItem("Stock updated", "Lays Classic stock restocked (+50 units)", "1 hour ago", Icons.inventory_2_outlined, AppColors.accent),
-          _buildActivityDivider(),
-          _buildActivityItem("Distributor dispatch", "Premium Distributors Ltd sent dispatch request", "3 hours ago", Icons.local_shipping_outlined, AppColors.skyBlue),
-        ],
+        children: List.generate(recentOrders.length * 2 - 1, (index) {
+          if (index.isOdd) {
+            return _buildActivityDivider();
+          }
+          final orderIndex = index ~/ 2;
+          final order = recentOrders[orderIndex];
+          final timeStr = _getFormattedTimeAgo(order.createdAt);
+          final customerName = order.customerInfo?['name'] ?? 'Customer';
+          
+          return _buildActivityItem(
+            "Order ${order.status}",
+            "Order ID: ${order.id.substring(order.id.length - 6).toUpperCase()} from $customerName (${order.items.length} items)",
+            timeStr,
+            _getOrderStatusIcon(order.status),
+            _getOrderStatusColor(order.status),
+          );
+        }),
       ),
     );
   }
@@ -1005,121 +1268,179 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list_rounded),
-            onPressed: () {},
-          ),
-        ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        itemCount: _mockOrders.length,
-        itemBuilder: (context, index) {
-          final order = _mockOrders[index];
-          Color statusColor;
-          switch (order['status']) {
-            case 'Pending':
-              statusColor = AppColors.citrusOrange;
-              break;
-            case 'Processing':
-              statusColor = AppColors.accent;
-              break;
-            case 'Shipped':
-              statusColor = AppColors.skyBlue;
-              break;
-            default:
-              statusColor = AppColors.freshGreen;
-          }
+      body: _isLoadingOrders
+          ? const Center(child: CircularProgressIndicator())
+          : _orders.isEmpty
+              ? const Center(child: Text("No incoming orders yet"))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  itemCount: _orders.length,
+                  itemBuilder: (context, index) {
+                    final order = _orders[index];
+                    Color statusColor = _getOrderStatusColor(order.status);
+                    
+                    String actionLabel = '';
+                    String nextStatus = '';
+                    if (order.status == 'Placed') {
+                      actionLabel = 'Accept Order';
+                      nextStatus = 'Processing';
+                    } else if (order.status == 'Processing') {
+                      actionLabel = 'Mark Dispatched';
+                      nextStatus = 'Dispatched';
+                    } else if (order.status == 'Dispatched') {
+                      actionLabel = 'Mark Delivered';
+                      nextStatus = 'Delivered';
+                    }
 
-          return Card(
-            margin: const EdgeInsets.only(bottom: AppSpacing.md),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              side: BorderSide(color: AppColors.primaryLight.withOpacity(0.5), width: 1.2),
-            ),
-            elevation: 0,
-            color: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        side: BorderSide(color: AppColors.primaryLight.withOpacity(0.5), width: 1.2),
+                      ),
+                      elevation: 0,
+                      color: Colors.white,
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '#${order.id.substring(order.id.length - 6).toUpperCase()}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: statusColor.withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    order.status,
+                                    style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 10),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              "Customer: ${order.customerInfo?['name'] ?? 'Unknown Customer'}",
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "${order.items.length} items • ${_getFormattedTimeAgo(order.createdAt)}",
+                                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                ),
+                                Text(
+                                  "₹${order.totalAmount.toStringAsFixed(0)}",
+                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.primary),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            const Divider(),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: () => _showOrderDetailsDialog(order),
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: AppColors.primaryLight),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  ),
+                                  child: const Text("Details", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                ),
+                                if (actionLabel.isNotEmpty) ...[
+                                  const SizedBox(width: 8),
+                                  ElevatedButton(
+                                    onPressed: () => _updateOrderStatus(order.id, nextStatus),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    ),
+                                    child: Text(actionLabel, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+    );
+  }
+
+  void _showOrderDetailsDialog(OrderModel order) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Order ID: ${order.id.substring(order.id.length - 6).toUpperCase()}',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Items:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              ...order.items.map((item) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('${item.name} x${item.quantity}', style: const TextStyle(fontSize: 13)),
+                    Text('₹${(item.price * item.quantity).toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  ],
+                ),
+              )),
+              const Divider(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        order['id'],
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          order['status'],
-                          style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 10),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    "Customer: ${order['customer']}",
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "${order['items']} • ${order['date']}",
-                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                      ),
-                      Text(
-                        order['amount'],
-                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.primary),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      OutlinedButton(
-                        onPressed: () {},
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.primaryLight),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                        ),
-                        child: const Text("Details", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Updated status for order ${order['id']}')),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                        ),
-                        child: const Text("Accept Order", style: TextStyle(fontSize: 12, color: Colors.white)),
-                      ),
-                    ],
-                  ),
+                  const Text('Total Amount:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('₹${order.totalAmount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 15)),
                 ],
               ),
-            ),
-          );
-        },
+              const SizedBox(height: 16),
+              const Text('Delivery Address:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              Text(
+                order.deliveryAddress is Map 
+                    ? '${order.deliveryAddress['street'] ?? ''}, ${order.deliveryAddress['city'] ?? ''}, ${order.deliveryAddress['state'] ?? ''} - ${order.deliveryAddress['zipCode'] ?? ''}'
+                    : order.deliveryAddress?.toString() ?? 'No address provided',
+                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              const Text('Customer Contact:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              Text('Name: ${order.customerInfo?['name'] ?? 'N/A'}', style: const TextStyle(fontSize: 13)),
+              Text('Phone: ${order.customerInfo?['phone'] ?? 'N/A'}', style: const TextStyle(fontSize: 13)),
+              Text('Email: ${order.customerInfo?['email'] ?? 'N/A'}', style: const TextStyle(fontSize: 13)),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }
@@ -1201,8 +1522,8 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
               ),
               child: Column(
                 children: [
-                  _buildProfileTile(Icons.storefront_rounded, "Store Name", user?.businessName ?? 'Merchant Agency'),
-                  _buildProfileTile(Icons.category_rounded, "Category", "Grocery & Daily Staples"),
+                  _buildProfileTile(Icons.storefront_rounded, "Store Name", _myShop?.name ?? user?.businessName ?? 'Merchant Agency'),
+                  _buildProfileTile(Icons.category_rounded, "Category", _myShop?.category ?? "Grocery & Staples"),
                   _buildProfileTile(Icons.account_balance_rounded, "Settlement Account", "State Bank of India (•••• 5678)"),
                   _buildProfileTile(Icons.phone_rounded, "Contact Number", user?.phone ?? '+91 98765 43210'),
                 ],
@@ -1315,6 +1636,7 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
 
   // --- GENERAL POPUPS/MODAL SHEETS ---
   void _showNotificationsBottomSheet(BuildContext context) {
+    final notifications = _getNotifications();
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -1333,14 +1655,17 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Column(
-              children: _notifications.map((n) {
-                return ListTile(
-                  leading: Icon(Icons.notifications_active_rounded, color: n['unread'] ? AppColors.accent : AppColors.textMuted),
-                  title: Text(n['title'], style: TextStyle(fontWeight: n['unread'] ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
-                  trailing: Text(n['time'], style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                );
-              }).toList(),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: notifications.map((n) {
+                  return ListTile(
+                    leading: Icon(Icons.notifications_active_rounded, color: n['unread'] ? AppColors.accent : AppColors.textMuted),
+                    title: Text(n['title'], style: TextStyle(fontWeight: n['unread'] ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
+                    trailing: Text(n['time'], style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                  );
+                }).toList(),
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
             ElevatedButton(
@@ -1416,11 +1741,25 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           children: [
             const Text("Settlement Ledger", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: AppSpacing.lg),
-            _buildPaymentItem("June 7, 2026", "₹4,500 settled", "Completed", AppColors.freshGreen),
-            const Divider(),
-            _buildPaymentItem("June 6, 2026", "₹6,800 settled", "Completed", AppColors.freshGreen),
-            const Divider(),
-            _buildPaymentItem("June 5, 2026", "₹1,200 pending", "Processing", AppColors.citrusOrange),
+            // Build settlements dynamically based on Delivered orders
+            ..._orders.where((o) => o.status == 'Delivered').take(3).map((o) {
+              return Column(
+                children: [
+                  _buildPaymentItem(
+                    _getFormattedTimeAgo(o.createdAt),
+                    "₹${o.totalAmount.toStringAsFixed(0)} settled",
+                    "Completed",
+                    AppColors.freshGreen,
+                  ),
+                  const Divider(),
+                ],
+              );
+            }).toList(),
+            if (_orders.where((o) => o.status == 'Delivered').isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Text("No completed settlements yet.", style: TextStyle(color: AppColors.textSecondary)),
+              ),
             const SizedBox(height: AppSpacing.lg),
           ],
         ),
