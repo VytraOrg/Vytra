@@ -558,8 +558,12 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           AppColors.primary,
           true,
           onTap: () {
-            setState(() {
-              _currentIndex = 1;
+            Future.delayed(Duration.zero, () {
+              if (mounted) {
+                setState(() {
+                  _currentIndex = 1;
+                });
+              }
             });
           },
         ),
@@ -571,8 +575,12 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           AppColors.citrusOrange,
           false,
           onTap: () {
-            setState(() {
-              _currentIndex = 1;
+            Future.delayed(Duration.zero, () {
+              if (mounted) {
+                setState(() {
+                  _currentIndex = 1;
+                });
+              }
             });
           },
         ),
@@ -585,8 +593,12 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
           false,
           isAlert: _lowStockCount > 0,
           onTap: () {
-            setState(() {
-              _currentIndex = 2;
+            Future.delayed(Duration.zero, () {
+              if (mounted) {
+                setState(() {
+                  _currentIndex = 2;
+                });
+              }
             });
           },
         ),
