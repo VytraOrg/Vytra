@@ -284,39 +284,140 @@
           </div>
         </section>
 
-        <!-- Dynamic Content Section -->
-        <section class="content-section">
-          <div class="card table-card">
+        <!-- Dynamic Content Section: Split Workspace -->
+        <section class="content-section split-workspace">
+          <!-- Column 1: Queue Panel (Left) -->
+          <div class="card queue-panel-card">
             <div class="table-header">
               <h3>Verification Queue</h3>
               <div class="filters">
                 <button class="filter-btn active" data-filter="Pending">Pending</button>
-                <button class="filter-btn" data-filter="all">All Submissions</button>
+                <button class="filter-btn" data-filter="all">All</button>
               </div>
             </div>
+            <div class="queue-list-container" id="queue-list">
+              <div class="loading-state">
+                <div class="spinner"></div>
+                <span>Loading shops...</span>
+              </div>
+            </div>
+          </div>
 
-            <div class="table-container">
-              <table id="verification-table">
-                <thead>
-                  <tr>
-                    <th>Shop Info</th>
-                    <th>Owner Contact</th>
-                    <th>GST Certificate</th>
-                    <th>Trade License</th>
-                    <th>Submitted At</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="verification-list">
-                  <tr>
-                    <td colspan="7" class="loading-state">
-                      <div class="spinner"></div>
-                      <span>Loading shops...</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+          <!-- Column 2: Shop Details Workspace (Center) -->
+          <div class="card workspace-panel-card" id="workspace-panel">
+            <div class="workspace-empty-state" id="workspace-empty-state">
+              <i data-lucide="store"></i>
+              <p>Select a shop from the queue to start verification</p>
+            </div>
+            
+            <div class="workspace-details-container hidden" id="workspace-details">
+              <div class="workspace-header">
+                <div>
+                  <h3 id="ws-shop-name">Green Grocery Co.</h3>
+                  <span class="shop-meta" id="ws-shop-meta">Retailer · Grocery</span>
+                </div>
+                <span class="status-badge" id="ws-shop-status">
+                  <span class="status-dot"></span>
+                  <span id="ws-status-text">Pending</span>
+                </span>
+              </div>
+
+              <div class="workspace-section">
+                <h4>Owner Information</h4>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="label">Owner Name</span>
+                    <span class="value" id="ws-owner-name">Rajesh Kumar</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">Email Address</span>
+                    <span class="value" id="ws-owner-email">rajesh@grocery.com</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="workspace-section">
+                <h4>Verification Checklist</h4>
+                <div class="checklist-container">
+                  <label class="checkbox-label" for="check-name-match" style="margin-bottom: 0;">
+                    <input type="checkbox" id="check-name-match" class="checklist-checkbox">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-text">Store Name matches Document Name</span>
+                  </label>
+                  <label class="checkbox-label" for="check-gst-valid" style="margin-bottom: 0;">
+                    <input type="checkbox" id="check-gst-valid" class="checklist-checkbox">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-text">GST/License details are valid & active</span>
+                  </label>
+                  <label class="checkbox-label" for="check-address-match" style="margin-bottom: 0;">
+                    <input type="checkbox" id="check-address-match" class="checklist-checkbox">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-text">Address matches business location</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Rejection Input Pane (Nested inline inside workspace) -->
+              <div id="ws-rejection-pane" class="rejection-pane hidden">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="ws-reject-reason-select" style="font-size: 11px; margin-bottom: 6px;">Rejection Reason</label>
+                  <div class="input-wrapper">
+                    <select id="ws-reject-reason-select" style="width: 100%; padding: 8px 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); font-size: 13px; outline: none; border-color: var(--border-hover);">
+                      <option value="GST Certificate Expired">GST Certificate Expired</option>
+                      <option value="Document Details Mismatch (Name/Address)">Document Details Mismatch (Name/Address)</option>
+                      <option value="Blurry or Illegible Upload">Blurry or Illegible Upload</option>
+                      <option value="Invalid Document Type">Invalid Document Type</option>
+                      <option value="Other / Verification Failed">Other / Verification Failed</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="ws-reject-notes-input" style="font-size: 11px; margin-bottom: 6px;">Detailed Notes (Shown to Merchant)</label>
+                  <div class="input-wrapper">
+                    <textarea id="ws-reject-notes-input" placeholder="Explain what the merchant needs to correct..." style="width: 100%; height: 60px; padding: 8px 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); font-size: 13px; resize: none; outline: none; border-color: var(--border-hover);"></textarea>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                  <button id="ws-cancel-reject-btn" class="secondary-btn" style="padding: 6px 12px; font-size: 12px;">Cancel</button>
+                  <button id="ws-confirm-reject-btn" class="primary-btn" style="padding: 6px 12px; font-size: 12px; background: var(--danger); border-color: var(--danger-border);">Confirm Rejection</button>
+                </div>
+              </div>
+
+              <!-- Main Verification Actions Panel -->
+              <div class="workspace-actions" id="ws-actions-panel">
+                <button id="ws-reject-btn" class="secondary-btn reject-btn-ws">
+                  <i data-lucide="x-circle"></i>
+                  <span>Reject Request</span>
+                </button>
+                <button id="ws-approve-btn" class="primary-btn approve-btn-ws" disabled>
+                  <i data-lucide="check-circle2"></i>
+                  <span>Approve Shop</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 3: Document Viewport (Right) -->
+          <div class="card viewer-panel-card" id="viewer-panel">
+            <div class="viewer-empty-state" id="viewer-empty-state">
+              <i data-lucide="file-text"></i>
+              <p>No documents to display</p>
+            </div>
+            <div class="viewer-container hidden" id="viewer-container">
+              <div class="viewer-tabs">
+                <button class="viewer-tab-btn active" id="tab-gst-btn">GST Certificate</button>
+                <button class="viewer-tab-btn" id="tab-license-btn">Trade License</button>
+              </div>
+              <div class="viewer-toolbar">
+                <button class="tool-btn" id="btn-zoom-in" title="Zoom In"><i data-lucide="zoom-in"></i></button>
+                <button class="tool-btn" id="btn-zoom-out" title="Zoom Out"><i data-lucide="zoom-out"></i></button>
+                <button class="tool-btn" id="btn-rotate" title="Rotate"><i data-lucide="rotate-cw"></i></button>
+              </div>
+              <div class="document-frame-wrapper">
+                <div class="document-frame" id="document-frame">
+                  <!-- Dynamically rendered document iframe/image -->
+                </div>
+              </div>
             </div>
           </div>
         </section>

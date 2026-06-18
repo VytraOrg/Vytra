@@ -14,6 +14,12 @@ let shopsData = [];
 let activeTab = 'verifications';
 let activeFilter = 'Pending';
 
+// Split Workspace State
+let selectedShopId = null;
+let activeDocType = 'gst';
+let zoomLevel = 1.0;
+let rotationAngle = 0;
+
 // Initialize Lucide Icons
 function initIcons() {
   if (window.lucide) {
@@ -312,11 +318,14 @@ function setupEventListeners() {
 
   // Modal Close Button
   document.getElementById('close-modal-btn').addEventListener('click', hideModal);
+  
+  // Setup Workspace Event Listeners
+  setupWorkspaceListeners();
 }
 
 // Fetch Shops from API
 async function fetchShops() {
-  const tbody = document.getElementById('verification-list');
+  const qList = document.getElementById('queue-list');
   
   try {
     const response = await fetch(`${API_BASE_URL}/shops/admin/all`, {
@@ -342,14 +351,14 @@ async function fetchShops() {
     renderShops();
   } catch (err) {
     showToast(err.message, 'error');
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" class="empty-state">
+    if (qList) {
+      qList.innerHTML = `
+        <div class="empty-state">
           <i data-lucide="alert-octagon"></i>
           <p>${err.message}</p>
-        </td>
-      </tr>
-    `;
+        </div>
+      `;
+    }
     initIcons();
   }
 }
@@ -475,9 +484,9 @@ function getAvatarColor(name) {
   return colors[index];
 }
 
-// Render Table Items
+// Render Queue Items (3-column layout)
 function renderShops() {
-  const tbody = document.getElementById('verification-list');
+  const qList = document.getElementById('queue-list');
   const searchVal = document.getElementById('shop-search').value.toLowerCase().trim();
   
   // 1. Filter by Status Tab
@@ -497,97 +506,252 @@ function renderShops() {
   }
   
   if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" class="empty-state">
-          <i data-lucide="inbox"></i>
-          <p>No shops found matching filters.</p>
-          ${activeFilter === 'Pending' ? `
-            <button onclick="fetchShops()" class="primary-btn empty-cta">
-              <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Refresh Queue
-            </button>` : ''
-          }
-        </td>
-      </tr>
+    qList.innerHTML = `
+      <div class="empty-state">
+        <i data-lucide="inbox"></i>
+        <p>No shops found matching filters.</p>
+        ${activeFilter === 'Pending' ? `
+          <button onclick="fetchShops()" class="primary-btn empty-cta">
+            <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Refresh Queue
+          </button>` : ''
+        }
+      </div>
     `;
     initIcons();
     return;
   }
   
-  tbody.innerHTML = filtered.map(shop => {
-    const ownerName = shop.owner ? shop.owner.name : 'Unknown';
-    const ownerEmail = shop.owner ? shop.owner.email : 'No email';
-    const gstUrl = shop.gstCertificateUrl || null;
-    const licenseUrl = shop.tradeLicenseUrl || null;
-    const updatedAt = shop.updatedAt ? new Date(shop.updatedAt).toLocaleDateString() : 'N/A';
-    
-    // Status style mapping
+  qList.innerHTML = filtered.map(shop => {
     const statusLower = (shop.verificationStatus || 'unverified').toLowerCase();
-    
-    // Avatar styling details
     const initials = (shop.name || 'S').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
     const avatarColor = getAvatarColor(shop.name || '');
-    const categoryClass = getCategoryClass(shop.category);
+    const isActive = shop._id === selectedShopId ? 'active' : '';
+    const timeAgo = shop.updatedAt ? new Date(shop.updatedAt).toLocaleDateString() : 'N/A';
     
     return `
-      <tr>
-        <td>
-          <div class="shop-cell-container">
-            <div class="shop-avatar" style="background-color: ${avatarColor}">${initials}</div>
-            <div class="shop-info-cell">
-              <span class="shop-name">${shop.name}</span>
-              <span class="shop-meta">${shop.shopType || 'Local Store'}</span>
-            </div>
+      <div class="queue-card ${isActive}" onclick="selectShop('${shop._id}')">
+        <div class="shop-avatar" style="background-color: ${avatarColor}">${initials}</div>
+        <div class="queue-card-details">
+          <div class="queue-card-title-row">
+            <span class="name">${shop.name}</span>
+            <span class="queue-card-time">${timeAgo}</span>
           </div>
-        </td>
-        <td>
-          <div class="owner-cell">
-            <span class="owner-name">${ownerName}</span>
-            <span class="owner-email">${ownerEmail}</span>
+          <div class="queue-card-title-row">
+            <span class="queue-card-meta">${shop.shopType || 'Local Store'} · ${shop.category}</span>
+            <span class="status-badge ${statusLower}" style="padding: 2px 6px; font-size: 8px;">
+              <span class="status-dot"></span>
+              ${shop.verificationStatus}
+            </span>
           </div>
-        </td>
-        <td>
-          <span class="category-badge ${categoryClass}">${shop.category || 'Others'}</span>
-        </td>
-        <td>
-          ${gstUrl 
-            ? `<button onclick="viewDocument('${gstUrl}', 'GST Certificate')" class="doc-btn"><i data-lucide="file-text"></i> View GST</button>`
-            : '<span class="doc-btn no-doc"><i data-lucide="slash"></i> Empty</span>'
-          }
-        </td>
-        <td>
-          ${licenseUrl 
-            ? `<button onclick="viewDocument('${licenseUrl}', 'Trade License')" class="doc-btn"><i data-lucide="file-text"></i> View License</button>`
-            : '<span class="doc-btn no-doc"><i data-lucide="slash"></i> Empty</span>'
-          }
-        </td>
-        <td>
-          <span class="status-badge ${statusLower}">
-            <span class="status-dot"></span>
-            ${shop.verificationStatus || 'Unverified'}
-          </span>
-        </td>
-        <td>
-          <div class="action-group">
-            <button onclick="confirmVerifyShop('${shop._id}', '${shop.name}', 'Verified')" 
-                    class="action-btn approve" 
-                    title="Approve Shop" 
-                    ${shop.verificationStatus === 'Verified' ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : ''}>
-              <i data-lucide="check"></i>
-            </button>
-            <button onclick="confirmVerifyShop('${shop._id}', '${shop.name}', 'Rejected')" 
-                    class="action-btn reject" 
-                    title="Reject Shop" 
-                    ${shop.verificationStatus === 'Rejected' ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : ''}>
-              <i data-lucide="x"></i>
-            </button>
-          </div>
-        </td>
-      </tr>
+        </div>
+      </div>
     `;
   }).join('');
   
   initIcons();
+}
+
+// Select a Shop from the Queue List
+window.selectShop = function(shopId) {
+  selectedShopId = shopId;
+  
+  // Highlight active card
+  const cards = document.querySelectorAll('.queue-card');
+  cards.forEach(card => card.classList.remove('active'));
+  
+  // Re-render the list to capture current active state easily
+  renderShops();
+
+  const shop = shopsData.find(s => s._id === shopId);
+  if (!shop) return;
+
+  // Toggle empty states vs workspace containers
+  document.getElementById('workspace-empty-state').classList.add('hidden');
+  document.getElementById('workspace-details').classList.remove('hidden');
+  document.getElementById('viewer-empty-state').classList.add('hidden');
+  document.getElementById('viewer-container').classList.remove('hidden');
+
+  // Set Shop Details values
+  document.getElementById('ws-shop-name').textContent = shop.name;
+  document.getElementById('ws-shop-meta').textContent = `${shop.shopType || 'Local Store'} · ${shop.category}`;
+  
+  // Update status badge
+  const statusBadge = document.getElementById('ws-shop-status');
+  const statusText = document.getElementById('ws-status-text');
+  statusBadge.className = `status-badge ${(shop.verificationStatus || 'unverified').toLowerCase()}`;
+  statusText.textContent = shop.verificationStatus || 'Unverified';
+
+  // Set Owner Details values
+  document.getElementById('ws-owner-name').textContent = shop.owner ? shop.owner.name : 'Unknown';
+  document.getElementById('ws-owner-email').textContent = shop.owner ? shop.owner.email : 'No email';
+
+  // Reset Checklist
+  document.getElementById('check-name-match').checked = false;
+  document.getElementById('check-gst-valid').checked = false;
+  document.getElementById('check-address-match').checked = false;
+  
+  // Reset rejection pane
+  document.getElementById('ws-rejection-pane').classList.add('hidden');
+  document.getElementById('ws-actions-panel').classList.remove('hidden');
+
+  // Reset buttons
+  updateChecklist();
+
+  // Reset rotation and zoom
+  zoomLevel = 1.0;
+  rotationAngle = 0;
+
+  // Load document (default to GST)
+  loadDocument('gst');
+};
+
+// Load GST or Trade License into right panel viewport
+window.loadDocument = function(type) {
+  activeDocType = type;
+  
+  const gstBtn = document.getElementById('tab-gst-btn');
+  const licBtn = document.getElementById('tab-license-btn');
+  
+  if (type === 'gst') {
+    gstBtn.classList.add('active');
+    licBtn.classList.remove('active');
+  } else {
+    gstBtn.classList.remove('active');
+    licBtn.classList.add('active');
+  }
+
+  const shop = shopsData.find(s => s._id === selectedShopId);
+  if (!shop) return;
+
+  const url = type === 'gst' ? shop.gstCertificateUrl : shop.tradeLicenseUrl;
+  const frame = document.getElementById('document-frame');
+
+  if (!url) {
+    frame.innerHTML = `
+      <div class="loading-placeholder">
+        <i data-lucide="slash"></i>
+        <span>No document uploaded for this type</span>
+      </div>`;
+    initIcons();
+    return;
+  }
+
+  // Check if PDF or Image
+  if (url.toLowerCase().endsWith('.pdf') || url.includes('/raw/upload/')) {
+    frame.innerHTML = `<iframe src="${url}"></iframe>`;
+  } else {
+    frame.innerHTML = `<img src="${url}" alt="${type === 'gst' ? 'GST Certificate' : 'Trade License'}">`;
+  }
+
+  // Apply default scale/rotate transform styles
+  applyFrameTransform();
+};
+
+// Apply zoom and rotation styles to image/iframe
+function applyFrameTransform() {
+  const frame = document.getElementById('document-frame');
+  const imgOrIframe = frame.querySelector('img, iframe');
+  if (imgOrIframe) {
+    imgOrIframe.style.transform = `scale(${zoomLevel}) rotate(${rotationAngle}deg)`;
+    imgOrIframe.style.transition = 'transform 0.2s ease';
+  }
+}
+
+// Checklist checkboxes validator
+window.updateChecklist = function() {
+  const nameMatch = document.getElementById('check-name-match').checked;
+  const gstValid = document.getElementById('check-gst-valid').checked;
+  const addressMatch = document.getElementById('check-address-match').checked;
+  
+  const approveBtn = document.getElementById('ws-approve-btn');
+  approveBtn.disabled = !(nameMatch && gstValid && addressMatch);
+};
+
+// Bind Workspace Listeners
+window.setupWorkspaceListeners = function() {
+  // Zoom & Rotation Toolbar buttons
+  document.getElementById('btn-zoom-in').addEventListener('click', () => {
+    if (zoomLevel < 2.5) {
+      zoomLevel += 0.15;
+      applyFrameTransform();
+    }
+  });
+
+  document.getElementById('btn-zoom-out').addEventListener('click', () => {
+    if (zoomLevel > 0.5) {
+      zoomLevel -= 0.15;
+      applyFrameTransform();
+    }
+  });
+
+  document.getElementById('btn-rotate').addEventListener('click', () => {
+    rotationAngle = (rotationAngle + 90) % 360;
+    applyFrameTransform();
+  });
+
+  // Tab switchers
+  document.getElementById('tab-gst-btn').addEventListener('click', () => loadDocument('gst'));
+  document.getElementById('tab-license-btn').addEventListener('click', () => loadDocument('license'));
+
+  // Checklist checkboxes
+  const checkboxes = document.querySelectorAll('.checklist-checkbox');
+  checkboxes.forEach(box => {
+    box.addEventListener('change', updateChecklist);
+  });
+
+  // Action Buttons
+  const approveBtn = document.getElementById('ws-approve-btn');
+  const rejectBtn = document.getElementById('ws-reject-btn');
+  const cancelRejectBtn = document.getElementById('ws-cancel-reject-btn');
+  const confirmRejectBtn = document.getElementById('ws-confirm-reject-btn');
+
+  approveBtn.addEventListener('click', () => {
+    if (!selectedShopId) return;
+    const shop = shopsData.find(s => s._id === selectedShopId);
+    if (shop) confirmVerifyShop(selectedShopId, shop.name, 'Verified');
+  });
+
+  rejectBtn.addEventListener('click', () => {
+    document.getElementById('ws-rejection-pane').classList.remove('hidden');
+    document.getElementById('ws-actions-panel').classList.add('hidden');
+    // Clear reject inputs
+    document.getElementById('ws-reject-reason-select').selectedIndex = 0;
+    document.getElementById('ws-reject-notes-input').value = '';
+  });
+
+  cancelRejectBtn.addEventListener('click', () => {
+    document.getElementById('ws-rejection-pane').classList.add('hidden');
+    document.getElementById('ws-actions-panel').classList.remove('hidden');
+  });
+
+  confirmRejectBtn.addEventListener('click', async () => {
+    if (!selectedShopId) return;
+    const reason = document.getElementById('ws-reject-reason-select').value;
+    const notes = document.getElementById('ws-reject-notes-input').value.trim();
+    
+    // Hide pane and show main buttons
+    document.getElementById('ws-rejection-pane').classList.add('hidden');
+    document.getElementById('ws-actions-panel').classList.remove('hidden');
+
+    // Call update API
+    await updateShopStatus(selectedShopId, 'Rejected', reason, notes);
+    
+    // Refresh active panel selection or reset
+    const shop = shopsData.find(s => s._id === selectedShopId);
+    if (shop) {
+      selectShop(selectedShopId);
+    } else {
+      resetWorkspace();
+    }
+  });
+};
+
+function resetWorkspace() {
+  selectedShopId = null;
+  document.getElementById('workspace-empty-state').classList.remove('hidden');
+  document.getElementById('workspace-details').classList.add('hidden');
+  document.getElementById('viewer-empty-state').classList.remove('hidden');
+  document.getElementById('viewer-container').classList.add('hidden');
 }
 
 // Open Document in Modal
