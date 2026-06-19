@@ -7,9 +7,9 @@
 /* ─── DESIGN TOKENS ──────────────────────────────────────────────────────── */
 :root {
   /* Primary */
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --primary-dim: #3730a3;
+  --primary: #cd6937;
+  --primary-hover: #b65a2a;
+  --primary-dim: #9e4e24;
   /* solid tinted bg for active states */
 
   /* Surfaces — all solid, no alpha */
@@ -262,6 +262,12 @@ label {
   height: 26px;
 }
 
+.brand-logo img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
 .brand h1 {
   font-size: 24px;
   font-weight: 700;
@@ -475,6 +481,12 @@ label {
   width: 18px;
   height: 18px;
   color: #fff;
+}
+
+.sidebar-brand .mini-logo img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .sidebar-collapse-btn {
