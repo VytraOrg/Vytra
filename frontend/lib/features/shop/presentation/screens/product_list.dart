@@ -114,7 +114,12 @@ class _ProductListState extends State<ProductList> {
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => GlobalProductCard(product: products[index], index: index, customerId: widget.customerId),
+                    (context, index) => GlobalProductCard(
+                      product: products[index],
+                      index: index,
+                      customerId: widget.customerId,
+                      disableShopNavigation: true,
+                    ),
                     childCount: products.length,
                   ),
                 ),

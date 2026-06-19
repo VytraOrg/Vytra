@@ -5,6 +5,7 @@ class UserEntity {
   final String name;
   final String businessName;
   final String phone;
+  final String imageUrl;
   final String? accessToken;
   final String? refreshToken;
 
@@ -15,6 +16,7 @@ class UserEntity {
     this.name = '',
     this.businessName = '',
     this.phone = '',
+    this.imageUrl = '',
     this.accessToken,
     this.refreshToken,
   });

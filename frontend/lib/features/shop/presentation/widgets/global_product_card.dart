@@ -11,27 +11,31 @@ class GlobalProductCard extends StatelessWidget {
   final ProductModel product;
   final int index;
   final String customerId;
+  final bool disableShopNavigation;
 
   const GlobalProductCard({
     super.key,
     required this.product,
     required this.index,
     required this.customerId,
+    this.disableShopNavigation = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ProductList(
-            shopName: product.shopName ?? 'Store',
-            shopId: product.shopId,
-            customerId: customerId,
-          ),
-        ),
-      ),
+      onTap: disableShopNavigation
+          ? null
+          : () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ProductList(
+                    shopName: product.shopName ?? 'Store',
+                    shopId: product.shopId,
+                    customerId: customerId,
+                  ),
+                ),
+              ),
       child: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.lg),
         padding: const EdgeInsets.all(AppSpacing.md),

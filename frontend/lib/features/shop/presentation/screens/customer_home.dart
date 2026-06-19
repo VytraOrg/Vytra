@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -9,7 +10,9 @@ import '../controllers/shop_controller.dart';
 import '../widgets/shop_card.dart';
 import '../widgets/global_product_card.dart';
 import '../../../auth/presentation/auth_controller.dart';
+import '../../../auth/domain/entities/user_entity.dart';
 import '../../../account/presentation/screens/account_page.dart';
+import '../../../account/presentation/screens/wishlist_page.dart';
 import '../../../cart/presentation/screens/cart_page.dart';
 import '../../../orders/presentation/screens/orders_page.dart';
 import '../../data/shop_model.dart';
@@ -122,7 +125,7 @@ class _CustomerHomeState extends State<CustomerHome> {
                 SliverPadding(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   sliver: SliverToBoxAdapter(
-                    child: _buildHeader(user?.name ?? "Guest", isShopkeeper),
+                    child: _buildHeader(user, isShopkeeper),
                   ),
                 ),
 
@@ -210,9 +213,12 @@ class _CustomerHomeState extends State<CustomerHome> {
     );
   }
 
-  Widget _buildHeader(String name, bool isShopkeeper) {
-    final user = context.read<AuthController>().currentUser;
-    final initials = name.isEmpty ? 'C' : name.split(' ').map((e) => e.isNotEmpty ? e[0] : '').join('').toUpperCase();
+  Widget _buildHeader(UserEntity? user, bool isShopkeeper) {
+    final name = user?.name ?? "Guest";
+    final parts = name.trim().split(RegExp(r'\s+'));
+    final initials = parts.length >= 2
+        ? '${parts.first[0]}${parts.last[0]}'.toUpperCase()
+        : (name.isNotEmpty ? name[0].toUpperCase() : 'C');
     
     return Row(
       children: [
@@ -226,14 +232,40 @@ class _CustomerHomeState extends State<CustomerHome> {
         const Spacer(),
         GestureDetector(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AccountPage(customerId: widget.customerId, user: user))),
-          child: CircleAvatar(
-            radius: 24,
-            backgroundColor: AppColors.primary,
-            child: Text(initials.length > 2 ? initials.substring(0, 2) : initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
+          child: _buildHomeAvatar(user, initials),
         ),
       ],
     ).animate().fadeIn().slideX(begin: -0.1);
+  }
+
+  Widget _buildHomeAvatar(UserEntity? user, String initials) {
+    final imageUrl = user?.imageUrl ?? '';
+    if (imageUrl.isNotEmpty) {
+      if (imageUrl.startsWith('data:image') || !imageUrl.startsWith('http')) {
+        try {
+          final bytes = base64Decode(imageUrl.split(',').last);
+          return CircleAvatar(
+            radius: 24,
+            backgroundImage: MemoryImage(bytes),
+          );
+        } catch (e) {
+          // Fallback
+        }
+      } else {
+        return CircleAvatar(
+          radius: 24,
+          backgroundImage: NetworkImage(imageUrl),
+        );
+      }
+    }
+    return CircleAvatar(
+      radius: 24,
+      backgroundColor: AppColors.primary,
+      child: Text(
+        initials,
+        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      ),
+    );
   }
 
   Widget _buildSearchBar() {
@@ -355,6 +387,7 @@ class _CustomerHomeState extends State<CustomerHome> {
     return GestureDetector(
       onTap: () {
         if (index == 1) Navigator.push(context, MaterialPageRoute(builder: (_) => OrdersPage()));
+        else if (index == 2) Navigator.push(context, MaterialPageRoute(builder: (_) => const WishlistPage()));
         else if (index == 3) Navigator.push(context, MaterialPageRoute(builder: (_) => AccountPage(customerId: widget.customerId, user: context.read<AuthController>().currentUser)));
         else setState(() => _currentIndex = index);
       },

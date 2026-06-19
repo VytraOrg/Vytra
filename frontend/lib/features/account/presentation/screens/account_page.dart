@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +9,10 @@ import '../../../auth/presentation/auth_controller.dart';
 import '../../../orders/presentation/screens/orders_page.dart';
 import '../../../auth/presentation/screens/welcome_screen.dart';
 import '../controllers/account_controller.dart';
+import 'addresses_page.dart';
+import 'wishlist_page.dart';
+import 'payment_methods_page.dart';
+import 'notifications_page.dart';
 
 class AccountPage extends StatefulWidget {
   final String customerId;
@@ -28,15 +34,16 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   String get _displayName {
-    if (widget.user?.name.isNotEmpty == true) return widget.user!.name;
-    if (widget.user?.email.isNotEmpty == true) return widget.user!.email.split('@')[0];
+    final currentUser = context.watch<AuthController>().currentUser;
+    if (currentUser?.name.isNotEmpty == true) return currentUser!.name;
+    if (currentUser?.email.isNotEmpty == true) return currentUser!.email.split('@')[0];
     return 'Customer';
   }
 
   String get _initials {
     final name = _displayName;
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length >= 2) return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
     return name.isNotEmpty ? name[0].toUpperCase() : 'C';
   }
 
@@ -73,6 +80,7 @@ class _AccountPageState extends State<AccountPage> {
                   subtitle: 'Home, Office & more',
                   color: AppColors.skyBlue,
                   delay: 150,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddressesPage())),
                 ),
                 _buildMenuTile(
                   icon: Icons.favorite_border_rounded,
@@ -80,6 +88,7 @@ class _AccountPageState extends State<AccountPage> {
                   subtitle: 'Items you love',
                   color: AppColors.error,
                   delay: 200,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WishlistPage())),
                 ),
 
                 const SizedBox(height: AppSpacing.md),
@@ -90,6 +99,7 @@ class _AccountPageState extends State<AccountPage> {
                   subtitle: 'Cards, UPI & Wallets',
                   color: AppColors.primary,
                   delay: 300,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentMethodsPage())),
                 ),
                 _buildMenuTile(
                   icon: Icons.notifications_none_rounded,
@@ -97,6 +107,7 @@ class _AccountPageState extends State<AccountPage> {
                   subtitle: 'Manage alerts & updates',
                   color: AppColors.citrusOrange,
                   delay: 350,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage())),
                 ),
 
                 const SizedBox(height: AppSpacing.xl),
@@ -111,6 +122,8 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Widget _buildHeader(AccountController controller) {
+    final currentUser = context.watch<AuthController>().currentUser;
+
     return SliverToBoxAdapter(
       child: Container(
         padding: EdgeInsets.fromLTRB(
@@ -152,18 +165,14 @@ class _AccountPageState extends State<AccountPage> {
 
             Row(
               children: [
-                CircleAvatar(
-                  radius: 36,
-                  backgroundColor: AppColors.accent,
-                  child: Text(_initials, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
-                ).animate().scale(delay: 100.ms, duration: 500.ms, curve: Curves.easeOutBack),
+                _buildAvatar(currentUser),
                 const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(_displayName, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                      Text(widget.user?.email ?? '', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+                      Text(currentUser?.email ?? '', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
                     ],
                   ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1),
                 ),
@@ -206,32 +215,151 @@ class _AccountPageState extends State<AccountPage> {
   Widget _buildStatDivider() => Container(width: 1, height: 40, color: Colors.white.withOpacity(0.2));
 
   Widget _buildInfoCard() {
-    final phone = widget.user?.phone ?? '';
+    final currentUser = context.watch<AuthController>().currentUser;
+    final phone = currentUser?.phone ?? '';
     final isComplete = phone.isNotEmpty;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: isComplete ? AppColors.freshGreen.withOpacity(0.08) : Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        boxShadow: AppShadows.soft,
+    return GestureDetector(
+      onTap: () => _showPhoneEditSheet(context),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: isComplete ? AppColors.freshGreen.withOpacity(0.08) : Colors.white,
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+          boxShadow: AppShadows.soft,
+        ),
+        child: Row(
+          children: [
+            Icon(isComplete ? Icons.check_circle_outline_rounded : Icons.person_outline_rounded, color: isComplete ? AppColors.freshGreen : AppColors.primary),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(isComplete ? 'Profile Complete!' : 'Complete your profile', style: TextStyle(fontWeight: FontWeight.bold, color: isComplete ? AppColors.freshGreen : AppColors.textPrimary)),
+                  Text(isComplete ? phone : 'Add phone to get faster delivery', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+            if (!isComplete)
+              const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.textMuted, size: 14),
+          ],
+        ),
       ),
-      child: Row(
-        children: [
-          Icon(isComplete ? Icons.check_circle_outline_rounded : Icons.person_outline_rounded, color: isComplete ? AppColors.freshGreen : AppColors.primary),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
+    ).animate().fadeIn(delay: 50.ms).slideY(begin: 0.05);
+  }
+
+  void _showPhoneEditSheet(BuildContext context) {
+    final authController = context.read<AuthController>();
+    // Strip prefix if any for display in editing textfield
+    final currentPhone = authController.currentUser?.phone ?? '';
+    final digitsOnly = currentPhone.replaceAll('+91 ', '');
+    final phoneController = TextEditingController(text: digitsOnly);
+    final formKey = GlobalKey<FormState>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(AppRadius.xl),
+              topRight: Radius.circular(AppRadius.xl),
+            ),
+          ),
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Form(
+            key: formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(isComplete ? 'Profile Complete!' : 'Complete your profile', style: TextStyle(fontWeight: FontWeight.bold, color: isComplete ? AppColors.freshGreen : AppColors.textPrimary)),
-                Text(isComplete ? phone : 'Add phone to get faster delivery', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: AppColors.textMuted.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                const Text(
+                  'Update Phone Number',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Enter your 10-digit mobile number for faster delivery updates.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                TextFormField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  autofocus: true,
+                  maxLength: 10,
+                  style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 16),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.phone_iphone_rounded, color: AppColors.primary),
+                    prefixText: '+91 ',
+                    prefixStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 16),
+                    hintText: 'Enter phone number',
+                    hintStyle: const TextStyle(fontWeight: FontWeight.normal, letterSpacing: 0, fontSize: 14),
+                    filled: true,
+                    fillColor: AppColors.background,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      borderSide: BorderSide.none,
+                    ),
+                    counterText: '',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a phone number';
+                    }
+                    if (value.length != 10 || !RegExp(r'^[0-9]+$').hasMatch(value)) {
+                      return 'Please enter a valid 10-digit number';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      await authController.updatePhone('+91 ${phoneController.text}');
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Phone number updated successfully!'),
+                            backgroundColor: AppColors.freshGreen,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+                  ),
+                  child: const Text('Save Details', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                ),
               ],
             ),
           ),
-        ],
+        ),
       ),
-    ).animate().fadeIn(delay: 50.ms).slideY(begin: 0.05);
+    );
   }
 
   Widget _buildSectionTitle(String title) {
@@ -274,5 +402,171 @@ class _AccountPageState extends State<AccountPage> {
         ),
       ),
     ).animate().fadeIn(delay: 550.ms);
+  }
+
+  Widget _buildAvatar(UserEntity? user) {
+    final imageUrl = user?.imageUrl ?? '';
+    final initials = _initials;
+
+    Widget avatarImage;
+    if (imageUrl.isNotEmpty) {
+      if (imageUrl.startsWith('data:image') || !imageUrl.startsWith('http')) {
+        try {
+          final bytes = base64Decode(imageUrl.split(',').last);
+          avatarImage = CircleAvatar(
+            radius: 36,
+            backgroundImage: MemoryImage(bytes),
+          );
+        } catch (e) {
+          avatarImage = CircleAvatar(
+            radius: 36,
+            backgroundColor: AppColors.accent,
+            child: Text(initials, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
+          );
+        }
+      } else {
+        avatarImage = CircleAvatar(
+          radius: 36,
+          backgroundImage: NetworkImage(imageUrl),
+        );
+      }
+    } else {
+      avatarImage = CircleAvatar(
+        radius: 36,
+        backgroundColor: AppColors.accent,
+        child: Text(initials, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
+      );
+    }
+
+    return GestureDetector(
+      onTap: _showAvatarOptions,
+      child: Stack(
+        children: [
+          avatarImage.animate().scale(delay: 100.ms, duration: 500.ms, curve: Curves.easeOutBack),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+              ),
+              child: const Icon(
+                Icons.edit_rounded,
+                color: AppColors.primary,
+                size: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAvatarOptions() {
+    final user = context.read<AuthController>().currentUser;
+    final hasPhoto = user?.imageUrl.isNotEmpty == true;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Profile Picture',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
+                title: const Text('Upload Photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickProfilePicture();
+                },
+              ),
+              if (hasPhoto)
+                ListTile(
+                  leading: const Icon(Icons.delete_rounded, color: AppColors.error),
+                  title: const Text('Remove Photo'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await context.read<AuthController>().updateAvatar('');
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Profile picture removed.'),
+                          backgroundColor: AppColors.primary,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                title: const Text('Cancel'),
+                onTap: () => Navigator.pop(context),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickProfilePicture() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+
+      if (result != null && result.files.single.bytes != null) {
+        final bytes = result.files.single.bytes!;
+        final base64String = base64Encode(bytes);
+        final dataUrl = 'data:image/png;base64,$base64String';
+
+        if (mounted) {
+          await context.read<AuthController>().updateAvatar(dataUrl);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile picture updated successfully!'),
+              backgroundColor: AppColors.freshGreen,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking image: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }

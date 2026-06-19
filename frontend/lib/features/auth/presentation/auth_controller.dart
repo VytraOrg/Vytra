@@ -4,6 +4,7 @@ import '../domain/usecases/login_usecase.dart';
 import '../domain/usecases/register_usecase.dart';
 import '../domain/usecases/get_cached_user_usecase.dart';
 import '../../../core/cache/cache_manager.dart';
+import '../data/user_model.dart';
 
 class AuthController with ChangeNotifier {
   final LoginUseCase _loginUseCase;
@@ -61,6 +62,42 @@ class AuthController with ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  Future<void> updatePhone(String newPhone) async {
+    if (_currentUser == null) return;
+    final updatedUser = UserModel(
+      id: _currentUser!.id,
+      email: _currentUser!.email,
+      role: _currentUser!.role,
+      name: _currentUser!.name,
+      businessName: _currentUser!.businessName,
+      phone: newPhone,
+      imageUrl: _currentUser!.imageUrl,
+      accessToken: _currentUser!.accessToken,
+      refreshToken: _currentUser!.refreshToken,
+    );
+    _currentUser = updatedUser;
+    await CacheManager.saveUser(updatedUser.toJson());
+    notifyListeners();
+  }
+
+  Future<void> updateAvatar(String newImageUrl) async {
+    if (_currentUser == null) return;
+    final updatedUser = UserModel(
+      id: _currentUser!.id,
+      email: _currentUser!.email,
+      role: _currentUser!.role,
+      name: _currentUser!.name,
+      businessName: _currentUser!.businessName,
+      phone: _currentUser!.phone,
+      imageUrl: newImageUrl,
+      accessToken: _currentUser!.accessToken,
+      refreshToken: _currentUser!.refreshToken,
+    );
+    _currentUser = updatedUser;
+    await CacheManager.saveUser(updatedUser.toJson());
+    notifyListeners();
   }
 
   Future<void> logout() async {

@@ -8,6 +8,7 @@ class UserModel extends UserEntity {
     super.name = '',
     super.businessName = '',
     super.phone = '',
+    super.imageUrl = '',
     super.accessToken,
     super.refreshToken,
   });
@@ -31,6 +32,7 @@ class UserModel extends UserEntity {
       name: (data['name'] ?? '').toString(),
       businessName: (data['businessName'] ?? '').toString(),
       phone: (data['phone'] ?? '').toString(),
+      imageUrl: (data['imageUrl'] ?? '').toString(),
       accessToken: safeJson['access_token']?.toString() ?? data['accessToken']?.toString(),
       refreshToken: safeJson['refresh_token']?.toString() ?? data['refreshToken']?.toString(),
     );
@@ -43,6 +45,7 @@ class UserModel extends UserEntity {
     'name': name,
     'businessName': businessName,
     'phone': phone,
+    'imageUrl': imageUrl,
     'accessToken': accessToken,
     'refreshToken': refreshToken,
   };
