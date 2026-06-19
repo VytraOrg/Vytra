@@ -1,4 +1,4 @@
-# LocalCommerce Admin Portal
+# Vytra Admin Portal
 
 A premium, glassmorphic Single Page Application for administrators to review, approve, or reject business document uploads (GST Certificate and Trade License) from shopkeepers.
 

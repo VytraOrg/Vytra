@@ -1,5 +1,5 @@
 // ==========================================================================
-// LocalCommerce Admin Portal Logic (app.js)
+// Vytra Admin Portal Logic (app.js)
 // ==========================================================================
 
 // Base API URL configuration (defaults to live Render server, local fallback via localStorage override)
