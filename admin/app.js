@@ -105,8 +105,7 @@ function setupPasswordToggle() {
   toggleBtn.addEventListener('click', () => {
     const isHidden = passwordInput.type === 'password';
     passwordInput.type = isHidden ? 'text' : 'password';
-    const icon = toggleBtn.querySelector('i');
-    icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+    toggleBtn.innerHTML = `<i data-lucide="${isHidden ? 'eye-off' : 'eye'}"></i>`;
     initIcons();
     toggleBtn.title = isHidden ? 'Hide password' : 'Show password';
   });
@@ -153,19 +152,15 @@ function setupSidebarCollapse() {
   const isCollapsed = localStorage.getItem('admin_sidebar_collapsed') === 'true';
   if (isCollapsed) {
     sidebar.classList.add('collapsed');
-    collapseBtn.querySelector('i').setAttribute('data-lucide', 'chevron-right');
+    collapseBtn.innerHTML = '<i data-lucide="chevron-right"></i>';
   }
   
   collapseBtn.addEventListener('click', () => {
     const collapsed = sidebar.classList.toggle('collapsed');
     localStorage.setItem('admin_sidebar_collapsed', collapsed);
     
-    const icon = collapseBtn.querySelector('i');
-    if (collapsed) {
-      icon.setAttribute('data-lucide', 'chevron-right');
-    } else {
-      icon.setAttribute('data-lucide', 'chevron-left');
-    }
+    // Replace inner HTML to safely update Lucide icon
+    collapseBtn.innerHTML = `<i data-lucide="${collapsed ? 'chevron-right' : 'chevron-left'}"></i>`;
     initIcons();
   });
 }
