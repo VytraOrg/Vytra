@@ -21,6 +21,7 @@ import 'features/shop/presentation/screens/customer_home.dart';
 import 'features/auth/presentation/screens/welcome_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/shopkeeper/presentation/screens/shopkeeper_route_handler.dart';
+import 'features/auth/presentation/screens/splash_screen.dart';
 import 'core/cache/cache_manager.dart';
 
 void main() async {
@@ -91,26 +92,11 @@ class LocalCommerceApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authRepo = context.read<IAuthRepository>();
-    final user = authRepo.getCachedUser();
-
-    Widget home;
-    if (user != null) {
-      // If user is already logged in, skip welcome/login
-      if (user.role == 'Shopkeeper') {
-        home = const ShopkeeperRouteHandler();
-      } else {
-        home = CustomerHome(customerId: user.id);
-      }
-    } else {
-      home = const WelcomeScreen();
-    }
-
     return MaterialApp(
-      title: 'Local Commerce',
+      title: 'Vytra',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: home,
+      home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
       },
