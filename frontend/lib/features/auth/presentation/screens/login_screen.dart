@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/design_system.dart';
@@ -138,29 +139,32 @@ class _LoginScreenState extends State<LoginScreen> {
                               : Text("Sign In as $selectedRole"),
                         ),
                         
-                        const SizedBox(height: AppSpacing.lg),
-                        const Divider(),
-                        const SizedBox(height: AppSpacing.xs),
-                        const Text(
-                          "DEV QUICK LOGIN",
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.textSecondary,
-                            letterSpacing: 1.2,
+                        // DEV ONLY: Quick login buttons — hidden in release builds
+                        if (kDebugMode) ...[
+                          const SizedBox(height: AppSpacing.lg),
+                          const Divider(),
+                          const SizedBox(height: AppSpacing.xs),
+                          const Text(
+                            "DEV QUICK LOGIN",
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textSecondary,
+                              letterSpacing: 1.2,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildDevLoginBtn("Customer", "cust@gmail.com", "123456", "Customer", authController),
-                            const SizedBox(width: AppSpacing.xs),
-                            _buildDevLoginBtn("Shopkeeper", "shop@gmail.com", "123456", "Shopkeeper", authController),
-                            const SizedBox(width: AppSpacing.xs),
-                            _buildDevLoginBtn("Distributor", "dist@gmail.com", "123456", "Distributor", authController),
-                          ],
-                        ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildDevLoginBtn("Customer", "cust@gmail.com", "123456", "Customer", authController),
+                              const SizedBox(width: AppSpacing.xs),
+                              _buildDevLoginBtn("Shopkeeper", "shop@gmail.com", "123456", "Shopkeeper", authController),
+                              const SizedBox(width: AppSpacing.xs),
+                              _buildDevLoginBtn("Distributor", "dist@gmail.com", "123456", "Distributor", authController),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
