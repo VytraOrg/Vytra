@@ -24,6 +24,8 @@ class Shop {
   final String? pincode;
   final String? gstNumber;
   final String? tradeLicenseNumber;
+  final double? latitude;
+  final double? longitude;
 
   Shop({
     required this.id,
@@ -49,5 +51,7 @@ class Shop {
     this.pincode,
     this.gstNumber,
     this.tradeLicenseNumber,
+    this.latitude,
+    this.longitude,
   });
 }

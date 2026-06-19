@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, Length, Matches } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, Length, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SubmitVerificationDto {
@@ -63,4 +63,14 @@ export class SubmitVerificationDto {
   @IsNotEmpty()
   @IsString()
   tradeLicenseNumber: string;
+
+  @ApiProperty({ example: '22.5726', required: false })
+  @IsOptional()
+  @IsString()
+  latitude?: string;
+
+  @ApiProperty({ example: '88.3639', required: false })
+  @IsOptional()
+  @IsString()
+  longitude?: string;
 }

@@ -10,6 +10,8 @@ import '../../../../core/design_system.dart';
 import '../../../shop/data/shop_model.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import 'shopkeeper_route_handler.dart';
+import 'location_picker_screen.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class CompleteVerificationScreen extends StatefulWidget {
   final ShopModel? existingShop;
@@ -46,6 +48,10 @@ class _CompleteVerificationScreenState extends State<CompleteVerificationScreen>
   late TextEditingController _districtController;
   late TextEditingController _stateController;
   late TextEditingController _pincodeController;
+  
+  // GPS Coordinates
+  double? _latitude;
+  double? _longitude;
 
   // Business verification numbers
   late TextEditingController _gstNumberController;
@@ -97,6 +103,8 @@ class _CompleteVerificationScreenState extends State<CompleteVerificationScreen>
     _districtController = TextEditingController(text: shop?.district ?? '');
     _stateController = TextEditingController(text: shop?.state ?? '');
     _pincodeController = TextEditingController(text: shop?.pincode ?? '');
+    _latitude = shop?.latitude;
+    _longitude = shop?.longitude;
 
     // Prefill doc numbers
     _gstNumberController = TextEditingController(text: shop?.gstNumber ?? '');
@@ -261,6 +269,13 @@ class _CompleteVerificationScreenState extends State<CompleteVerificationScreen>
       request.fields['pincode'] = _pincodeController.text.trim();
       request.fields['gstNumber'] = _gstNumberController.text.trim().toUpperCase();
       request.fields['tradeLicenseNumber'] = _tradeLicenseNumberController.text.trim();
+      
+      if (_latitude != null) {
+        request.fields['latitude'] = _latitude!.toString();
+      }
+      if (_longitude != null) {
+        request.fields['longitude'] = _longitude!.toString();
+      }
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
@@ -426,6 +441,65 @@ class _CompleteVerificationScreenState extends State<CompleteVerificationScreen>
                       if (v.trim().length != 6 || int.tryParse(v) == null) return "Must be a 6 digit number";
                       return null;
                     },
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  const Divider(),
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Map Location (Coordinates)",
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _latitude != null && _longitude != null
+                                  ? "Lat: ${_latitude!.toStringAsFixed(6)}, Lng: ${_longitude!.toStringAsFixed(6)}"
+                                  : "No location selected on map",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: _latitude != null ? Colors.green.shade800 : Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.indigo.shade50,
+                          foregroundColor: Colors.indigo.shade900,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.indigo.shade100),
+                          ),
+                        ),
+                        icon: const Icon(Icons.map_rounded, size: 16),
+                        label: Text(_latitude != null ? "Change" : "Select"),
+                        onPressed: () async {
+                          final LatLng? result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LocationPickerScreen(
+                                initialLatitude: _latitude,
+                                initialLongitude: _longitude,
+                              ),
+                            ),
+                          );
+                          if (result != null) {
+                            setState(() {
+                              _latitude = result.latitude;
+                              _longitude = result.longitude;
+                            });
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

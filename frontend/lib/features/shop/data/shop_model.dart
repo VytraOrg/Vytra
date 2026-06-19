@@ -25,9 +25,21 @@ class ShopModel extends Shop {
     super.pincode,
     super.gstNumber,
     super.tradeLicenseNumber,
+    super.latitude,
+    super.longitude,
   });
 
   factory ShopModel.fromJson(Map<String, dynamic> json) {
+    double? lat;
+    double? lng;
+    if (json['location'] != null && json['location']['coordinates'] != null) {
+      final coords = json['location']['coordinates'] as List;
+      if (coords.length >= 2) {
+        lng = (coords[0] as num).toDouble();
+        lat = (coords[1] as num).toDouble();
+      }
+    }
+
     return ShopModel(
       id: json['_id'] ?? json['id'] ?? '',
       name: json['name'] ?? '',
@@ -52,6 +64,8 @@ class ShopModel extends Shop {
       pincode: json['pincode'],
       gstNumber: json['gstNumber'],
       tradeLicenseNumber: json['tradeLicenseNumber'],
+      latitude: lat,
+      longitude: lng,
     );
   }
 
@@ -79,5 +93,9 @@ class ShopModel extends Shop {
     'pincode': pincode,
     'gstNumber': gstNumber,
     'tradeLicenseNumber': tradeLicenseNumber,
+    'location': {
+      'type': 'Point',
+      'coordinates': [longitude ?? 0.0, latitude ?? 0.0]
+    }
   };
 }

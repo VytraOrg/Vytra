@@ -77,6 +77,13 @@ export class ShopsService {
     shop.gstNumber = dto.gstNumber;
     shop.tradeLicenseNumber = dto.tradeLicenseNumber;
 
+    if (dto.latitude && dto.longitude) {
+      shop.location = {
+        type: 'Point',
+        coordinates: [parseFloat(dto.longitude), parseFloat(dto.latitude)],
+      };
+    }
+
     // Merge documents
     shop.gstCertificateUrl = urls.gstCertificateUrl;
     shop.tradeLicenseUrl = urls.tradeLicenseUrl;
