@@ -83,7 +83,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const SizedBox(height: AppSpacing.xxl),
                   // Logo/Icon
-                  const Icon(Icons.storefront_rounded, size: 80, color: Colors.white)
+                  Image.asset(
+                    'assets/logo_transparent.png',
+                    width: 80,
+                    height: 80,
+                    color: Colors.white,
+                  )
                       .animate().fadeIn().scale(),
                   
                   const SizedBox(height: AppSpacing.lg),

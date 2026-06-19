@@ -58,9 +58,10 @@ class WelcomeScreen extends StatelessWidget {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(AppRadius.xl),
                     ),
-                    child: const Icon(
-                      Icons.storefront_outlined,
-                      size: 40,
+                    child: Image.asset(
+                      'assets/logo_transparent.png',
+                      width: 40,
+                      height: 40,
                       color: AppColors.primary,
                     ),
                   ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.2),
