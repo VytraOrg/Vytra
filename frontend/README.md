@@ -1,6 +1,6 @@
-# LocalCommerceApp Frontend
+# Vytra Frontend
 
-Flutter client for LocalCommerceApp.
+Flutter client for Vytra.
 
 ## Prerequisites
 

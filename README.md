@@ -1,6 +1,6 @@
-# 🛒 Local Commerce App
+# 🛒 Vytra - Hyperlocal Commerce Platform
 
-A full-stack hyperlocal commerce platform connecting **Customers**, **Shopkeepers**, and **Distributors**. Built with **Flutter** (Frontend), **NestJS** (Backend), and **MongoDB Atlas** (Database).
+Vytra is a 3-sided hyperlocal commerce platform connecting **Customers**, **Shopkeepers**, and **Distributors**. Built with **Flutter** (Frontend), **NestJS** (Backend), and **MongoDB Atlas** (Database).
 
 ---
 
@@ -69,7 +69,7 @@ flutter run              # Mobile
 ## 🏗️ Project Structure
 
 ```
-LocalCommerceApp/
+Vytra/
 ├── server/                   # NestJS API
 │   └── src/
 │       ├── common/           # Filters, Guards, Interceptors
