@@ -5,7 +5,7 @@ import '../../../../core/design_system.dart';
 import '../widgets/auth_text_field.dart';
 import '../auth_controller.dart';
 import '../../../shop/presentation/screens/customer_home.dart';
-import '../../../shopkeeper/presentation/screens/shopkeeper_dash.dart';
+import '../../../shopkeeper/presentation/screens/shopkeeper_route_handler.dart';
 import '../../../distributor/presentation/screens/distributor_dash.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -71,7 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       } else if (selectedRole == 'Shopkeeper') {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const ShopkeeperDash()),
+          MaterialPageRoute(builder: (_) => const ShopkeeperRouteHandler()),
           (route) => false,
         );
       } else {

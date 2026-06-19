@@ -48,7 +48,7 @@ export class Shop {
   @Prop({ default: 'Open' })
   status: string;
 
-  @Prop({ required: true, enum: ['Unverified', 'Pending', 'Verified', 'Rejected'], default: 'Unverified' })
+  @Prop({ required: true, enum: ['Unverified', 'Incomplete', 'Pending', 'Under Review', 'Changes Requested', 'Verified', 'Rejected'], default: 'Incomplete' })
   verificationStatus: string;
 
   @Prop()
@@ -62,6 +62,40 @@ export class Shop {
 
   @Prop()
   verificationRejectedNotes?: string;
+
+  // New Fields for Owner Info
+  @Prop()
+  ownerName?: string;
+
+  @Prop()
+  ownerPhone?: string;
+
+  // New Fields for Address Info
+  @Prop()
+  address?: string;
+
+  @Prop()
+  district?: string;
+
+  @Prop()
+  state?: string;
+
+  @Prop()
+  pincode?: string;
+
+  // New Fields for Doc Numbers
+  @Prop()
+  gstNumber?: string;
+
+  @Prop()
+  tradeLicenseNumber?: string;
+
+  // New Fields for Admin Review details
+  @Prop()
+  verificationNotes?: string;
+
+  @Prop()
+  changesRequestedDetails?: string;
 }
 
 export const ShopSchema = SchemaFactory.createForClass(Shop);

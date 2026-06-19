@@ -2,12 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Shop, ShopDocument } from './schemas/shop.schema';
+import { User, UserDocument } from '../users/schemas/user.schema';
 import { CreateShopDto } from './dto/create-shop.dto';
+import { SubmitVerificationDto } from './dto/submit-verification.dto';
 
 @Injectable()
 export class ShopsService {
   constructor(
     @InjectModel(Shop.name) private shopModel: Model<ShopDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
   async findAll() {
@@ -48,6 +51,55 @@ export class ShopsService {
     return shop.save();
   }
 
+  async submitVerification(
+    ownerId: string,
+    dto: SubmitVerificationDto,
+    urls: { gstCertificateUrl: string; tradeLicenseUrl: string; shopImageUrl: string },
+  ) {
+    let shop = await this.shopModel.findOne({ owner: ownerId }).exec();
+    if (!shop) {
+      shop = new this.shopModel({
+        owner: ownerId,
+        shopType: 'Retailer', // default
+      });
+    }
+
+    // Merge details
+    shop.name = dto.name;
+    shop.category = dto.category;
+    shop.description = dto.description;
+    shop.ownerName = dto.ownerName;
+    shop.ownerPhone = dto.ownerPhone;
+    shop.address = dto.address;
+    shop.district = dto.district;
+    shop.state = dto.state;
+    shop.pincode = dto.pincode;
+    shop.gstNumber = dto.gstNumber;
+    shop.tradeLicenseNumber = dto.tradeLicenseNumber;
+
+    // Merge documents
+    shop.gstCertificateUrl = urls.gstCertificateUrl;
+    shop.tradeLicenseUrl = urls.tradeLicenseUrl;
+    shop.imageUrl = urls.shopImageUrl;
+
+    // Transition state
+    shop.verificationStatus = 'Pending';
+
+    // Clear previous rejection details
+    shop.verificationRejectedReason = undefined;
+    shop.verificationRejectedNotes = undefined;
+    shop.verificationNotes = undefined;
+    shop.changesRequestedDetails = undefined;
+
+    // Also update User profile
+    await this.userModel.findByIdAndUpdate(ownerId, {
+      name: dto.ownerName,
+      phone: dto.ownerPhone,
+    }).exec();
+
+    return shop.save();
+  }
+
   async findAllAdmin() {
     return this.shopModel.find().populate('owner', 'name email').exec();
   }
@@ -59,9 +111,15 @@ export class ShopsService {
     if (status === 'Rejected') {
       shop.verificationRejectedReason = reason;
       shop.verificationRejectedNotes = notes;
+    } else if (status === 'Changes Requested') {
+      shop.changesRequestedDetails = notes;
     } else {
       shop.verificationRejectedReason = undefined;
       shop.verificationRejectedNotes = undefined;
+      shop.changesRequestedDetails = undefined;
+    }
+    if (notes) {
+      shop.verificationNotes = notes;
     }
     return shop.save();
   }

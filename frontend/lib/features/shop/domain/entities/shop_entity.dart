@@ -13,6 +13,17 @@ class Shop {
   final String? tradeLicenseUrl;
   final String? verificationRejectedReason;
   final String? verificationRejectedNotes;
+  
+  // New verification fields
+  final String? verificationNotes;
+  final String? ownerName;
+  final String? ownerPhone;
+  final String? address;
+  final String? district;
+  final String? state;
+  final String? pincode;
+  final String? gstNumber;
+  final String? tradeLicenseNumber;
 
   Shop({
     required this.id,
@@ -29,5 +40,14 @@ class Shop {
     this.tradeLicenseUrl,
     this.verificationRejectedReason,
     this.verificationRejectedNotes,
+    this.verificationNotes,
+    this.ownerName,
+    this.ownerPhone,
+    this.address,
+    this.district,
+    this.state,
+    this.pincode,
+    this.gstNumber,
+    this.tradeLicenseNumber,
   });
 }

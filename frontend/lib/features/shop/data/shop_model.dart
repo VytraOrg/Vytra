@@ -16,6 +16,15 @@ class ShopModel extends Shop {
     super.tradeLicenseUrl,
     super.verificationRejectedReason,
     super.verificationRejectedNotes,
+    super.verificationNotes,
+    super.ownerName,
+    super.ownerPhone,
+    super.address,
+    super.district,
+    super.state,
+    super.pincode,
+    super.gstNumber,
+    super.tradeLicenseNumber,
   });
 
   factory ShopModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +43,15 @@ class ShopModel extends Shop {
       tradeLicenseUrl: json['tradeLicenseUrl'],
       verificationRejectedReason: json['verificationRejectedReason'],
       verificationRejectedNotes: json['verificationRejectedNotes'],
+      verificationNotes: json['verificationNotes'],
+      ownerName: json['ownerName'],
+      ownerPhone: json['ownerPhone'],
+      address: json['address'],
+      district: json['district'],
+      state: json['state'],
+      pincode: json['pincode'],
+      gstNumber: json['gstNumber'],
+      tradeLicenseNumber: json['tradeLicenseNumber'],
     );
   }
 
@@ -52,5 +70,14 @@ class ShopModel extends Shop {
     'tradeLicenseUrl': tradeLicenseUrl,
     'verificationRejectedReason': verificationRejectedReason,
     'verificationRejectedNotes': verificationRejectedNotes,
+    'verificationNotes': verificationNotes,
+    'ownerName': ownerName,
+    'ownerPhone': ownerPhone,
+    'address': address,
+    'district': district,
+    'state': state,
+    'pincode': pincode,
+    'gstNumber': gstNumber,
+    'tradeLicenseNumber': tradeLicenseNumber,
   };
 }

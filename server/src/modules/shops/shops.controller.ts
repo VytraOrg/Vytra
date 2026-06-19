@@ -4,6 +4,7 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ShopsService } from './shops.service';
 import { CloudinaryService } from './cloudinary.service';
 import { CreateShopDto } from './dto/create-shop.dto';
+import { SubmitVerificationDto } from './dto/submit-verification.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -55,6 +56,7 @@ export class ShopsController {
       [
         { name: 'gstCertificate', maxCount: 1 },
         { name: 'tradeLicense', maxCount: 1 },
+        { name: 'shopImage', maxCount: 1 },
       ],
       {
         fileFilter: (req, file, callback) => {
@@ -72,24 +74,34 @@ export class ShopsController {
     files: {
       gstCertificate?: Express.Multer.File[];
       tradeLicense?: Express.Multer.File[];
+      shopImage?: Express.Multer.File[];
     },
+    @Body() submitVerificationDto: SubmitVerificationDto,
   ) {
     const ownerId = req.user._id;
 
     if (!files || !files.gstCertificate || files.gstCertificate.length === 0) {
-      throw new BadRequestException('GST Certificate is required');
+      throw new BadRequestException('GST Certificate file is required');
     }
     if (!files || !files.tradeLicense || files.tradeLicense.length === 0) {
-      throw new BadRequestException('Trade License is required');
+      throw new BadRequestException('Trade License file is required');
+    }
+    if (!files || !files.shopImage || files.shopImage.length === 0) {
+      throw new BadRequestException('Shop Front Image is required');
     }
 
     // Upload files to Cloudinary
-    const [gstUrl, licenseUrl] = await Promise.all([
+    const [gstUrl, licenseUrl, shopImageUrl] = await Promise.all([
       this.cloudinaryService.uploadFile(files.gstCertificate[0]),
       this.cloudinaryService.uploadFile(files.tradeLicense[0]),
+      this.cloudinaryService.uploadFile(files.shopImage[0]),
     ]);
 
-    return this.shopsService.verifyShop(ownerId, gstUrl, licenseUrl);
+    return this.shopsService.submitVerification(ownerId, submitVerificationDto, {
+      gstCertificateUrl: gstUrl,
+      tradeLicenseUrl: licenseUrl,
+      shopImageUrl,
+    });
   }
 
   @Get('admin/fix-status')
@@ -119,7 +131,7 @@ export class ShopsController {
     @Param('id') id: string,
     @Body() body: { status: string; reason?: string; notes?: string },
   ) {
-    if (!['Verified', 'Rejected', 'Pending', 'Unverified'].includes(body.status)) {
+    if (!['Verified', 'Rejected', 'Pending', 'Unverified', 'Under Review', 'Changes Requested'].includes(body.status)) {
       throw new BadRequestException('Invalid verification status');
     }
     return this.shopsService.updateVerificationStatus(id, body.status, body.reason, body.notes);

@@ -1415,8 +1415,19 @@ tr:hover td {
   background: var(--danger);
 }
 
-.status-badge.unverified {
+.status-badge.unverified,
+.status-badge.incomplete {
   background: var(--text-muted);
+}
+
+.status-badge.under-review {
+  background: var(--primary);
+  color: #fff;
+}
+
+.status-badge.changes-requested {
+  background: var(--warning-border);
+  color: #fff;
 }
 
 .status-dot {

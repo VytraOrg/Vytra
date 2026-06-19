@@ -292,6 +292,10 @@
               <h3>Verification Queue</h3>
               <div class="filters">
                 <button class="filter-btn active" data-filter="Pending">Pending</button>
+                <button class="filter-btn" data-filter="Under Review">Reviewing</button>
+                <button class="filter-btn" data-filter="Changes Requested">Changes</button>
+                <button class="filter-btn" data-filter="Verified">Verified</button>
+                <button class="filter-btn" data-filter="Rejected">Rejected</button>
                 <button class="filter-btn" data-filter="all">All</button>
               </div>
             </div>
@@ -323,7 +327,7 @@
               </div>
 
               <div class="workspace-section">
-                <h4>Owner Information</h4>
+                <h4>Owner & Shop Profile</h4>
                 <div class="info-grid">
                   <div class="info-item">
                     <span class="label">Owner Name</span>
@@ -332,6 +336,50 @@
                   <div class="info-item">
                     <span class="label">Email Address</span>
                     <span class="value" id="ws-owner-email">rajesh@grocery.com</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">Owner Phone</span>
+                    <span class="value" id="ws-owner-phone">-</span>
+                  </div>
+                  <div class="info-item" style="grid-column: span 2;">
+                    <span class="label">Business Description</span>
+                    <span class="value" id="ws-shop-desc" style="white-space: pre-wrap;">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="workspace-section">
+                <h4>Location & Address Details</h4>
+                <div class="info-grid">
+                  <div class="info-item" style="grid-column: span 2;">
+                    <span class="label">Full Physical Address</span>
+                    <span class="value" id="ws-shop-address">-</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">District</span>
+                    <span class="value" id="ws-shop-district">-</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">State</span>
+                    <span class="value" id="ws-shop-state">-</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">Pincode</span>
+                    <span class="value" id="ws-shop-pincode">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="workspace-section">
+                <h4>Business Credentials</h4>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="label">GST Number</span>
+                    <span class="value" id="ws-gst-number" style="font-family: var(--font-mono); font-weight: 700; color: var(--warning);">-</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="label">Trade License Number</span>
+                    <span class="value" id="ws-license-number" style="font-family: var(--font-mono); font-weight: 700; color: var(--warning);">-</span>
                   </div>
                 </div>
               </div>
@@ -353,6 +401,11 @@
                     <input type="checkbox" id="check-address-match" class="checklist-checkbox">
                     <span class="checkbox-custom"></span>
                     <span class="checkbox-text">Address matches business location</span>
+                  </label>
+                  <label class="checkbox-label" for="check-image-match" style="margin-bottom: 0;">
+                    <input type="checkbox" id="check-image-match" class="checklist-checkbox">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-text">Shop Front image matches description</span>
                   </label>
                 </div>
               </div>
@@ -383,11 +436,29 @@
                 </div>
               </div>
 
+              <!-- Changes Requested Input Pane -->
+              <div id="ws-changes-pane" class="rejection-pane hidden" style="border-color: var(--warning-border); background: var(--warning-dim); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="ws-changes-notes-input" style="font-size: 11px; margin-bottom: 6px; color: var(--warning);">Describe Requested Changes (Shown to Merchant)</label>
+                  <div class="input-wrapper">
+                    <textarea id="ws-changes-notes-input" placeholder="Explain what the merchant needs to correct..." style="width: 100%; height: 60px; padding: 8px 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); font-size: 13px; resize: none; outline: none; border-color: var(--border-hover);"></textarea>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                  <button id="ws-cancel-changes-btn" class="secondary-btn" style="padding: 6px 12px; font-size: 12px;">Cancel</button>
+                  <button id="ws-confirm-changes-btn" class="primary-btn" style="padding: 6px 12px; font-size: 12px; background: var(--warning); border-color: var(--warning-border); color: #fff;">Send Request</button>
+                </div>
+              </div>
+
               <!-- Main Verification Actions Panel -->
               <div class="workspace-actions" id="ws-actions-panel">
-                <button id="ws-reject-btn" class="secondary-btn reject-btn-ws">
+                <button id="ws-reject-btn" class="secondary-btn reject-btn-ws" style="background: var(--danger-dim); color: var(--danger); border-color: var(--danger-border);">
                   <i data-lucide="x-circle"></i>
-                  <span>Reject Request</span>
+                  <span>Reject</span>
+                </button>
+                <button id="ws-changes-btn" class="secondary-btn changes-btn-ws" style="background: var(--warning-dim); color: var(--warning); border-color: var(--warning-border);">
+                  <i data-lucide="alert-triangle"></i>
+                  <span>Request Changes</span>
                 </button>
                 <button id="ws-approve-btn" class="primary-btn approve-btn-ws" disabled>
                   <i data-lucide="check-circle2"></i>
@@ -407,6 +478,7 @@
               <div class="viewer-tabs">
                 <button class="viewer-tab-btn active" id="tab-gst-btn">GST Certificate</button>
                 <button class="viewer-tab-btn" id="tab-license-btn">Trade License</button>
+                <button class="viewer-tab-btn" id="tab-image-btn">Shop Photo</button>
               </div>
               <div class="viewer-toolbar">
                 <button class="tool-btn" id="btn-zoom-in" title="Zoom In"><i data-lucide="zoom-in"></i></button>

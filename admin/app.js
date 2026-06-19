@@ -575,23 +575,38 @@ window.selectShop = function(shopId) {
   document.getElementById('ws-shop-name').textContent = shop.name;
   document.getElementById('ws-shop-meta').textContent = `${shop.shopType || 'Local Store'} · ${shop.category}`;
   
-  // Update status badge
+  // Update status badge (dashed for CSS matching)
   const statusBadge = document.getElementById('ws-shop-status');
   const statusText = document.getElementById('ws-status-text');
-  statusBadge.className = `status-badge ${(shop.verificationStatus || 'unverified').toLowerCase()}`;
+  const badgeClass = (shop.verificationStatus || 'unverified').toLowerCase().replace(/\s+/g, '-');
+  statusBadge.className = `status-badge ${badgeClass}`;
   statusText.textContent = shop.verificationStatus || 'Unverified';
 
   // Set Owner Details values
-  document.getElementById('ws-owner-name').textContent = shop.owner ? shop.owner.name : 'Unknown';
+  document.getElementById('ws-owner-name').textContent = shop.ownerName || (shop.owner ? shop.owner.name : 'Unknown');
   document.getElementById('ws-owner-email').textContent = shop.owner ? shop.owner.email : 'No email';
+  document.getElementById('ws-owner-phone').textContent = shop.ownerPhone || '-';
+  document.getElementById('ws-shop-desc').textContent = shop.description || '-';
+
+  // Set Location Details values
+  document.getElementById('ws-shop-address').textContent = shop.address || '-';
+  document.getElementById('ws-shop-district').textContent = shop.district || '-';
+  document.getElementById('ws-shop-state').textContent = shop.state || '-';
+  document.getElementById('ws-shop-pincode').textContent = shop.pincode || '-';
+
+  // Set Business Credentials values
+  document.getElementById('ws-gst-number').textContent = shop.gstNumber || '-';
+  document.getElementById('ws-license-number').textContent = shop.tradeLicenseNumber || '-';
 
   // Reset Checklist
   document.getElementById('check-name-match').checked = false;
   document.getElementById('check-gst-valid').checked = false;
   document.getElementById('check-address-match').checked = false;
+  document.getElementById('check-image-match').checked = false;
   
-  // Reset rejection pane
+  // Reset rejection and changes requested panes
   document.getElementById('ws-rejection-pane').classList.add('hidden');
+  document.getElementById('ws-changes-pane').classList.add('hidden');
   document.getElementById('ws-actions-panel').classList.remove('hidden');
 
   // Reset buttons
@@ -611,19 +626,32 @@ window.loadDocument = function(type) {
   
   const gstBtn = document.getElementById('tab-gst-btn');
   const licBtn = document.getElementById('tab-license-btn');
+  const imgBtn = document.getElementById('tab-image-btn');
+  
+  gstBtn.classList.remove('active');
+  licBtn.classList.remove('active');
+  imgBtn.classList.remove('active');
   
   if (type === 'gst') {
     gstBtn.classList.add('active');
-    licBtn.classList.remove('active');
-  } else {
-    gstBtn.classList.remove('active');
+  } else if (type === 'license') {
     licBtn.classList.add('active');
+  } else {
+    imgBtn.classList.add('active');
   }
 
   const shop = shopsData.find(s => s._id === selectedShopId);
   if (!shop) return;
 
-  const url = type === 'gst' ? shop.gstCertificateUrl : shop.tradeLicenseUrl;
+  let url;
+  if (type === 'gst') {
+    url = shop.gstCertificateUrl;
+  } else if (type === 'license') {
+    url = shop.tradeLicenseUrl;
+  } else {
+    url = shop.imageUrl;
+  }
+
   const frame = document.getElementById('document-frame');
 
   if (!url) {
@@ -640,7 +668,7 @@ window.loadDocument = function(type) {
   if (url.toLowerCase().endsWith('.pdf') || url.includes('/raw/upload/')) {
     frame.innerHTML = `<iframe src="${url}"></iframe>`;
   } else {
-    frame.innerHTML = `<img src="${url}" alt="${type === 'gst' ? 'GST Certificate' : 'Trade License'}">`;
+    frame.innerHTML = `<img src="${url}" alt="${type === 'gst' ? 'GST Certificate' : (type === 'license' ? 'Trade License' : 'Shop Photo')}">`;
   }
 
   // Apply default scale/rotate transform styles
@@ -662,9 +690,10 @@ window.updateChecklist = function() {
   const nameMatch = document.getElementById('check-name-match').checked;
   const gstValid = document.getElementById('check-gst-valid').checked;
   const addressMatch = document.getElementById('check-address-match').checked;
+  const imageMatch = document.getElementById('check-image-match').checked;
   
   const approveBtn = document.getElementById('ws-approve-btn');
-  approveBtn.disabled = !(nameMatch && gstValid && addressMatch);
+  approveBtn.disabled = !(nameMatch && gstValid && addressMatch && imageMatch);
 };
 
 // Bind Workspace Listeners
@@ -692,6 +721,7 @@ window.setupWorkspaceListeners = function() {
   // Tab switchers
   document.getElementById('tab-gst-btn').addEventListener('click', () => loadDocument('gst'));
   document.getElementById('tab-license-btn').addEventListener('click', () => loadDocument('license'));
+  document.getElementById('tab-image-btn').addEventListener('click', () => loadDocument('image'));
 
   // Checklist checkboxes
   const checkboxes = document.querySelectorAll('.checklist-checkbox');
@@ -705,6 +735,10 @@ window.setupWorkspaceListeners = function() {
   const cancelRejectBtn = document.getElementById('ws-cancel-reject-btn');
   const confirmRejectBtn = document.getElementById('ws-confirm-reject-btn');
 
+  const changesBtn = document.getElementById('ws-changes-btn');
+  const cancelChangesBtn = document.getElementById('ws-cancel-changes-btn');
+  const confirmChangesBtn = document.getElementById('ws-confirm-changes-btn');
+
   approveBtn.addEventListener('click', () => {
     if (!selectedShopId) return;
     const shop = shopsData.find(s => s._id === selectedShopId);
@@ -713,6 +747,7 @@ window.setupWorkspaceListeners = function() {
 
   rejectBtn.addEventListener('click', () => {
     document.getElementById('ws-rejection-pane').classList.remove('hidden');
+    document.getElementById('ws-changes-pane').classList.add('hidden');
     document.getElementById('ws-actions-panel').classList.add('hidden');
     // Clear reject inputs
     document.getElementById('ws-reject-reason-select').selectedIndex = 0;
@@ -735,6 +770,43 @@ window.setupWorkspaceListeners = function() {
 
     // Call update API
     await updateShopStatus(selectedShopId, 'Rejected', reason, notes);
+    
+    // Refresh active panel selection or reset
+    const shop = shopsData.find(s => s._id === selectedShopId);
+    if (shop) {
+      selectShop(selectedShopId);
+    } else {
+      resetWorkspace();
+    }
+  });
+
+  changesBtn.addEventListener('click', () => {
+    document.getElementById('ws-changes-pane').classList.remove('hidden');
+    document.getElementById('ws-rejection-pane').classList.add('hidden');
+    document.getElementById('ws-actions-panel').classList.add('hidden');
+    document.getElementById('ws-changes-notes-input').value = '';
+  });
+
+  cancelChangesBtn.addEventListener('click', () => {
+    document.getElementById('ws-changes-pane').classList.add('hidden');
+    document.getElementById('ws-actions-panel').classList.remove('hidden');
+  });
+
+  confirmChangesBtn.addEventListener('click', async () => {
+    if (!selectedShopId) return;
+    const notes = document.getElementById('ws-changes-notes-input').value.trim();
+    
+    if (!notes) {
+      showToast('Please provide details for the requested changes', 'error');
+      return;
+    }
+
+    // Hide pane and show main buttons
+    document.getElementById('ws-changes-pane').classList.add('hidden');
+    document.getElementById('ws-actions-panel').classList.remove('hidden');
+
+    // Call update API
+    await updateShopStatus(selectedShopId, 'Changes Requested', undefined, notes);
     
     // Refresh active panel selection or reset
     const shop = shopsData.find(s => s._id === selectedShopId);
@@ -844,10 +916,8 @@ window.confirmVerifyShop = function(id, name, targetStatus) {
 async function updateShopStatus(id, status, reason, notes) {
   try {
     const payload = { status };
-    if (status === 'Rejected') {
-      payload.reason = reason;
-      payload.notes = notes;
-    }
+    if (reason) payload.reason = reason;
+    if (notes) payload.notes = notes;
 
     const response = await fetch(`${API_BASE_URL}/shops/admin/${id}/verify`, {
       method: 'POST',

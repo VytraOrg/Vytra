@@ -20,6 +20,9 @@ export class User {
   @Prop()
   businessName?: string;
 
+  @Prop()
+  phone?: string;
+
   @Prop({ type: [{ type: Object }] })
   addresses: any[];
 
