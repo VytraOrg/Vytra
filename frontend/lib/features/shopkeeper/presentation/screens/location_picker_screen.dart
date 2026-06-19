@@ -171,7 +171,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50),
-                        backgroundColor: Colors.indigo.shade800,
+                        backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
@@ -196,7 +196,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             left: 16,
             right: 16,
             child: Card(
-              color: Colors.indigo.shade900.withOpacity(0.9),
+              color: AppColors.primary.withOpacity(0.95),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               elevation: 4,
               child: const Padding(

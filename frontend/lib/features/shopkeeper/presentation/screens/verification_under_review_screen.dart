@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/design_system.dart';
 import '../../../auth/presentation/auth_controller.dart';
 import 'shopkeeper_route_handler.dart';
 
@@ -16,13 +17,13 @@ class VerificationUnderReviewScreen extends StatelessWidget {
     final authController = Provider.of<AuthController>(context);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.grey),
+            icon: const Icon(Icons.logout_rounded, color: AppColors.error),
             onPressed: () => authController.logout(),
             tooltip: 'Logout',
           )
@@ -30,7 +31,7 @@ class VerificationUnderReviewScreen extends StatelessWidget {
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 40.0),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.xxl),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -38,12 +39,13 @@ class VerificationUnderReviewScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
-                  color: Colors.indigo.shade50,
+                  color: AppColors.primaryLight,
                   shape: BoxShape.circle,
+                  boxShadow: AppShadows.soft,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.watch_later_outlined, 
-                  color: Colors.indigo.shade800, 
+                  color: AppColors.primary, 
                   size: 72,
                 ),
               ),
@@ -54,7 +56,7 @@ class VerificationUnderReviewScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 24, 
                   fontWeight: FontWeight.bold, 
-                  color: Colors.black87,
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -63,7 +65,7 @@ class VerificationUnderReviewScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15, 
-                  color: Colors.grey, 
+                  color: AppColors.textSecondary, 
                   height: 1.6,
                 ),
               ),
@@ -71,7 +73,7 @@ class VerificationUnderReviewScreen extends StatelessWidget {
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 58),
-                  backgroundColor: Colors.indigo.shade800,
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 2,
@@ -95,7 +97,7 @@ class VerificationUnderReviewScreen extends StatelessWidget {
                 child: const Text(
                   "Sign Out",
                   style: TextStyle(
-                    color: Colors.grey, 
+                    color: AppColors.textSecondary, 
                     fontWeight: FontWeight.bold,
                   ),
                 ),

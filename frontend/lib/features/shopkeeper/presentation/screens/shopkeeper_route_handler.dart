@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/design_system.dart';
 import '../../../shop/data/shop_model.dart';
 import 'complete_verification_screen.dart';
 import 'verification_under_review_screen.dart';
@@ -63,14 +64,14 @@ class _ShopkeeperRouteHandlerState extends State<ShopkeeperRouteHandler> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(color: Colors.indigo),
+              CircularProgressIndicator(color: AppColors.primary),
               SizedBox(height: 16),
-              Text('Checking profile verification status...', style: TextStyle(color: Colors.grey)),
+              Text('Checking profile verification status...', style: TextStyle(color: AppColors.textSecondary)),
             ],
           ),
         ),

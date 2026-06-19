@@ -471,12 +471,14 @@ class _CompleteVerificationScreenState extends State<CompleteVerificationScreen>
                       ),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.indigo.shade50,
-                          foregroundColor: Colors.indigo.shade900,
+                          minimumSize: Size.zero,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          backgroundColor: AppColors.primaryLight,
+                          foregroundColor: AppColors.primary,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: Colors.indigo.shade100),
+                            side: BorderSide(color: AppColors.primary.withOpacity(0.15)),
                           ),
                         ),
                         icon: const Icon(Icons.map_rounded, size: 16),
@@ -551,7 +553,7 @@ class _CompleteVerificationScreenState extends State<CompleteVerificationScreen>
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 58),
-                  backgroundColor: Colors.indigo.shade800,
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 2,
@@ -593,7 +595,7 @@ class _CompleteVerificationScreenState extends State<CompleteVerificationScreen>
         children: [
           Row(
             children: [
-              Icon(icon, color: Colors.indigo.shade800, size: 22),
+              Icon(icon, color: AppColors.primary, size: 22),
               const SizedBox(width: 8),
               Text(
                 title,
@@ -630,7 +632,7 @@ class _CompleteVerificationScreenState extends State<CompleteVerificationScreen>
           children: [
             Icon(
               hasFile ? Icons.check_circle_rounded : Icons.cloud_upload_outlined,
-              color: hasFile ? Colors.green : Colors.indigo,
+              color: hasFile ? AppColors.success : AppColors.primary,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -651,7 +653,7 @@ class _CompleteVerificationScreenState extends State<CompleteVerificationScreen>
             Text(
               hasFile ? "Replace" : "Select",
               style: TextStyle(
-                color: hasFile ? Colors.grey : Colors.indigo,
+                color: hasFile ? AppColors.textSecondary : AppColors.primary,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
