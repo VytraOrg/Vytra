@@ -484,20 +484,42 @@ class _CompleteVerificationScreenState extends State<CompleteVerificationScreen>
                         icon: const Icon(Icons.map_rounded, size: 16),
                         label: Text(_latitude != null ? "Change" : "Select"),
                         onPressed: () async {
-                          final LatLng? result = await Navigator.push(
+                          final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => LocationPickerScreen(
                                 initialLatitude: _latitude,
                                 initialLongitude: _longitude,
+                                shopName: _shopNameController.text.trim(),
                               ),
                             ),
                           );
                           if (result != null) {
-                            setState(() {
-                              _latitude = result.latitude;
-                              _longitude = result.longitude;
-                            });
+                            if (result is LatLng) {
+                              setState(() {
+                                _latitude = result.latitude;
+                                _longitude = result.longitude;
+                              });
+                            } else if (result is Map<String, dynamic>) {
+                              setState(() {
+                                final latLng = result['latLng'] as LatLng;
+                                _latitude = latLng.latitude;
+                                _longitude = latLng.longitude;
+                                
+                                if (result['address'] != null && (result['address'] as String).isNotEmpty) {
+                                  _addressController.text = result['address'] as String;
+                                }
+                                if (result['district'] != null && (result['district'] as String).isNotEmpty) {
+                                  _districtController.text = result['district'] as String;
+                                }
+                                if (result['state'] != null && (result['state'] as String).isNotEmpty) {
+                                  _stateController.text = result['state'] as String;
+                                }
+                                if (result['pincode'] != null && (result['pincode'] as String).isNotEmpty) {
+                                  _pincodeController.text = result['pincode'] as String;
+                                }
+                              });
+                            }
                           }
                         },
                       ),

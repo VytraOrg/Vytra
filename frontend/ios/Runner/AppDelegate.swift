@@ -9,7 +9,13 @@ import GoogleMaps
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     // Register Google Maps API Key
-    GMSServices.provideAPIKey("AIzaSyAlnxfyy1TWe-fEZ6Cx7TKMY5PjFtGz0nY")
+    var mapsApiKey = "YOUR_API_KEY_HERE"
+    if let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
+       let dict = NSDictionary(contentsOfFile: path),
+       let apiKey = dict["MAPS_API_KEY"] as? String {
+        mapsApiKey = apiKey
+    }
+    GMSServices.provideAPIKey(mapsApiKey)
     
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

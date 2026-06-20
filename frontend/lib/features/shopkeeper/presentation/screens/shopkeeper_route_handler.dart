@@ -114,7 +114,7 @@ class _ShopkeeperRouteHandlerState extends State<ShopkeeperRouteHandler> {
     final status = _shop?.verificationStatus;
 
     if (_shop == null || status == 'Incomplete' || status == 'Unverified') {
-      return const CompleteVerificationScreen();
+      return CompleteVerificationScreen(existingShop: _shop);
     }
 
     if (status == 'Pending' || status == 'Under Review') {
@@ -141,6 +141,6 @@ class _ShopkeeperRouteHandlerState extends State<ShopkeeperRouteHandler> {
     }
 
     // Default to verification form
-    return const CompleteVerificationScreen();
+    return CompleteVerificationScreen(existingShop: _shop);
   }
 }

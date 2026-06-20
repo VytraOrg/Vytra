@@ -85,3 +85,11 @@ coverage/
 
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
+
+# Custom Environment Secrets
+.env
+ios/Runner/Secrets.plist
+web/config.js
+lib/core/config/secrets.dart
+
+
