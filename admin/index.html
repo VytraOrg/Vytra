@@ -352,7 +352,13 @@
                 <h4>Location & Address Details</h4>
                 <div class="info-grid">
                   <div class="info-item" style="grid-column: span 2;">
-                    <span class="label">Full Physical Address</span>
+                    <span class="label" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                      <span>Full Physical Address</span>
+                      <a href="#" id="ws-shop-map-link" target="_blank" class="map-link" style="display: none; align-items: center; gap: 4px; color: var(--primary); text-transform: none; font-size: 11px; text-decoration: none; font-weight: 600;">
+                        <i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>
+                        <span>View on Google Maps</span>
+                      </a>
+                    </span>
                     <span class="value" id="ws-shop-address">-</span>
                   </div>
                   <div class="info-item">

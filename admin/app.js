@@ -589,6 +589,22 @@ window.selectShop = function(shopId) {
   document.getElementById('ws-shop-state').textContent = shop.state || '-';
   document.getElementById('ws-shop-pincode').textContent = shop.pincode || '-';
 
+  const mapLink = document.getElementById('ws-shop-map-link');
+  if (shop.location && shop.location.coordinates && shop.location.coordinates.length >= 2) {
+    const lng = shop.location.coordinates[0];
+    const lat = shop.location.coordinates[1];
+    
+    // Check if they are valid coordinates (not 0.0)
+    if (lat !== 0 && lng !== 0) {
+      mapLink.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+      mapLink.style.display = 'inline-flex';
+    } else {
+      mapLink.style.display = 'none';
+    }
+  } else {
+    mapLink.style.display = 'none';
+  }
+
   // Set Business Credentials values
   document.getElementById('ws-gst-number').textContent = shop.gstNumber || '-';
   document.getElementById('ws-license-number').textContent = shop.tradeLicenseNumber || '-';
