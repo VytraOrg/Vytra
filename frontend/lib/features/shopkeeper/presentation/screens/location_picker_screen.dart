@@ -101,6 +101,8 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     String state = '';
     String pincode = '';
     String locality = '';
+    String adminArea2 = '';
+    String adminArea3 = '';
 
     for (var comp in components) {
       final types = List<String>.from(comp['types'] ?? []);
@@ -109,14 +111,20 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       } else if (types.contains('administrative_area_level_1')) {
         state = comp['long_name'] ?? '';
       } else if (types.contains('administrative_area_level_2')) {
-        district = comp['long_name'] ?? '';
+        adminArea2 = comp['long_name'] ?? '';
+      } else if (types.contains('administrative_area_level_3')) {
+        adminArea3 = comp['long_name'] ?? '';
       } else if (types.contains('locality')) {
         locality = comp['long_name'] ?? '';
       }
     }
 
-    if (district.isEmpty) {
-      district = locality;
+    // In India (especially West Bengal), administrative_area_level_2 is often the Division (e.g., Presidency Division)
+    // and administrative_area_level_3 is the actual District (e.g., South 24 Parganas).
+    if (adminArea2.toLowerCase().contains('division')) {
+      district = adminArea3.isNotEmpty ? adminArea3 : adminArea2;
+    } else {
+      district = adminArea2.isNotEmpty ? adminArea2 : (adminArea3.isNotEmpty ? adminArea3 : locality);
     }
 
     return {
