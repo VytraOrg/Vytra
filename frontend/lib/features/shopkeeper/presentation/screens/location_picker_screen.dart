@@ -43,10 +43,15 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   @override
   void initState() {
     super.initState();
-    // Default to Kolkata center if no initial coordinate provided
+    // Default to Kolkata center if no initial coordinate provided or if it's 0.0
+    final bool hasValidInitial = widget.initialLatitude != null &&
+        widget.initialLatitude != 0.0 &&
+        widget.initialLongitude != null &&
+        widget.initialLongitude != 0.0;
+
     _selectedLocation = LatLng(
-      widget.initialLatitude ?? 22.5726,
-      widget.initialLongitude ?? 88.3639,
+      hasValidInitial ? widget.initialLatitude! : 22.5726,
+      hasValidInitial ? widget.initialLongitude! : 88.3639,
     );
     _updateMarker(_selectedLocation);
     // Reverse geocode initial position to pre-populate text field
