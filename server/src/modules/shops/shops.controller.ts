@@ -29,13 +29,16 @@ export class ShopsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all shops with optional filters' })
+  @ApiOperation({ summary: 'Get all shops with optional filters and location proximity' })
   async getShops(
     @Query('category') category?: string,
     @Query('shopType') shopType?: string,
     @Query('search') search?: string,
+    @Query('lat') lat?: number,
+    @Query('lng') lng?: number,
+    @Query('maxDistanceKm') maxDistanceKm?: number,
   ) {
-    return this.shopsService.findFiltered(category, shopType, search);
+    return this.shopsService.findFiltered(category, shopType, search, lat, lng, maxDistanceKm);
   }
 
   @Post()

@@ -74,15 +74,25 @@ class ShopCard extends StatelessWidget {
                       children: [
                         Text(shop.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
                         const SizedBox(height: 4),
-                        const Row(
+                        Row(
                           children: [
-                            Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
-                            SizedBox(width: 4),
-                            Text("1.2 km away", style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                            SizedBox(width: 12),
-                            Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
-                            SizedBox(width: 4),
-                            Text("25 mins", style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                            const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Text(
+                              shop.distanceKm != null
+                                  ? "${shop.distanceKm!.toStringAsFixed(1)} km away"
+                                  : (shop.address != null && shop.address!.isNotEmpty ? shop.address! : "Nearby"),
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                            ),
+                            const SizedBox(width: 12),
+                            const Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Text(
+                              shop.distanceKm != null
+                                  ? "${(shop.distanceKm! * 4 + 10).clamp(10, 60).toInt()} mins"
+                                  : "20-30 mins",
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                            ),
                           ],
                         ),
                       ],

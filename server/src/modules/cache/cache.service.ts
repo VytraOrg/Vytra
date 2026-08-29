@@ -30,6 +30,12 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
           username: decodeURIComponent(parsedUrl.username),
           password: decodeURIComponent(parsedUrl.password),
           maxRetriesPerRequest: 1,
+          connectTimeout: 2000,
+          retryStrategy: () => null,
+          lazyConnect: true,
+        });
+        this.redisClient.connect().catch((err) => {
+          console.warn('⚠️ Redis connection failed. Caching disabled:', err.message);
         });
       } else {
         console.log('🔄 Connecting to local Redis...');
@@ -38,6 +44,12 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
           host: this.configService.get<string>('REDIS_HOST', 'localhost'),
           port: this.configService.get<number>('REDIS_PORT', 6379),
           maxRetriesPerRequest: 1,
+          connectTimeout: 2000,
+          retryStrategy: () => null,
+          lazyConnect: true,
+        });
+        this.redisClient.connect().catch((err) => {
+          console.warn('⚠️ Redis connection failed. Caching disabled:', err.message);
         });
       }
 

@@ -34,6 +34,10 @@ export class Product {
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
-ProductSchema.index({ name: 'text', description: 'text' }); // Enable Full-Text Search
+ProductSchema.index(
+  { name: 'text', category: 'text', description: 'text' },
+  { weights: { name: 10, category: 5, description: 1 }, name: 'ProductTextIndex' }
+);
 ProductSchema.index({ shop: 1, isAvailable: 1 });
 ProductSchema.index({ category: 1, isAvailable: 1 });
+

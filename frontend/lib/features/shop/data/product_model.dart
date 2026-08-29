@@ -13,6 +13,7 @@ class ProductModel extends Product {
     required super.shopId,
     super.shopName,
     required super.stockQuantity,
+    super.distanceKm,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -25,9 +26,10 @@ class ProductModel extends Product {
       unit: json['unit'] ?? 'pcs',
       imageUrl: json['imageUrl'],
       isAvailable: json['isAvailable'] ?? true,
-      shopId: json['shop'] is Map ? (json['shop']['_id'] ?? '') : (json['shop'] ?? ''),
-      shopName: json['shopInfo'] != null ? json['shopInfo']['name'] : (json['shop'] is Map ? json['shop']['name'] : null),
+      shopId: (json['shop'] is Map ? json['shop']['_id'] : json['shop'])?.toString() ?? '',
+      shopName: json['shopInfo'] != null ? json['shopInfo']['name']?.toString() : (json['shop'] is Map ? json['shop']['name']?.toString() : null),
       stockQuantity: (json['stockQuantity'] as num?)?.toInt() ?? 0,
+      distanceKm: (json['distanceKm'] as num?)?.toDouble(),
     );
   }
 

@@ -26,6 +26,7 @@ class Shop {
   final String? tradeLicenseNumber;
   final double? latitude;
   final double? longitude;
+  final double? distanceKm;
 
   Shop({
     required this.id,
@@ -53,5 +54,6 @@ class Shop {
     this.tradeLicenseNumber,
     this.latitude,
     this.longitude,
+    this.distanceKm,
   });
 }

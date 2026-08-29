@@ -20,9 +20,20 @@ export class ProductsController {
   }
 
   @Get('search')
-  @ApiOperation({ summary: 'Global search products across all shops' })
-  search(@Query('q') q: string, @Query('shopType') shopType?: string) {
-    return this.productsService.searchGlobal(q, shopType);
+  @ApiOperation({ summary: 'Global search products across all shops with proximity boosting' })
+  search(
+    @Query('q') q: string,
+    @Query('shopType') shopType?: string,
+    @Query('lat') lat?: number,
+    @Query('lng') lng?: number,
+  ) {
+    return this.productsService.searchGlobal(q, shopType, lat, lng);
+  }
+
+  @Get('suggestions')
+  @ApiOperation({ summary: 'Get search suggestions for products and categories' })
+  getSuggestions(@Query('q') q: string, @Query('shopType') shopType?: string) {
+    return this.productsService.getSuggestions(q, shopType);
   }
 
   @Get(':id')

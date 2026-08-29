@@ -1,31 +1,29 @@
 import 'package:flutter/foundation.dart';
 
-/// --- CONNECTIVITY GUIDE ---
-/// 
-/// 1. EMULATOR: Use '10.0.2.2'
-/// 2. PHYSICAL PHONE: 
-///    - Connect phone and PC to the SAME Wi-Fi.
-///    - Find your PC IP (Windows: 'ipconfig', Mac: 'ifconfig').
-///    - Look for "IPv4 Address" (usually starts with 192.168...).
-///    - Replace '10.0.2.2' with that IP below.
-/// 3. BACKEND: Ensure you run using 'python app.py' NOT 'flask run'.
+/// Production hosted backend URL (used for production builds & release APK/web)
+const String _prodBackendUrl = 'https://localcommerceapp-1.onrender.com/api/v1';
+
+/// Local development backend URLs (used during development)
+const String _localWebUrl = 'http://localhost:5001/api/v1';
+const String _localAndroidEmulatorUrl = 'http://10.0.2.2:5001/api/v1';
+const String _localDesktopUrl = 'http://localhost:5001/api/v1';
 
 String get apiBaseUrl {
+  // 1. Production release builds or when explicitly overriding with --dart-define=USE_REMOTE_BACKEND=true
+  const bool forceRemote = bool.fromEnvironment('USE_REMOTE_BACKEND', defaultValue: false);
+  if (kReleaseMode || forceRemote) {
+    return _prodBackendUrl;
+  }
+
+  // 2. Development mode (Debug / Profile)
   if (kIsWeb) {
-    return 'https://localcommerceapp-1.onrender.com/api/v1';
+    return _localWebUrl;
   }
 
-  if (kReleaseMode) {
-    return 'https://localcommerceapp-1.onrender.com/api/v1';
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    return _localAndroidEmulatorUrl;
   }
 
-  String hostIp = '10.0.2.2';
-
-  final url = 'http://$hostIp:5001/api/v1';
-
-  if (kDebugMode) {
-    print('📡 Attempting to connect to: $url');
-  }
-
-  return url;
+  return _localDesktopUrl;
 }
+

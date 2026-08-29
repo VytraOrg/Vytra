@@ -17,14 +17,57 @@ export class ShopsService {
     return this.shopModel.find().exec();
   }
 
-  async findFiltered(category?: string, shopType?: string, search?: string) {
+  async findFiltered(
+    category?: string,
+    shopType?: string,
+    search?: string,
+    lat?: number,
+    lng?: number,
+    maxDistanceKm: number = 50,
+  ) {
     const filter: any = { status: 'Open' };
     if (category) filter.category = category;
     if (shopType) filter.shopType = shopType;
-    if (search) {
-      filter.name = { $regex: search, $options: 'i' };
+    if (search && search.trim()) {
+      const tokens = search.trim().split(/\s+/).filter((t) => t.length > 0);
+      filter.$and = tokens.map((token) => {
+        const escaped = token.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+        return {
+          $or: [
+            { name: { $regex: escaped, $options: 'i' } },
+            { category: { $regex: escaped, $options: 'i' } },
+            { address: { $regex: escaped, $options: 'i' } },
+            { description: { $regex: escaped, $options: 'i' } },
+          ],
+        };
+      });
     }
-    return this.shopModel.find(filter).exec();
+
+    if (lat !== undefined && lng !== undefined && !isNaN(Number(lat)) && !isNaN(Number(lng))) {
+      const latitude = Number(lat);
+      const longitude = Number(lng);
+
+      const pipeline: any[] = [
+        {
+          $geoNear: {
+            near: { type: 'Point', coordinates: [longitude, latitude] },
+            distanceField: 'distanceMeters',
+            maxDistance: maxDistanceKm * 1000,
+            spherical: true,
+            query: filter,
+          },
+        },
+        {
+          $addFields: {
+            distanceKm: { $round: [{ $divide: ['$distanceMeters', 1000] }, 1] },
+          },
+        },
+        { $limit: 50 },
+      ];
+      return this.shopModel.aggregate(pipeline).exec();
+    }
+
+    return this.shopModel.find(filter).sort({ createdAt: -1 }).exec();
   }
 
   async findOne(id: string) {

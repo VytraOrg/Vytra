@@ -6,6 +6,7 @@ class CacheManager {
   static const String _userBox = 'user_box';
   static const String _apiBox = 'api_cache_box';
   static const String _settingsBox = 'settings_box';
+  static const String _recentSearchesBox = 'recent_searches_box';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -24,6 +25,7 @@ class CacheManager {
     await Hive.openBox(_userBox, encryptionCipher: HiveAesCipher(encryptionKey));
     await Hive.openBox(_apiBox);
     await Hive.openBox(_settingsBox);
+    await Hive.openBox(_recentSearchesBox);
   }
 
   // --- API Response Caching ---
@@ -51,6 +53,41 @@ class CacheManager {
     return cached['data'];
   }
 
+  // --- Recent Searches ---
+  static Future<void> addRecentSearch(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return;
+    final box = Hive.box(_recentSearchesBox);
+    List<String> list = List<String>.from(box.get('searches', defaultValue: <String>[]));
+    list.removeWhere((item) => item.toLowerCase() == trimmed.toLowerCase());
+    list.insert(0, trimmed);
+    if (list.length > 10) {
+      list = list.sublist(0, 10);
+    }
+    await box.put('searches', list);
+    await box.flush();
+  }
+
+  static List<String> getRecentSearches() {
+    final box = Hive.box(_recentSearchesBox);
+    return List<String>.from(box.get('searches', defaultValue: <String>[]));
+  }
+
+  static Future<void> removeRecentSearch(String query) async {
+    final box = Hive.box(_recentSearchesBox);
+    List<String> list = List<String>.from(box.get('searches', defaultValue: <String>[]));
+    list.removeWhere((item) => item.toLowerCase() == query.trim().toLowerCase());
+    await box.put('searches', list);
+    await box.flush();
+  }
+
+  static Future<void> clearRecentSearches() async {
+    final box = Hive.box(_recentSearchesBox);
+    await box.delete('searches');
+    await box.put('searches', <String>[]);
+    await box.flush();
+  }
+
   // --- User Session Caching ---
   static Future<void> saveUser(Map<String, dynamic> userData) async {
     final box = Hive.box(_userBox);
@@ -67,5 +104,6 @@ class CacheManager {
     await Hive.box(_apiBox).clear();
     await Hive.box(_userBox).clear();
     await Hive.box(_settingsBox).clear();
+    await Hive.box(_recentSearchesBox).clear();
   }
 }

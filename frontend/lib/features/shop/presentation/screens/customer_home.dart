@@ -4,6 +4,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/cache/cache_manager.dart';
+import '../../../../core/services/location_service.dart';
 import '../../../../core/design_system.dart';
 import '../../../../shared/widgets/app_network_image.dart';
 import '../controllers/shop_controller.dart';
@@ -32,6 +34,11 @@ class _CustomerHomeState extends State<CustomerHome> {
   String selectedCategory = "All";
   String _searchQuery = "";
   Timer? _debounce;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  List<String> _recentSearches = [];
+  double? _userLat;
+  double? _userLng;
   
   final List<Map<String, dynamic>> categories = [
     {"name": "All", "icon": Icons.grid_view_rounded, "color": AppColors.skyBlue},
@@ -45,12 +52,36 @@ class _CustomerHomeState extends State<CustomerHome> {
   @override
   void initState() {
     super.initState();
+    _loadRecentSearches();
+    _searchFocusNode.addListener(() {
+      setState(() {});
+    });
+    _initLocation();
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+  }
+
+  void _initLocation() async {
+    final loc = await LocationService.getCurrentLocation();
+    if (mounted && loc != null) {
+      setState(() {
+        _userLat = loc.latitude;
+        _userLng = loc.longitude;
+      });
+      _loadData();
+    }
+  }
+
+  void _loadRecentSearches() {
+    setState(() {
+      _recentSearches = CacheManager.getRecentSearches();
+    });
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -75,6 +106,8 @@ class _CustomerHomeState extends State<CustomerHome> {
       shopType: shopType,
       search: effectiveQuery.isNotEmpty ? effectiveQuery : null,
       category: selectedCategory != 'All' ? selectedCategory : null,
+      lat: _userLat,
+      lng: _userLng,
     );
 
     // 2. Fetch products for global search/category
@@ -82,16 +115,38 @@ class _CustomerHomeState extends State<CustomerHome> {
         ? effectiveQuery 
         : (selectedCategory != 'All' ? (_categorySearchMap[selectedCategory] ?? selectedCategory) : '');
 
-    shopController.searchGlobal(productQuery, shopType: isShopkeeper ? 'Distributor' : 'Retailer');
+    shopController.searchGlobal(
+      productQuery,
+      shopType: isShopkeeper ? 'Distributor' : 'Retailer',
+      lat: _userLat,
+      lng: _userLng,
+    );
+
+    if (effectiveQuery.isNotEmpty) {
+      shopController.fetchSuggestions(effectiveQuery, shopType: isShopkeeper ? 'Distributor' : 'Retailer');
+    } else {
+      shopController.clearSuggestions();
+    }
   }
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () {
+    _debounce = Timer(const Duration(milliseconds: 350), () {
       setState(() {
         _searchQuery = query;
         _loadData();
       });
+    });
+  }
+
+  void _selectSearchTerm(String term) {
+    _searchController.text = term;
+    _searchController.selection = TextSelection.fromPosition(TextPosition(offset: term.length));
+    _searchFocusNode.unfocus();
+    CacheManager.addRecentSearch(term).then((_) => _loadRecentSearches());
+    setState(() {
+      _searchQuery = term;
+      _loadData();
     });
   }
 
@@ -131,29 +186,54 @@ class _CustomerHomeState extends State<CustomerHome> {
 
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  sliver: SliverToBoxAdapter(child: _buildSearchBar()),
+                  sliver: SliverToBoxAdapter(child: _buildSearchBar(shopController)),
                 ),
 
-                SliverToBoxAdapter(child: _buildPromoCarousel()),
+                if (_searchQuery.isEmpty && _recentSearches.isNotEmpty)
+                  SliverToBoxAdapter(child: _buildRecentSearchesSection()),
 
-                SliverToBoxAdapter(child: _buildCategoryList()),
+                if (_searchQuery.isNotEmpty && shopController.isAutoCorrected)
+                  SliverToBoxAdapter(child: _buildSpellCorrectionBanner(shopController)),
+
+                if (_searchQuery.isNotEmpty && shopController.suggestions.isNotEmpty)
+                  SliverToBoxAdapter(child: _buildSuggestionsChips(shopController)),
+
+                if (_searchQuery.isEmpty) ...[
+                  SliverToBoxAdapter(child: _buildPromoCarousel()),
+                  SliverToBoxAdapter(child: _buildCategoryList()),
+                ],
 
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
                   sliver: SliverToBoxAdapter(
-                    child: Text(
-                      _searchQuery.isNotEmpty 
-                        ? "Items matching \"$_searchQuery\"" 
-                        : (isShopkeeper ? "Top Distributors" : "Nearby Stores"),
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _searchQuery.isNotEmpty 
+                            ? "Results for \"$_searchQuery\"" 
+                            : (isShopkeeper ? "Top Distributors" : "Nearby Stores"),
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary),
+                        ),
+                        if (_searchQuery.isNotEmpty)
+                          Text(
+                            "${shopController.shops.length + shopController.searchResults.length} found",
+                            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                          ),
+                      ],
                     ),
                   ),
                 ),
 
-                if (shopController.isLoading && shopController.shops.isEmpty)
-                  const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()))
+                if (shopController.isLoading && shopController.shops.isEmpty && shopController.searchResults.isEmpty)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                  )
                 else if (shopController.shops.isEmpty && shopController.searchResults.isEmpty)
-                  _buildEmptyState()
+                  _buildEmptyState(shopController)
                 else
                   _buildResultsList(shopController),
 
@@ -173,16 +253,218 @@ class _CustomerHomeState extends State<CustomerHome> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return SliverFillRemaining(
-      hasScrollBody: false,
-      child: Center(
+  Widget _buildRecentSearchesSection() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.92),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.history_rounded, size: 16, color: AppColors.textSecondary),
+                  SizedBox(width: 6),
+                  Text(
+                    "Recent Searches",
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+              TextButton(
+                onPressed: () async {
+                  await CacheManager.clearRecentSearches();
+                  if (mounted) {
+                    setState(() {
+                      _recentSearches = [];
+                    });
+                  }
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.redAccent,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  "Clear All",
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: _recentSearches.map((term) {
+              return InputChip(
+                label: Text(term, style: const TextStyle(fontSize: 13)),
+                backgroundColor: AppColors.background,
+                onPressed: () => _selectSearchTerm(term),
+                onDeleted: () async {
+                  await CacheManager.removeRecentSearch(term);
+                  if (mounted) {
+                    _loadRecentSearches();
+                  }
+                },
+                deleteIcon: const Icon(Icons.close_rounded, size: 14),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 200.ms).slideY(begin: -0.05);
+  }
+
+  Widget _buildSuggestionsChips(ShopController controller) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: controller.suggestions.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final suggestion = controller.suggestions[index];
+          return ActionChip(
+            avatar: const Icon(Icons.search_rounded, size: 14, color: AppColors.primary),
+            label: Text(suggestion, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
+            backgroundColor: AppColors.primary.withOpacity(0.08),
+            side: BorderSide(color: AppColors.primary.withOpacity(0.2)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+            onPressed: () => _selectSearchTerm(suggestion),
+          );
+        },
+      ),
+    ).animate().fadeIn(duration: 200.ms);
+  }
+
+  Widget _buildSpellCorrectionBanner(ShopController controller) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.organicAmber.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.organicAmber.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.auto_fix_high_rounded, size: 16, color: AppColors.organicAmber),
+          const SizedBox(width: 8),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                children: [
+                  const TextSpan(text: "Showing results for "),
+                  TextSpan(
+                    text: controller.correctedQuery,
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                  ),
+                  const TextSpan(text: " (auto-corrected from \""),
+                  TextSpan(text: _searchQuery, style: const TextStyle(fontStyle: FontStyle.italic)),
+                  const TextSpan(text: "\")"),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 200.ms);
+  }
+
+  Widget _buildEmptyState(ShopController controller) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: 40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            Text("No results found", style: TextStyle(color: Colors.grey.shade500)),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                shape: BoxShape.circle,
+                boxShadow: AppShadows.soft,
+              ),
+              child: Icon(Icons.search_off_rounded, size: 64, color: Colors.grey.shade400),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              _searchQuery.isNotEmpty
+                  ? "No results for \"$_searchQuery\""
+                  : "No items or shops available",
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            ),
+            if (controller.didYouMean != null && controller.didYouMean!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () => _selectSearchTerm(controller.didYouMean!),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.spellcheck_rounded, size: 16, color: AppColors.primary),
+                      const SizedBox(width: 6),
+                      Text(
+                        "Did you mean: ${controller.didYouMean}?",
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Text(
+              _searchQuery.isNotEmpty
+                  ? "Check spelling or explore popular categories below"
+                  : "Try changing your category or check back later",
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 24),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: categories.where((c) => c['name'] != 'All').map((c) {
+                return ActionChip(
+                  avatar: Icon(c['icon'] as IconData, size: 14, color: AppColors.primary),
+                  label: Text(c['name'] as String, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  backgroundColor: Colors.white,
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                  onPressed: () {
+                    setState(() {
+                      selectedCategory = c['name'] as String;
+                      _searchController.clear();
+                      _searchQuery = '';
+                    });
+                    _loadData();
+                  },
+                );
+              }).toList(),
+            ),
           ],
         ),
       ),
@@ -268,21 +550,62 @@ class _CustomerHomeState extends State<CustomerHome> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(ShopController controller) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       height: 55,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.lg), boxShadow: AppShadows.soft),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: AppShadows.soft,
+      ),
       child: Row(
         children: [
           const Icon(Icons.search_rounded, color: AppColors.accent),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: TextField(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
               onChanged: _onSearchChanged,
-              decoration: const InputDecoration(hintText: "Search items or stores...", border: InputBorder.none),
+              textInputAction: TextInputAction.search,
+              onSubmitted: (term) {
+                _searchFocusNode.unfocus();
+                final t = term.trim();
+                if (t.isNotEmpty) {
+                  if (t.length >= 2) {
+                    CacheManager.addRecentSearch(t).then((_) => _loadRecentSearches());
+                  }
+                  _onSearchChanged(t);
+                }
+              },
+              decoration: const InputDecoration(
+                hintText: "Search items, brands, or stores...",
+                border: InputBorder.none,
+              ),
             ),
           ),
+          if (controller.isLoading)
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+            )
+          else if (_searchController.text.isNotEmpty)
+            GestureDetector(
+              onTap: () {
+                _searchController.clear();
+                _onSearchChanged('');
+              },
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close_rounded, size: 14, color: AppColors.textSecondary),
+              ),
+            ),
         ],
       ),
     ).animate().fadeIn(delay: 200.ms);

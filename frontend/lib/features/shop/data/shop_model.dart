@@ -27,6 +27,7 @@ class ShopModel extends Shop {
     super.tradeLicenseNumber,
     super.latitude,
     super.longitude,
+    super.distanceKm,
   });
 
   factory ShopModel.fromJson(Map<String, dynamic> json) {
@@ -66,6 +67,7 @@ class ShopModel extends Shop {
       tradeLicenseNumber: json['tradeLicenseNumber'],
       latitude: lat,
       longitude: lng,
+      distanceKm: (json['distanceKm'] as num?)?.toDouble(),
     );
   }
 

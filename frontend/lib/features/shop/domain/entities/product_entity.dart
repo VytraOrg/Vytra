@@ -10,6 +10,7 @@ class Product {
   final bool isAvailable;
   final String shopId;
   final String? shopName;
+  final double? distanceKm;
 
   Product({
     required this.id,
@@ -23,5 +24,6 @@ class Product {
     this.isAvailable = true,
     required this.shopId,
     this.shopName,
+    this.distanceKm,
   });
 }

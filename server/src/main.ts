@@ -15,9 +15,16 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // 1. Security & Optimization
-  app.use(helmet());
-  app.use(compression());
-  app.enableCors();
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: false,
+    }),
+  );
+  app.enableCors({
+    origin: true,
+    credentials: true,
+  });
 
   // 2. Global Prefix & Versioning
   app.setGlobalPrefix('api');

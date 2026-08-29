@@ -66,10 +66,35 @@ class GlobalProductCard extends StatelessWidget {
                     children: [
                       const Icon(Icons.storefront_rounded, size: 14, color: AppColors.accent),
                       const SizedBox(width: 4),
-                      Text(
-                        product.shopName ?? 'Local Store',
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600),
+                      Expanded(
+                        child: Text(
+                          product.shopName ?? 'Local Store',
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
+                      if (product.distanceKm != null) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.location_on_rounded, size: 11, color: AppColors.primary),
+                              const SizedBox(width: 2),
+                              Text(
+                                "${product.distanceKm!.toStringAsFixed(1)} km",
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 8),
