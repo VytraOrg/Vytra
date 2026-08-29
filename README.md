@@ -1,109 +1,128 @@
 # 🛒 Vytra - Hyperlocal Commerce Platform
 
-Vytra is a 3-sided hyperlocal commerce platform connecting **Customers**, **Shopkeepers**, and **Distributors**. Built with **Flutter** (Frontend), **NestJS** (Backend), and **MongoDB Atlas** (Database).
+Vytra is an enterprise-grade, 3-sided hyperlocal commerce platform connecting **Customers**, **Shopkeepers**, and **Distributors**. Built with **Flutter** (Frontend), **NestJS** (Backend), and **MongoDB Atlas** (Database).
 
 ---
 
-## 🚀 Features
+## 🚀 Key Features
 
-- **Multi-Role Auth**: Separate dashboards and flows for Customers, Shopkeepers, and Distributors (JWT + Role Guards).
-- **Customer App**: Browse shops, search products/shops, manage cart, place orders, and track order status.
-- **Shopkeeper Dashboard**: Incoming order management with one-tap status updates (Placed → Processing → Dispatched → Delivered), inventory management, analytics, and shop verification.
-- **Distributor Module**: List and connect with local distributors.
-- **Full-Stack Cart**: Real-time cart with backend persistence per user.
-- **Order Lifecycle**: Complete order flow — cart → checkout → status tracking (Placed, Processing, Dispatched, Delivered).
-- **Inventory Management**: Add/edit/delete products with stock tracking and low-stock alerts.
-- **Shop Verification**: Document upload and admin review workflow.
-- **Premium UI**: Glassmorphism, animated cards, custom design system with dark tokens.
+### 🔍 Intelligent Hyperlocal Search Engine
+- **Tokenized Weighted Search**: Multi-field search across product names, categories, and descriptions with relevance scoring.
+- **Hyperlocal GPS Proximity**: MongoDB `$geoNear` aggregation sorts nearest stores first with live distance badges (`📍 1.2 km away`) and proximity score boosts.
+- **Regional & Colloquial Synonyms**: Seamless multi-dialect support (e.g. `aloo/alu` $\leftrightarrow$ `potato`, `doodh` $\leftrightarrow$ `milk`, `pyaz` $\leftrightarrow$ `onion`, `sabun` $\leftrightarrow$ `soap`).
+- **Typo Tolerance & Spell Correction**: Levenshtein distance matching with automatic fallback queries and *"Did you mean?"* recovery chips.
+- **Real-Time Autocomplete**: Debounced instant search suggestions and category hints.
+- **Persistent Search History**: Local search history with 1-tap delete and instant "Clear All".
+
+### 👥 Multi-Role Ecosystem
+- **Customer Experience**: Store discovery by category & proximity, product browsing, full-stack persistent cart, and live order tracking.
+- **Shopkeeper Operations**: Instant order fulfillment workflow (Placed → Processing → Dispatched → Delivered), inventory management with low-stock alerts, and store verification.
+- **Distributor Network**: B2B bulk sourcing and store discovery for local retailers.
+
+### 🛡️ Architecture & Security
+- **Authentication**: JWT authentication with refresh token rotation and role-based guards.
+- **Security & Headers**: Helmet, rate-limiting (`ThrottlerModule`), and granular CORS configuration.
+- **Caching**: Non-blocking Redis cache layer with graceful offline resilience.
+- **Interactive Documentation**: Integrated Swagger/OpenAPI at `/docs`.
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer | Tech |
+| Layer | Technology |
 |---|---|
-| Frontend | Flutter (Dart), Provider, Hive, flutter_animate |
-| Backend | NestJS (TypeScript), Mongoose |
-| Database | MongoDB Atlas |
-| Auth | JWT + bcrypt, Role-based Guards |
-| Media | Cloudinary (product images) |
-| Docs | Swagger/OpenAPI (`/api`) |
+| **Frontend** | Flutter (Dart), Provider, Hive, Geolocator, flutter_animate |
+| **Backend** | NestJS (TypeScript), Mongoose, Helmet, Compression |
+| **Database** | MongoDB Atlas (Geospatial 2dsphere & compound text indexes) |
+| **Cache** | Redis (ioredis) |
+| **Auth** | JWT + bcrypt, Role-based Guards |
+| **Media** | Cloudinary |
+| **API Docs** | Swagger / OpenAPI (`/docs`) |
 
 ---
 
-## ⚙️ Setup
+## ⚙️ Quick Start
 
-### 1. Backend (NestJS)
+### 1. Prerequisites
+- **Node.js** (v18+) & **npm**
+- **Flutter SDK** (v3.0+)
+- **MongoDB Atlas** database cluster
+
+---
+
+### 2. Backend Setup (NestJS)
+
 ```bash
 cd server
 npm install
 ```
-Copy `.env.example` to `.env` and fill in your values:
+
+Create a `.env` file in the `server/` directory:
+
 ```env
-MONGODB_URI=mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/<db>
 PORT=5001
-JWT_SECRET=your_secret_here
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>?appName=<cluster-name>
+JWT_SECRET=your_jwt_secret_key_here
 JWT_EXPIRES_IN=7d
+REDIS_URL=redis://default:<password>@<host>:<port>  # Optional
 ```
+
+Run in development mode:
 ```bash
 npm run start:dev
 ```
-API docs available at `http://localhost:5001/api`
+* **API Base URL**: `http://localhost:5001/api/v1`
+* **Swagger API Docs**: `http://localhost:5001/docs`
 
-### 2. Frontend (Flutter)
+---
+
+### 3. Frontend Setup (Flutter)
+
 ```bash
 cd frontend
 flutter pub get
 ```
-Update `frontend/lib/core/network/api_client.dart` with your backend base URL:
-- **Emulator**: `http://10.0.2.2:5001`
-- **Physical device / Web**: `http://<your-local-ip>:5001`
+
+The app automatically switches between local backend during development and the live hosted Render backend for release builds:
 
 ```bash
-flutter run -d chrome    # Web
-flutter run              # Mobile
+# Run on Chrome Web
+flutter run -d chrome
+
+# Run on Android Emulator / Physical Device
+flutter run
 ```
+
+> **Note**: To force using the hosted remote backend during development, run:
+> ```bash
+> flutter run -d chrome --dart-define=USE_REMOTE_BACKEND=true
+> ```
 
 ---
 
-## 🏗️ Project Structure
+## 📡 API Overview
 
-```
-Vytra/
-├── server/                   # NestJS API
-│   └── src/
-│       ├── common/           # Filters, Guards, Interceptors
-│       └── modules/
-│           ├── auth/         # JWT auth, login, register
-│           ├── users/        # User profiles
-│           ├── shops/        # Shop CRUD & verification
-│           ├── products/     # Product & inventory management
-│           ├── cart/         # Cart persistence
-│           └── orders/       # Order lifecycle & status updates
-├── frontend/                 # Flutter app
-│   └── lib/
-│       ├── core/             # ApiClient, design system, constants
-│       └── features/
-│           ├── auth/         # Login, register, welcome
-│           ├── customer/     # Customer dashboard, cart, checkout
-│           ├── shopkeeper/   # Shopkeeper dashboard, inventory
-│           ├── distributor/  # Distributor listing
-│           ├── shop/         # Shop models & browsing
-│           ├── orders/       # Order models & tracking
-│           └── products/     # Product models
-└── admin/                    # Admin panel (optional)
-```
-
----
-
-## 📦 Order Status Flow
-
-```
-Placed → Processing → Dispatched → Delivered
-```
-Shopkeepers update status from their dashboard with one tap per stage.
+| Group | Method | Endpoint | Description |
+|---|---|---|---|
+| **Auth** | `POST` | `/api/v1/auth/register` | Register customer / shopkeeper / distributor |
+| | `POST` | `/api/v1/auth/login` | JWT login with access & refresh tokens |
+| | `POST` | `/api/v1/auth/refresh` | Rotate and issue new access token |
+| **Shops** | `GET` | `/api/v1/shops` | List & filter shops (supports `lat`, `lng`, `shopType`, `category`) |
+| | `GET` | `/api/v1/shops/my` | Get current shopkeeper's store profile |
+| | `POST` | `/api/v1/shops/verify` | Submit store verification documents |
+| **Products** | `GET` | `/api/v1/products/search` | Global multi-token & proximity search with synonyms |
+| | `GET` | `/api/v1/products/suggestions` | Instant autocomplete suggestions |
+| | `GET` | `/api/v1/products` | Paginated product list by store / category |
+| | `GET` | `/api/v1/products/:id` | Single product details |
+| **Cart** | `GET` | `/api/v1/cart` | Get current user's persistent cart |
+| | `POST` | `/api/v1/cart/items` | Add/update item quantity in cart |
+| | `DELETE` | `/api/v1/cart/items/:id` | Remove product from cart |
+| **Orders** | `POST` | `/api/v1/orders` | Place a new order |
+| | `GET` | `/api/v1/orders/my` | Customer order history |
+| | `GET` | `/api/v1/orders/my-shop` | Shopkeeper incoming order queue |
+| | `PUT` | `/api/v1/orders/:id/status` | Update order stage (`Placed` → `Processing` → `Dispatched` → `Delivered`) |
 
 ---
 
 ## 📜 License
-MIT
+MIT License. Built for seamless local commerce.
