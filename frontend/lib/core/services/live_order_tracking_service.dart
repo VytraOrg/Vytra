@@ -160,7 +160,8 @@ class LiveOrderTrackingService extends ChangeNotifier {
         channelShowBadge: true,
         visibility: NotificationVisibility.public,
         category: AndroidNotificationCategory.progress,
-        color: const Color(0xFF38240D),
+        color: const Color(0xFFFF6600),
+        largeIcon: const DrawableResourceAndroidBitmap('@mipmap/launcher_icon'),
         subText: '$_remainingMinutes mins left',
       );
 
@@ -216,6 +217,8 @@ class LiveOrderTrackingService extends ChangeNotifier {
             priority: Priority.high,
             ongoing: false,
             autoCancel: true,
+            color: Color(0xFFFF6600),
+            largeIcon: DrawableResourceAndroidBitmap('@mipmap/launcher_icon'),
           );
           await _notificationsPlugin.show(
             id: _notificationId + 1,

@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.0.12",
+    "buildNumber": 12,
+    "timestamp": "2026-09-29T20:52:32.827Z",
+    "date": "30 Sept 2026, 02:22 AM",
+    "commit": "f43ca03",
+    "branch": "master",
+    "size": "58.3 MB",
+    "apkName": "Vytra.apk",
+    "archivePath": "archives/Vytra-v1.0.12.apk",
+    "changes": [
+      "Set Vytra logo as notification largeIcon and vibrant brand color"
+    ]
+  },
+  {
     "version": "1.0.11",
     "buildNumber": 11,
     "timestamp": "2026-09-29T20:40:58.638Z",
