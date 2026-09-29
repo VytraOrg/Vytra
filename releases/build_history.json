@@ -1,0 +1,34 @@
+[
+  {
+    "version": "1.0.3",
+    "buildNumber": 3,
+    "timestamp": "2026-09-29T16:58:28.971Z",
+    "date": "29 Sept 2026, 10:28 PM",
+    "commit": "a65939f",
+    "branch": "master",
+    "size": "57.8 MB",
+    "apkName": "Vytra.apk",
+    "archivePath": "archives/Vytra-v1.0.3.apk",
+    "changes": [
+      "Flipkart floating pill navbar, cart integration, progressive backdrop blur, profile picture 25mb persistence, and symmetrical 3px border spacing"
+    ]
+  },
+  {
+    "version": "1.0.1",
+    "buildNumber": 1,
+    "timestamp": "2026-09-29T16:57:52.162Z",
+    "date": "29 Sep 2026, 10:25 PM",
+    "commit": "a65939f",
+    "branch": "master",
+    "size": "57.8 MB",
+    "apkName": "Vytra.apk",
+    "archivePath": "archives/Vytra-v1.0.1.apk",
+    "changes": [
+      "Flipkart-style symmetrical floating pill navigation dock",
+      "Integrated Cart as 5th tab with live item badge counter",
+      "Progressive backdrop blur and background fade layer behind navbar",
+      "Profile picture persistence in MongoDB Atlas and 25MB upload limit",
+      "Mobile gallery path resolution and image downscaling"
+    ]
+  }
+]

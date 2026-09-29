@@ -116,7 +116,19 @@ class _AccountPageState extends State<AccountPage> {
 
                 const SizedBox(height: AppSpacing.xl),
                 _buildLogoutButton(),
-                SizedBox(height: widget.isTab ? 100 : AppSpacing.xxl),
+                const SizedBox(height: AppSpacing.lg),
+                Center(
+                  child: Text(
+                    'Vytra v1.0.3 (Build 3)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textMuted.withValues(alpha: 0.7),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                SizedBox(height: widget.isTab ? 90 : AppSpacing.xxl),
               ]),
             ),
           ),

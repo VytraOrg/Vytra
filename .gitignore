@@ -124,3 +124,6 @@ server/seed.ts
 # Documentation
 PROJECT_PLAN.md
 DATA_FLOW.md
+
+# Build Artifacts
+*.apk
