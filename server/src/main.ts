@@ -9,7 +9,8 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import compression from 'compression';
 import helmet from 'helmet';
-import { json, urlencoded } from 'express';
+import { json, urlencoded, static as expressStatic } from 'express';
+import * as path from 'path';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -18,6 +19,9 @@ async function bootstrap() {
   // Increase payload limit for profile pictures and assets
   app.use(json({ limit: '25mb' }));
   app.use(urlencoded({ limit: '25mb', extended: true }));
+
+  // Serve Build Releases Portal & APK Downloads
+  app.use('/releases', expressStatic(path.join(process.cwd(), '..', 'releases')));
 
   // 1. Security & Optimization
   app.use(
