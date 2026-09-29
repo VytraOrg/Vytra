@@ -10,10 +10,13 @@ const archivesDir = path.join(releasesDir, 'archives');
 const historyPath = path.join(releasesDir, 'build_history.json');
 const changelogPath = path.join(rootDir, 'CHANGELOG.md');
 const dashboardPath = path.join(releasesDir, 'index.html');
+const docsDir = path.join(rootDir, 'docs');
+const docsDashboardPath = path.join(docsDir, 'index.html');
 
-// Ensure release directories exist
+// Ensure release and docs directories exist
 if (!fs.existsSync(releasesDir)) fs.mkdirSync(releasesDir, { recursive: true });
 if (!fs.existsSync(archivesDir)) fs.mkdirSync(archivesDir, { recursive: true });
+if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
 
 function getGitInfo() {
   try {
@@ -371,7 +374,9 @@ function generateDashboardHtml(history) {
       <div class="hero-tag">Current Active Build</div>
       <div class="hero-title">Vytra v${latest.version || '1.0.0'}</div>
       <div class="hero-meta">Compiled on ${latest.date || 'Today'} • Size: ${latest.size || '57.8 MB'} • Commit: <code>${latest.commit || 'master'}</code></div>
-      <a href="Vytra.apk" class="download-btn" download>
+      <a href="https://github.com/VytraOrg/Vytra/releases/download/v${latest.version || '1.0.3'}/Vytra.apk"
+         onclick="if(window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') { this.href = 'Vytra.apk'; }"
+         class="download-btn" download>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         Download Vytra.apk
       </a>
@@ -402,7 +407,9 @@ function generateDashboardHtml(history) {
             ${(item.changes || []).map(c => `<li>${c}</li>`).join('')}
           </ul>
           <div class="card-footer">
-            <a href="${item.archivePath || 'Vytra.apk'}" class="download-link" download>
+            <a href="https://github.com/VytraOrg/Vytra/releases/download/v${item.version}/Vytra.apk"
+               onclick="if(window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') { this.href = '${item.archivePath || 'Vytra.apk'}'; }"
+               class="download-link" download>
               ⬇ Download (${item.size})
             </a>
           </div>
@@ -503,15 +510,19 @@ async function main() {
   fs.writeFileSync(historyPath, JSON.stringify(history, null, 2), 'utf8');
   console.log(`✅ Updated releases/build_history.json`);
 
-  fs.writeFileSync(dashboardPath, generateDashboardHtml(history), 'utf8');
-  console.log(`✅ Generated releases/index.html (Visual Monitor Dashboard)`);
+  const html = generateDashboardHtml(history);
+  fs.writeFileSync(dashboardPath, html, 'utf8');
+  fs.writeFileSync(docsDashboardPath, html, 'utf8');
+  console.log(`✅ Generated releases/index.html & docs/index.html (GitHub Pages)`);
 
   updateChangelog(history);
   console.log(`✅ Updated CHANGELOG.md`);
 
   console.log(`\n🎉 BUILD COMPLETE!`);
   console.log(`📱 APK: releases/Vytra.apk (${sizeMb})`);
-  console.log(`🌐 Monitor Dashboard: releases/index.html`);
+  console.log(`🌐 Monitor Dashboard: releases/index.html & docs/index.html`);
+  console.log(`🚀 GitHub Release Tag: v${nextVersionName}`);
+  console.log(`📦 GitHub Release URL: https://github.com/VytraOrg/Vytra/releases/new?tag=v${nextVersionName}`);
   console.log(`=================================================\n`);
 }
 
