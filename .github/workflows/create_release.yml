@@ -33,6 +33,11 @@ jobs:
           cd frontend
           flutter pub get
 
+      - name: Generate placeholder secrets for CI
+        run: |
+          mkdir -p frontend/lib/core/config
+          echo "class Secrets { static const String googleMapsApiKey = ''; }" > frontend/lib/core/config/secrets.dart
+
       - name: Build Flutter APK
         run: |
           cd frontend

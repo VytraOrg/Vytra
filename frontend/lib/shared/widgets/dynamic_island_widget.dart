@@ -32,7 +32,6 @@ class _DynamicIslandWidgetState extends State<DynamicIslandWidget> {
 
     final topInset = MediaQuery.of(context).padding.top;
     final status = trackingService.currentStatus;
-    final remainingMins = trackingService.remainingMinutes;
     final isDelivered = status.toLowerCase() == 'delivered';
 
     return Positioned(

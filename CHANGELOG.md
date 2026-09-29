@@ -2,6 +2,14 @@
 
 All builds, versions, and change logs are automatically tracked here.
 
+## [v1.0.8] - Build 8 (30 Sept 2026, 01:50 AM)
+- **Commit**: `d985887` (master)
+- **APK**: [`Vytra.apk`](releases/archives/Vytra-v1.0.8.apk) (58.3 MB)
+### Changes:
+- Fix missing Secrets import on CI, add HyperOS live updates permission
+
+---
+
 ## [v1.0.7] - Build 7 (30 Sept 2026, 01:41 AM)
 - **Commit**: `1ae3e4b` (master)
 - **APK**: [`Vytra.apk`](releases/archives/Vytra-v1.0.7.apk) (58.3 MB)
