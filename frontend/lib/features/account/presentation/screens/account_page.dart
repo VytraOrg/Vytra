@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -544,20 +547,39 @@ class _AccountPageState extends State<AccountPage> {
         withData: true,
       );
 
-      if (result != null && result.files.single.bytes != null) {
-        final bytes = result.files.single.bytes!;
-        final base64String = base64Encode(bytes);
-        final dataUrl = 'data:image/png;base64,$base64String';
+      if (result != null) {
+        Uint8List? bytes = result.files.single.bytes;
+        if (bytes == null && !kIsWeb && result.files.single.path != null) {
+          bytes = await File(result.files.single.path!).readAsBytes();
+        }
 
-        if (mounted) {
+        if (bytes != null) {
+          try {
+            final codec = await ui.instantiateImageCodec(bytes, targetWidth: 400);
+            final frame = await codec.getNextFrame();
+            final byteData = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+            if (byteData != null) {
+              bytes = byteData.buffer.asUint8List();
+            }
+          } catch (_) {
+            // Fallback to original bytes if downscaling encounters issue
+          }
+
+          final Uint8List uploadBytes = bytes!;
+          final base64String = base64Encode(uploadBytes);
+          final dataUrl = 'data:image/png;base64,$base64String';
+
+          if (!mounted) return;
           await context.read<AuthController>().updateAvatar(dataUrl);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile picture updated successfully!'),
-              backgroundColor: AppColors.freshGreen,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile picture updated successfully!'),
+                backgroundColor: AppColors.freshGreen,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
         }
       }
     } catch (e) {
