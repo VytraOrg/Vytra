@@ -78,13 +78,17 @@ class ShopCard extends StatelessWidget {
                           children: [
                             const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
                             const SizedBox(width: 4),
-                            Text(
-                              shop.distanceKm != null
-                                  ? "${shop.distanceKm!.toStringAsFixed(1)} km away"
-                                  : (shop.address != null && shop.address!.isNotEmpty ? shop.address! : "Nearby"),
-                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                            Expanded(
+                              child: Text(
+                                shop.distanceKm != null
+                                    ? "${shop.distanceKm!.toStringAsFixed(1)} km away"
+                                    : (shop.address != null && shop.address!.isNotEmpty ? shop.address! : "Nearby"),
+                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 8),
                             const Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
                             const SizedBox(width: 4),
                             Text(
