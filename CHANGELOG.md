@@ -2,6 +2,14 @@
 
 All builds, versions, and change logs are automatically tracked here.
 
+## [v1.0.6] - Build 6 (30 Sept 2026, 01:24 AM)
+- **Commit**: `51766a8` (master)
+- **APK**: [`Vytra.apk`](releases/archives/Vytra-v1.0.6.apk) (58.3 MB)
+### Changes:
+- Fix checkout stock validation, add bottom slide-up cart notification, add HyperOS live order tracking and in-app delivery card
+
+---
+
 ## [v1.0.3] - Build 3 (29 Sept 2026, 10:28 PM)
 - **Commit**: `a65939f` (master)
 - **APK**: [`Vytra.apk`](releases/archives/Vytra-v1.0.3.apk) (57.8 MB)

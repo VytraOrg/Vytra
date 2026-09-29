@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/design_system.dart';
+import '../../../../shared/widgets/app_notification.dart';
 import '../../../shop/domain/entities/product_entity.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 
@@ -58,13 +59,10 @@ class _WishlistPageState extends State<WishlistPage> {
     setState(() {
       _wishlistItems.removeWhere((item) => item.id == id);
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Removed from Wishlist'),
-        backgroundColor: AppColors.textPrimary,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(milliseconds: 1500),
-      ),
+    AppNotification.showSuccess(
+      context,
+      'Removed from Wishlist',
+      isTab: widget.isTab,
     );
   }
 
@@ -73,27 +71,19 @@ class _WishlistPageState extends State<WishlistPage> {
     try {
       await cartController.addToCart(product.id, quantity: 1);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${product.name} added to cart!'),
-            backgroundColor: AppColors.freshGreen,
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'Undo',
-              textColor: Colors.white,
-              onPressed: () => cartController.addToCart(product.id, quantity: -1),
-            ),
-          ),
+        AppNotification.showAddedToCart(
+          context,
+          productName: product.name,
+          priceInfo: '₹${product.price} / ${product.unit}',
+          isTab: widget.isTab,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Could not add to cart: $e'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
+        AppNotification.showError(
+          context,
+          'Could not add to cart: $e',
+          isTab: widget.isTab,
         );
       }
     }
@@ -134,7 +124,7 @@ class _WishlistPageState extends State<WishlistPage> {
                 AppSpacing.lg,
                 AppSpacing.lg,
                 AppSpacing.lg,
-                widget.isTab ? 100 : AppSpacing.lg,
+                (widget.isTab ? 100 : AppSpacing.lg) + MediaQuery.of(context).padding.bottom,
               ),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,

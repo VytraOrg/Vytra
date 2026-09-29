@@ -18,7 +18,10 @@ import '../../../account/presentation/screens/wishlist_page.dart';
 import '../../../cart/presentation/screens/cart_page.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../../../orders/presentation/screens/orders_page.dart';
+import '../../../orders/presentation/controllers/order_controller.dart';
+import '../../../../core/services/live_order_tracking_service.dart';
 import '../../../../shared/widgets/floating_pill_nav_bar.dart';
+import '../../../../shared/widgets/dynamic_island_widget.dart';
 import '../../data/shop_model.dart';
 import '../../data/product_model.dart';
 
@@ -59,7 +62,23 @@ class _CustomerHomeState extends State<CustomerHome> {
       setState(() {});
     });
     _initLocation();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+      context.read<OrderController>().fetchOrders().then((_) {
+        if (mounted) {
+          final orders = context.read<OrderController>().orders;
+          for (final order in orders) {
+            final st = order.status.toLowerCase();
+            if (st != 'delivered' && st != 'cancelled') {
+              if (!context.read<LiveOrderTrackingService>().hasActiveOrder) {
+                context.read<LiveOrderTrackingService>().startTracking(order);
+              }
+              break;
+            }
+          }
+        }
+      });
+    });
   }
 
   void _initLocation() async {
@@ -293,6 +312,11 @@ class _CustomerHomeState extends State<CustomerHome> {
                   sliver: SliverToBoxAdapter(child: _buildSearchBar(shopController)),
                 ),
 
+                if (context.watch<LiveOrderTrackingService>().hasActiveOrder)
+                  SliverToBoxAdapter(
+                    child: _buildActiveDeliveryBanner(context.watch<LiveOrderTrackingService>()),
+                  ),
+
                 if (_searchQuery.isEmpty && _recentSearches.isNotEmpty)
                   SliverToBoxAdapter(child: _buildRecentSearchesSection()),
 
@@ -341,12 +365,114 @@ class _CustomerHomeState extends State<CustomerHome> {
                 else
                   _buildResultsList(shopController),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                SliverToBoxAdapter(
+                  child: SizedBox(height: 100 + MediaQuery.of(context).padding.bottom),
+                ),
               ],
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildActiveDeliveryBanner(LiveOrderTrackingService tracker) {
+    final status = tracker.currentStatus;
+    final mins = tracker.remainingMinutes;
+    final order = tracker.activeOrder;
+    if (order == null) return const SizedBox.shrink();
+
+    final orderShortId = order.id.toString().length > 6
+        ? order.id.toString().substring(order.id.toString().length - 6)
+        : order.id.toString();
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xs),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.primaryDark,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.35), width: 1.2),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: AppColors.freshGreen.withValues(alpha: 0.25),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.two_wheeler_rounded,
+                  color: Color(0xFF68D391),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Delivery in Progress • ~${mins}m left",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "Order #$orderShortId • $status",
+                      style: TextStyle(
+                        color: AppColors.accent.withValues(alpha: 0.95),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const OrdersPage()),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.accent,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text("Track", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    SizedBox(width: 3),
+                    Icon(Icons.arrow_forward_ios_rounded, size: 10),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: tracker.progressPercentage,
+              minHeight: 4,
+              backgroundColor: Colors.white.withValues(alpha: 0.15),
+              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF68D391)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -583,7 +709,12 @@ class _CustomerHomeState extends State<CustomerHome> {
             if (item['type'] == 'shop') {
               return ShopCard(shop: item['data'] as ShopModel, index: index, customerId: widget.customerId);
             } else {
-              return GlobalProductCard(product: item['data'] as ProductModel, index: index, customerId: widget.customerId);
+              return GlobalProductCard(
+                product: item['data'] as ProductModel,
+                index: index,
+                customerId: widget.customerId,
+                isTab: true,
+              );
             }
           },
           childCount: items.length,

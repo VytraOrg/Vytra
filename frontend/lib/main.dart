@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/app_theme.dart';
@@ -20,6 +21,8 @@ import 'features/shop/presentation/controllers/shop_controller.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'core/cache/cache_manager.dart';
+import 'core/services/live_order_tracking_service.dart';
+import 'shared/widgets/dynamic_island_widget.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -79,6 +82,9 @@ void main() async {
         ChangeNotifierProvider(
           create: (context) => CartController(context.read<CartRepository>()),
         ),
+        ChangeNotifierProvider(
+          create: (_) => LiveOrderTrackingService.instance,
+        ),
       ],
       child: const LocalCommerceApp(),
     ),
@@ -97,6 +103,14 @@ class LocalCommerceApp extends StatelessWidget {
       home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
+      },
+      builder: (context, child) {
+        return Stack(
+          children: [
+            if (child != null) child,
+            if (kIsWeb) const DynamicIslandWidget(),
+          ],
+        );
       },
     );
   }

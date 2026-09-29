@@ -31,8 +31,12 @@ export class OrdersService {
         const result = await this.productModel.updateOne(
           {
             _id: item.productId,
-            stockQuantity: { $gte: item.quantity },
             isAvailable: true,
+            $or: [
+              { stockQuantity: { $gte: item.quantity } },
+              { stockQuantity: { $exists: false } },
+              { stockQuantity: null },
+            ],
           },
           { $inc: { stockQuantity: -item.quantity } },
           { session }

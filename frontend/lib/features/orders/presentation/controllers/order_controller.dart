@@ -31,13 +31,16 @@ class OrderController extends ChangeNotifier {
     }
   }
 
+  OrderModel? _lastCreatedOrder;
+  OrderModel? get lastCreatedOrder => _lastCreatedOrder;
+
   Future<bool> placeOrder(Map<String, dynamic> address) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      await _repository.createOrder(address);
+      _lastCreatedOrder = await _repository.createOrder(address);
       await fetchOrders(); // Refresh list after placing order
       return true;
     } catch (e) {

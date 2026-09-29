@@ -1101,7 +1101,7 @@ async function main() {
 
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
-                  now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
   const newRecord = {
     version: nextVersionName,

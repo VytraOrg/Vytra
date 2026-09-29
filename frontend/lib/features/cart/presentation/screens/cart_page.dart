@@ -5,6 +5,8 @@ import '../../../../core/design_system.dart';
 import '../../../orders/presentation/controllers/order_controller.dart';
 import '../../../orders/presentation/screens/orders_page.dart';
 import '../controllers/cart_controller.dart';
+import '../../../../core/services/live_order_tracking_service.dart';
+import '../../../../shared/widgets/app_notification.dart';
 
 import '../../domain/cart_model.dart';
 
@@ -145,12 +147,13 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget _buildCheckoutSection(BuildContext context, dynamic cart) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     return Container(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.xl,
         AppSpacing.xl,
         AppSpacing.xl,
-        widget.isTab ? 90 : AppSpacing.xl,
+        widget.isTab ? (90 + bottomInset) : (AppSpacing.xl + bottomInset),
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -175,8 +178,19 @@ class _CartPageState extends State<CartPage> {
                 'address': '123 Green Valley, Sector 5, Kolkata',
               });
               if (success && mounted) {
+                final latestOrder = orderController.lastCreatedOrder ??
+                    (orderController.orders.isNotEmpty ? orderController.orders.first : null);
+                if (latestOrder != null) {
+                  context.read<LiveOrderTrackingService>().startTracking(latestOrder);
+                }
                 context.read<CartController>().fetchCart(); // Clear local cart
                 _showOrderSuccess(context);
+              } else if (mounted) {
+                AppNotification.showError(
+                  context,
+                  orderController.error ?? 'Could not place order. Please try again.',
+                  isTab: widget.isTab,
+                );
               }
             },
             child: context.watch<OrderController>().isLoading

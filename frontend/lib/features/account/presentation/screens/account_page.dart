@@ -128,7 +128,7 @@ class _AccountPageState extends State<AccountPage> {
                     ),
                   ),
                 ),
-                SizedBox(height: widget.isTab ? 90 : AppSpacing.xxl),
+                SizedBox(height: (widget.isTab ? 90 : AppSpacing.xxl) + MediaQuery.of(context).padding.bottom),
               ]),
             ),
           ),

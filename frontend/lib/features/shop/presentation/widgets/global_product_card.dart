@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/design_system.dart';
 import '../../../../shared/widgets/app_network_image.dart';
+import '../../../../shared/widgets/app_notification.dart';
 import '../../data/product_model.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../screens/product_list.dart';
@@ -12,6 +13,7 @@ class GlobalProductCard extends StatelessWidget {
   final int index;
   final String customerId;
   final bool disableShopNavigation;
+  final bool isTab;
 
   const GlobalProductCard({
     super.key,
@@ -19,6 +21,7 @@ class GlobalProductCard extends StatelessWidget {
     required this.index,
     required this.customerId,
     this.disableShopNavigation = false,
+    this.isTab = false,
   });
 
   @override
@@ -110,12 +113,11 @@ class GlobalProductCard extends StatelessWidget {
                           final cartController = context.read<CartController>();
                           await cartController.addToCart(product.id, quantity: 1);
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${product.name} added to cart'),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: AppColors.success,
-                              ),
+                            AppNotification.showAddedToCart(
+                              context,
+                              productName: product.name,
+                              priceInfo: '₹${product.price} / ${product.unit}',
+                              isTab: isTab,
                             );
                           }
                         },
