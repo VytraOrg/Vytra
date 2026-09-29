@@ -2,6 +2,14 @@
 
 All builds, versions, and change logs are automatically tracked here.
 
+## [v1.0.7] - Build 7 (30 Sept 2026, 01:41 AM)
+- **Commit**: `1ae3e4b` (master)
+- **APK**: [`Vytra.apk`](releases/archives/Vytra-v1.0.7.apk) (58.3 MB)
+### Changes:
+- Add POST_PROMOTED_NOTIFICATIONS permission and live updates attributes for Xiaomi HyperOS
+
+---
+
 ## [v1.0.6] - Build 6 (30 Sept 2026, 01:24 AM)
 - **Commit**: `51766a8` (master)
 - **APK**: [`Vytra.apk`](releases/archives/Vytra-v1.0.6.apk) (58.3 MB)

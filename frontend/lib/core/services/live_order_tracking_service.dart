@@ -157,6 +157,8 @@ class LiveOrderTrackingService extends ChangeNotifier {
         showProgress: true,
         maxProgress: 100,
         progress: progress,
+        channelShowBadge: true,
+        visibility: NotificationVisibility.public,
         category: AndroidNotificationCategory.progress,
         color: const Color(0xFF38240D),
         subText: '$_remainingMinutes mins left',

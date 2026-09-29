@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.0.7",
+    "buildNumber": 7,
+    "timestamp": "2026-09-29T20:11:51.953Z",
+    "date": "30 Sept 2026, 01:41 AM",
+    "commit": "1ae3e4b",
+    "branch": "master",
+    "size": "58.3 MB",
+    "apkName": "Vytra.apk",
+    "archivePath": "archives/Vytra-v1.0.7.apk",
+    "changes": [
+      "Add POST_PROMOTED_NOTIFICATIONS permission and live updates attributes for Xiaomi HyperOS"
+    ]
+  },
+  {
     "version": "1.0.6",
     "buildNumber": 6,
     "timestamp": "2026-09-29T19:54:33.590Z",
