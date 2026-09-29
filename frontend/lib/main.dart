@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/app_theme.dart';
@@ -107,7 +108,7 @@ class LocalCommerceApp extends StatelessWidget {
         return Stack(
           children: [
             if (child != null) child,
-            const DynamicIslandWidget(),
+            if (kIsWeb) const DynamicIslandWidget(),
           ],
         );
       },

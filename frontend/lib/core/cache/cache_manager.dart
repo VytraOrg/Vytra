@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -103,7 +104,7 @@ class CacheManager {
   // --- Dynamic Island Settings ---
   static bool isDynamicIslandEnabled() {
     final box = Hive.box(_settingsBox);
-    return box.get('dynamic_island_enabled', defaultValue: true);
+    return box.get('dynamic_island_enabled', defaultValue: kIsWeb);
   }
 
   static Future<void> setDynamicIslandEnabled(bool enabled) async {

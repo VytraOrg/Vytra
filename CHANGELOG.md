@@ -2,6 +2,14 @@
 
 All builds, versions, and change logs are automatically tracked here.
 
+## [v1.0.11] - Build 11 (30 Sept 2026, 02:10 AM)
+- **Commit**: `e213c41` (master)
+- **APK**: [`Vytra.apk`](releases/archives/Vytra-v1.0.11.apk) (58.3 MB)
+### Changes:
+- Remove in-app dynamic island from mobile
+
+---
+
 ## [v1.0.9] - Build 9 (30 Sept 2026, 02:05 AM)
 - **Commit**: `dfe43b8` (master)
 - **APK**: [`Vytra.apk`](releases/archives/Vytra-v1.0.9.apk) (58.3 MB)
