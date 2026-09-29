@@ -101,6 +101,38 @@
       50% { opacity: 0.4; transform: scale(1.3); }
       100% { opacity: 1; transform: scale(1); }
     }
+    .portal-nav {
+      display: inline-flex;
+      background: #EDE4D8;
+      padding: 5px;
+      border-radius: 14px;
+      gap: 6px;
+      margin-bottom: 28px;
+      border: 1px solid var(--border);
+    }
+    .nav-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+    }
+    .nav-tab svg {
+      stroke: currentColor;
+    }
+    .nav-tab:hover {
+      color: var(--primary);
+    }
+    .nav-tab.active {
+      background: var(--card-bg);
+      color: var(--primary);
+      box-shadow: 0 4px 10px rgba(56, 36, 13, 0.08);
+    }
     .hero-card {
       background: linear-gradient(135deg, var(--primary) 0%, #4D3316 100%);
       color: white;
@@ -325,6 +357,17 @@
         Latest: v1.0.3 (Build 3)
       </div>
     </header>
+
+    <nav class="portal-nav">
+      <a href="index.html" class="nav-tab active">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        Releases & Builds
+      </a>
+      <a href="commits.html" class="nav-tab">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="1.05" y1="12" x2="7" y2="12"></line><line x1="17.01" y1="12" x2="22.96" y2="12"></line></svg>
+        Commit Activity
+      </a>
+    </nav>
 
     <div class="hero-card">
       <div class="hero-tag">Current Active Build</div>

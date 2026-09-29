@@ -10,13 +10,62 @@ const archivesDir = path.join(releasesDir, 'archives');
 const historyPath = path.join(releasesDir, 'build_history.json');
 const changelogPath = path.join(rootDir, 'CHANGELOG.md');
 const dashboardPath = path.join(releasesDir, 'index.html');
+const commitsPath = path.join(releasesDir, 'commits.html');
 const docsDir = path.join(rootDir, 'docs');
 const docsDashboardPath = path.join(docsDir, 'index.html');
+const docsCommitsPath = path.join(docsDir, 'commits.html');
 
 // Ensure release and docs directories exist
 if (!fs.existsSync(releasesDir)) fs.mkdirSync(releasesDir, { recursive: true });
 if (!fs.existsSync(archivesDir)) fs.mkdirSync(archivesDir, { recursive: true });
 if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
+
+function escapeHtml(str) {
+  return (str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function getCommitHistory(limit = 80) {
+  try {
+    const raw = execSync(
+      `git log -n ${limit} --shortstat --pretty=format:"__START__%n%H%n%h%n%an%n%ad%n%s%n__STAT__" --date=format:"%d %b %Y, %I:%M %p"`,
+      { cwd: rootDir, encoding: 'utf8' }
+    );
+    const entries = raw.split('__START__').filter(Boolean);
+    return entries.map(entry => {
+      const parts = entry.split('__STAT__');
+      const metaLines = parts[0].trim().split('\n');
+      const statLine = (parts[1] || '').trim();
+      const hash = metaLines[0] || '';
+      const shortHash = metaLines[1] || '';
+      const author = metaLines[2] || 'Developer';
+      const date = metaLines[3] || '';
+      const subject = metaLines.slice(4).join(' ').trim();
+
+      const filesMatch = statLine.match(/(\d+)\s+file/);
+      const insertMatch = statLine.match(/(\d+)\s+insertion/);
+      const deleteMatch = statLine.match(/(\d+)\s+deletion/);
+
+      return {
+        hash,
+        shortHash,
+        author,
+        date,
+        subject,
+        files: filesMatch ? filesMatch[1] : '0',
+        insertions: insertMatch ? insertMatch[1] : '0',
+        deletions: deleteMatch ? deleteMatch[1] : '0',
+      };
+    }).filter(c => c.hash);
+  } catch (e) {
+    console.error('Error fetching git commit history:', e.message);
+    return [];
+  }
+}
 
 function getGitInfo() {
   try {
@@ -164,6 +213,38 @@ function generateDashboardHtml(history) {
       0% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.4; transform: scale(1.3); }
       100% { opacity: 1; transform: scale(1); }
+    }
+    .portal-nav {
+      display: inline-flex;
+      background: #EDE4D8;
+      padding: 5px;
+      border-radius: 14px;
+      gap: 6px;
+      margin-bottom: 28px;
+      border: 1px solid var(--border);
+    }
+    .nav-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+    }
+    .nav-tab svg {
+      stroke: currentColor;
+    }
+    .nav-tab:hover {
+      color: var(--primary);
+    }
+    .nav-tab.active {
+      background: var(--card-bg);
+      color: var(--primary);
+      box-shadow: 0 4px 10px rgba(56, 36, 13, 0.08);
     }
     .hero-card {
       background: linear-gradient(135deg, var(--primary) 0%, #4D3316 100%);
@@ -390,6 +471,17 @@ function generateDashboardHtml(history) {
       </div>
     </header>
 
+    <nav class="portal-nav">
+      <a href="index.html" class="nav-tab active">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        Releases & Builds
+      </a>
+      <a href="commits.html" class="nav-tab">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="1.05" y1="12" x2="7" y2="12"></line><line x1="17.01" y1="12" x2="22.96" y2="12"></line></svg>
+        Commit Activity
+      </a>
+    </nav>
+
     <div class="hero-card">
       <div class="hero-tag">Current Active Build</div>
       <div class="hero-title">Vytra v${latest.version || '1.0.0'}</div>
@@ -451,6 +543,479 @@ function generateDashboardHtml(history) {
 </html>`;
 }
 
+function generateCommitsHtml(commits, gitInfo) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vytra - Commit Activity & Engineering Log</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #38240D;
+      --primary-light: #F5EBE0;
+      --accent: #D4A373;
+      --bg: #FAF7F2;
+      --card-bg: #FFFFFF;
+      --text: #1E1A17;
+      --text-muted: #7E7469;
+      --border: #EDE4D8;
+      --success: #2E7D32;
+      --danger: #C62828;
+      --radius: 20px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 16px 80px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1.5px solid var(--border);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .brand-icon {
+      width: 50px;
+      height: 50px;
+      background: var(--primary);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 16px rgba(56, 36, 13, 0.18);
+      padding: 7px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .brand-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .brand-title h1 {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: -0.5px;
+    }
+    .brand-title p {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #E8F5E9;
+      color: var(--success);
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .portal-nav {
+      display: inline-flex;
+      background: #EDE4D8;
+      padding: 5px;
+      border-radius: 14px;
+      gap: 6px;
+      margin-bottom: 28px;
+      border: 1px solid var(--border);
+    }
+    .nav-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+    }
+    .nav-tab svg {
+      stroke: currentColor;
+    }
+    .nav-tab:hover {
+      color: var(--primary);
+    }
+    .nav-tab.active {
+      background: var(--card-bg);
+      color: var(--primary);
+      box-shadow: 0 4px 10px rgba(56, 36, 13, 0.08);
+    }
+    .search-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      box-shadow: 0 6px 16px rgba(56, 36, 13, 0.05);
+    }
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      stroke: var(--text-muted);
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      padding: 13px 44px 13px 44px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--accent);
+      background: #FFFFFF;
+    }
+    .clear-btn {
+      position: absolute;
+      right: 14px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 700;
+      display: none;
+      padding: 4px;
+    }
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .stats-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      padding: 5px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 12.5px;
+    }
+    .github-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+    }
+    .github-link:hover {
+      color: var(--accent);
+    }
+    .commits-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .commit-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1.5px solid var(--border);
+      padding: 20px 22px;
+      box-shadow: 0 4px 12px rgba(56, 36, 13, 0.04);
+      transition: all 0.2s ease;
+    }
+    .commit-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 8px 20px rgba(56, 36, 13, 0.08);
+      transform: translateY(-1px);
+    }
+    .commit-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .commit-subject {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1.45;
+      flex: 1;
+      min-width: 260px;
+    }
+    .commit-date {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .commit-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      padding: 4px 10px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .hash-badge {
+      text-decoration: none;
+      color: var(--primary);
+      background: var(--primary-light);
+      border-color: transparent;
+      transition: all 0.2s;
+    }
+    .hash-badge:hover {
+      background: var(--accent);
+      color: white;
+    }
+    .copy-sha-btn {
+      background: none;
+      border: 1px solid var(--border);
+      padding: 4px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .copy-sha-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .diff-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-left: auto;
+    }
+    .diff-files {
+      color: var(--text-muted);
+    }
+    .diff-add {
+      color: var(--success);
+      background: #E8F5E9;
+      padding: 2px 6px;
+      border-radius: 5px;
+    }
+    .diff-del {
+      color: var(--danger);
+      background: #FFEBEE;
+      padding: 2px 6px;
+      border-radius: 5px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1.5px dashed var(--border);
+      color: var(--text-muted);
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="brand-icon">
+          <img src="logo_transparent.png" alt="Vytra Logo">
+        </div>
+        <div class="brand-title">
+          <h1>Vytra Build Monitor</h1>
+          <p>Internal Development Release Registry</p>
+        </div>
+      </div>
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        Branch: ${escapeHtml(gitInfo.branch || 'master')}
+      </div>
+    </header>
+
+    <nav class="portal-nav">
+      <a href="index.html" class="nav-tab">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        Releases & Builds
+      </a>
+      <a href="commits.html" class="nav-tab active">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="1.05" y1="12" x2="7" y2="12"></line><line x1="17.01" y1="12" x2="22.96" y2="12"></line></svg>
+        Commit Activity
+      </a>
+    </nav>
+
+    <div class="search-card">
+      <div class="search-input-wrapper">
+        <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="commitSearch" class="search-input" placeholder="Filter commits by title, author, or commit hash..." autocomplete="off">
+        <button id="clearBtn" class="clear-btn" onclick="clearSearch()">✕</button>
+      </div>
+      <div class="stats-bar">
+        <div class="stats-group">
+          <div class="stat-pill"><span id="visibleCount">${commits.length}</span> commits recorded</div>
+          <div class="stat-pill">HEAD: <code>${gitInfo.commit || 'HEAD'}</code></div>
+        </div>
+        <a href="https://github.com/VytraOrg/Vytra/commits" target="_blank" class="github-link">
+          <span>GitHub History</span>
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="commits-timeline" id="commitsList">
+      ${commits.map(c => `
+        <div class="commit-card" data-search="${(c.subject + ' ' + c.author + ' ' + c.shortHash + ' ' + c.hash).toLowerCase()}">
+          <div class="commit-header">
+            <span class="commit-subject">${escapeHtml(c.subject)}</span>
+            <span class="commit-date">${c.date}</span>
+          </div>
+          <div class="commit-meta">
+            <div class="meta-badge">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              ${escapeHtml(c.author)}
+            </div>
+            <a href="https://github.com/VytraOrg/Vytra/commit/${c.hash}" target="_blank" class="meta-badge hash-badge" title="View commit diff on GitHub">
+              <code>${c.shortHash}</code>
+              <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </a>
+            <button class="copy-sha-btn" onclick="copySha('${c.hash}', this)" title="Copy commit SHA">
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>Copy SHA</span>
+            </button>
+            ${c.files !== '0' ? `
+              <div class="diff-badge">
+                <span class="diff-files">${c.files} files</span>
+                ${c.insertions !== '0' ? `<span class="diff-add">+${c.insertions}</span>` : ''}
+                ${c.deletions !== '0' ? `<span class="diff-del">-${c.deletions}</span>` : ''}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div id="emptyState" class="empty-state">
+      <p>No commits match your search query.</p>
+    </div>
+  </div>
+
+  <script>
+    function copySha(hash, btn) {
+      navigator.clipboard.writeText(hash).then(() => {
+        const original = btn.innerHTML;
+        btn.innerHTML = '<span style="color:var(--success);font-weight:700;">Copied!</span>';
+        setTimeout(() => { btn.innerHTML = original; }, 1600);
+      }).catch(() => {
+        prompt('Commit SHA:', hash);
+      });
+    }
+
+    const searchInput = document.getElementById('commitSearch');
+    const clearBtn = document.getElementById('clearBtn');
+    const cards = document.querySelectorAll('.commit-card');
+    const countEl = document.getElementById('visibleCount');
+    const emptyState = document.getElementById('emptyState');
+
+    function clearSearch() {
+      searchInput.value = '';
+      filter();
+      searchInput.focus();
+    }
+
+    function filter() {
+      const q = searchInput.value.toLowerCase().trim();
+      clearBtn.style.display = q ? 'inline-block' : 'none';
+      let visible = 0;
+      cards.forEach(card => {
+        const text = card.getAttribute('data-search') || '';
+        const match = !q || text.includes(q);
+        card.style.display = match ? 'block' : 'none';
+        if (match) visible++;
+      });
+      countEl.textContent = visible;
+      emptyState.style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    searchInput.addEventListener('input', filter);
+  </script>
+</body>
+</html>`;
+}
+
 function updateChangelog(history) {
   let md = `# 📦 Vytra Release Changelog\n\nAll builds, versions, and change logs are automatically tracked here.\n\n`;
   for (const item of history) {
@@ -467,18 +1032,25 @@ function updateChangelog(history) {
 }
 
 async function main() {
+  const gitInfo = getGitInfo();
+
   if (process.argv.includes('--refresh')) {
     const history = loadHistory();
     const html = generateDashboardHtml(history);
     fs.writeFileSync(dashboardPath, html, 'utf8');
     fs.writeFileSync(docsDashboardPath, html, 'utf8');
+
+    const commits = getCommitHistory(80);
+    const commitsHtml = generateCommitsHtml(commits, gitInfo);
+    fs.writeFileSync(commitsPath, commitsHtml, 'utf8');
+    fs.writeFileSync(docsCommitsPath, commitsHtml, 'utf8');
+
     updateChangelog(history);
-    console.log(`✅ Refreshed release portals (releases/index.html & docs/index.html) and CHANGELOG.md`);
+    console.log(`✅ Refreshed portals (index.html & commits.html in releases/ and docs/) and CHANGELOG.md`);
     return;
   }
 
   const customChangesArg = process.argv.slice(2).join(' ').trim();
-  const gitInfo = getGitInfo();
   const currentVersion = parsePubspecVersion();
 
   // Increment development version: 1.0.<build>
@@ -553,7 +1125,12 @@ async function main() {
   const html = generateDashboardHtml(history);
   fs.writeFileSync(dashboardPath, html, 'utf8');
   fs.writeFileSync(docsDashboardPath, html, 'utf8');
-  console.log(`✅ Generated releases/index.html & docs/index.html (GitHub Pages)`);
+
+  const commits = getCommitHistory(80);
+  const commitsHtml = generateCommitsHtml(commits, gitInfo);
+  fs.writeFileSync(commitsPath, commitsHtml, 'utf8');
+  fs.writeFileSync(docsCommitsPath, commitsHtml, 'utf8');
+  console.log(`✅ Generated releases/ (index.html, commits.html) & docs/ (GitHub Pages)`);
 
   updateChangelog(history);
   console.log(`✅ Updated CHANGELOG.md`);
