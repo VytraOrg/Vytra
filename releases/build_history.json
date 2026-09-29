@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.0.9",
+    "buildNumber": 9,
+    "timestamp": "2026-09-29T20:35:33.750Z",
+    "date": "30 Sept 2026, 02:05 AM",
+    "commit": "dfe43b8",
+    "branch": "master",
+    "size": "58.3 MB",
+    "apkName": "Vytra.apk",
+    "archivePath": "archives/Vytra-v1.0.9.apk",
+    "changes": [
+      "Enable Dynamic Island widget across mobile and web with centered punch-hole alignment"
+    ]
+  },
+  {
     "version": "1.0.8",
     "buildNumber": 8,
     "timestamp": "2026-09-29T20:20:07.150Z",

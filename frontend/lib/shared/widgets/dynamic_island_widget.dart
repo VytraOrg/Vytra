@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -34,18 +35,23 @@ class _DynamicIslandWidgetState extends State<DynamicIslandWidget> {
     final status = trackingService.currentStatus;
     final isDelivered = status.toLowerCase() == 'delivered';
 
+    // Hug the status bar center punch-hole neatly in compact mode, or drop down slightly when expanded
+    final compactTop = topInset > 0 ? math.max(6.0, (topInset - 36) / 2) : 8.0;
+    final targetTop = _isExpanded ? (topInset > 0 ? topInset + 4 : 12.0) : compactTop;
+
     return Positioned(
-      top: topInset > 0 ? (topInset + 4) : 10,
+      top: targetTop,
       left: 0,
       right: 0,
       child: Center(
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 320),
           curve: Curves.easeOutBack,
-          width: _isExpanded ? 340 : 220,
+          width: _isExpanded ? 340 : null,
           constraints: BoxConstraints(
-            minHeight: _isExpanded ? 180 : 38,
+            minHeight: _isExpanded ? 180 : 36,
             maxHeight: _isExpanded ? 210 : 38,
+            minWidth: _isExpanded ? 340 : 190,
           ),
           decoration: BoxDecoration(
             color: const Color(0xFF0C0C0E),
