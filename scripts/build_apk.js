@@ -68,6 +68,8 @@ function generateDashboardHtml(history) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vytra - Build & Release Monitor</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -112,17 +114,22 @@ function generateDashboardHtml(history) {
       gap: 14px;
     }
     .brand-icon {
-      width: 48px;
-      height: 48px;
+      width: 50px;
+      height: 50px;
       background: var(--primary);
-      color: var(--primary-light);
       border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 22px;
-      font-weight: 900;
-      box-shadow: 0 8px 16px rgba(56, 36, 13, 0.15);
+      box-shadow: 0 8px 16px rgba(56, 36, 13, 0.18);
+      padding: 7px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .brand-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
     .brand-title h1 {
       font-size: 24px;
@@ -358,7 +365,9 @@ function generateDashboardHtml(history) {
   <div class="container">
     <header>
       <div class="brand">
-        <div class="brand-icon">V</div>
+        <div class="brand-icon">
+          <img src="logo_transparent.png" alt="Vytra Logo">
+        </div>
         <div class="brand-title">
           <h1>Vytra Build Monitor</h1>
           <p>Internal Development Release Registry</p>
