@@ -300,26 +300,34 @@ function generateDashboardHtml(history) {
       color: var(--text-muted);
     }
     .meta-tag {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       background: var(--bg);
-      padding: 4px 8px;
-      border-radius: 6px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .meta-icon {
+      stroke: var(--accent);
+      flex-shrink: 0;
     }
     .changes-title {
-      font-size: 12px;
+      font-size: 11px;
       text-transform: uppercase;
       font-weight: 800;
       color: var(--text-muted);
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
+      letter-spacing: 0.6px;
+      margin-bottom: 10px;
     }
     .changes-list {
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       margin-bottom: 16px;
     }
     .changes-list li {
@@ -327,14 +335,17 @@ function generateDashboardHtml(history) {
       color: var(--text);
       line-height: 1.5;
       position: relative;
-      padding-left: 20px;
+      padding-left: 18px;
     }
     .changes-list li::before {
-      content: '✓';
+      content: '';
       position: absolute;
-      left: 0;
-      color: var(--accent);
-      font-weight: 900;
+      left: 3px;
+      top: 8px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
     }
     .card-footer {
       display: flex;
@@ -407,9 +418,18 @@ function generateDashboardHtml(history) {
             <div class="build-date">${item.date}</div>
           </div>
           <div class="build-meta-row">
-            <div class="meta-tag">📦 ${item.size}</div>
-            <div class="meta-tag">🔖 Commit: ${item.commit}</div>
-            <div class="meta-tag">🌿 ${item.branch || 'master'}</div>
+            <div class="meta-tag">
+              <svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+              ${item.size}
+            </div>
+            <div class="meta-tag">
+              <svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="1.05" y1="12" x2="7" y2="12"></line><line x1="17.01" y1="12" x2="22.96" y2="12"></line></svg>
+              Commit: <code>${item.commit}</code>
+            </div>
+            <div class="meta-tag">
+              <svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+              ${item.branch || 'master'}
+            </div>
           </div>
           <div class="changes-title">Changes in this build</div>
           <ul class="changes-list">
@@ -419,7 +439,8 @@ function generateDashboardHtml(history) {
             <a href="https://github.com/VytraOrg/Vytra/releases/download/v${item.version}/Vytra.apk"
                onclick="if(window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') { this.href = '${item.archivePath || 'Vytra.apk'}'; }"
                class="download-link" download>
-              ⬇ Download (${item.size})
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Download (${item.size})
             </a>
           </div>
         </div>
@@ -446,6 +467,16 @@ function updateChangelog(history) {
 }
 
 async function main() {
+  if (process.argv.includes('--refresh')) {
+    const history = loadHistory();
+    const html = generateDashboardHtml(history);
+    fs.writeFileSync(dashboardPath, html, 'utf8');
+    fs.writeFileSync(docsDashboardPath, html, 'utf8');
+    updateChangelog(history);
+    console.log(`✅ Refreshed release portals (releases/index.html & docs/index.html) and CHANGELOG.md`);
+    return;
+  }
+
   const customChangesArg = process.argv.slice(2).join(' ').trim();
   const gitInfo = getGitInfo();
   const currentVersion = parsePubspecVersion();
