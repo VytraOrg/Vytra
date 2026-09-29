@@ -16,7 +16,9 @@ import '../../../auth/domain/entities/user_entity.dart';
 import '../../../account/presentation/screens/account_page.dart';
 import '../../../account/presentation/screens/wishlist_page.dart';
 import '../../../cart/presentation/screens/cart_page.dart';
+import '../../../cart/presentation/controllers/cart_controller.dart';
 import '../../../orders/presentation/screens/orders_page.dart';
+import '../../../../shared/widgets/floating_pill_nav_bar.dart';
 import '../../data/shop_model.dart';
 import '../../data/product_model.dart';
 
@@ -93,7 +95,7 @@ class _CustomerHomeState extends State<CustomerHome> {
     'Household': 'sanitizer soap detergent',
   };
 
-  void _loadData() {
+  Future<void> _loadData({bool forceRefresh = false}) async {
     final user = context.read<AuthController>().currentUser;
     final isShopkeeper = user?.role == 'Shopkeeper';
     final shopType = isShopkeeper ? 'Distributor' : 'Retailer';
@@ -102,12 +104,13 @@ class _CustomerHomeState extends State<CustomerHome> {
     final shopController = context.read<ShopController>();
     
     // 1. Fetch shops
-    shopController.fetchShops(
+    final shopsFuture = shopController.fetchShops(
       shopType: shopType,
       search: effectiveQuery.isNotEmpty ? effectiveQuery : null,
       category: selectedCategory != 'All' ? selectedCategory : null,
       lat: _userLat,
       lng: _userLng,
+      forceRefresh: forceRefresh,
     );
 
     // 2. Fetch products for global search/category
@@ -115,11 +118,12 @@ class _CustomerHomeState extends State<CustomerHome> {
         ? effectiveQuery 
         : (selectedCategory != 'All' ? (_categorySearchMap[selectedCategory] ?? selectedCategory) : '');
 
-    shopController.searchGlobal(
+    final productsFuture = shopController.searchGlobal(
       productQuery,
       shopType: isShopkeeper ? 'Distributor' : 'Retailer',
       lat: _userLat,
       lng: _userLng,
+      forceRefresh: forceRefresh,
     );
 
     if (effectiveQuery.isNotEmpty) {
@@ -127,6 +131,8 @@ class _CustomerHomeState extends State<CustomerHome> {
     } else {
       shopController.clearSuggestions();
     }
+
+    await Future.wait([shopsFuture, productsFuture]);
   }
 
   void _onSearchChanged(String query) {
@@ -154,28 +160,126 @@ class _CustomerHomeState extends State<CustomerHome> {
   Widget build(BuildContext context) {
     final user = context.watch<AuthController>().currentUser;
     final shopController = context.watch<ShopController>();
+    final cartController = context.watch<CartController>();
     final isShopkeeper = user?.role == 'Shopkeeper';
+
+    final cartCount = cartController.cart?.items.fold<int>(0, (sum, item) => sum + item.quantity) ?? 0;
+
+    final pages = [
+      _buildHomeView(user, isShopkeeper, shopController),
+      const OrdersPage(isTab: true),
+      const WishlistPage(isTab: true),
+      AccountPage(customerId: widget.customerId, user: user, isTab: true),
+      const CartPage(isTab: true),
+    ];
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Opacity(
-              opacity: 0.6,
-              child: Image.asset('assets/bg_image.jpg', fit: BoxFit.cover),
+          IndexedStack(
+            index: _currentIndex,
+            children: pages,
+          ),
+          // Smooth progressive backdrop blur & fade gradient layer behind floating nav
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 140,
+            child: IgnorePointer(
+              child: ClipRect(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Gradual blur without hard edges
+                    ShaderMask(
+                      shaderCallback: (Rect bounds) {
+                        return LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.15),
+                            Colors.black.withValues(alpha: 0.7),
+                            Colors.black,
+                          ],
+                          stops: const [0.0, 0.28, 0.65, 1.0],
+                        ).createShader(bounds);
+                      },
+                      blendMode: BlendMode.dstIn,
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                        child: Container(color: Colors.transparent),
+                      ),
+                    ),
+
+                    // Gradual color fade into screen background
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.background.withValues(alpha: 0.0),
+                            AppColors.background.withValues(alpha: 0.25),
+                            AppColors.background.withValues(alpha: 0.7),
+                            AppColors.background.withValues(alpha: 0.95),
+                          ],
+                          stops: const [0.0, 0.3, 0.7, 1.0],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-              child: Container(color: Colors.black.withOpacity(0.02)),
+
+          // Floating Pill Nav Bar
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: SafeArea(
+              top: false,
+              child: FloatingPillNavBar(
+                currentIndex: _currentIndex,
+                cartCount: cartCount,
+                onTabSelected: (index) {
+                  setState(() => _currentIndex = index);
+                },
+              ),
             ),
           ),
-          
-          SafeArea(
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomeView(UserEntity? user, bool isShopkeeper, ShopController shopController) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Opacity(
+            opacity: 0.6,
+            child: Image.asset('assets/bg_image.jpg', fit: BoxFit.cover),
+          ),
+        ),
+        Positioned.fill(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+            child: Container(color: Colors.black.withOpacity(0.02)),
+          ),
+        ),
+        
+        SafeArea(
+          bottom: false,
+          child: RefreshIndicator(
+            onRefresh: () => _loadData(forceRefresh: true),
+            color: AppColors.primary,
             child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
               slivers: [
                 SliverPadding(
                   padding: const EdgeInsets.all(AppSpacing.lg),
@@ -241,15 +345,8 @@ class _CustomerHomeState extends State<CustomerHome> {
               ],
             ),
           ),
-        ],
-      ),
-      bottomNavigationBar: _buildBottomNav(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CartPage())),
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        ),
+      ],
     );
   }
 
@@ -513,7 +610,7 @@ class _CustomerHomeState extends State<CustomerHome> {
         ),
         const Spacer(),
         GestureDetector(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AccountPage(customerId: widget.customerId, user: user))),
+          onTap: () => setState(() => _currentIndex = 3),
           child: _buildHomeAvatar(user, initials),
         ),
       ],
@@ -684,43 +781,4 @@ class _CustomerHomeState extends State<CustomerHome> {
       ),
     ).animate().fadeIn(delay: 600.ms);
   }
-
-  Widget _buildBottomNav() {
-    return BottomAppBar(
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 8,
-      child: SizedBox(
-        height: 60,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(0, Icons.home_rounded, "Home"),
-            _buildNavItem(1, Icons.assignment_outlined, "Orders"),
-            const SizedBox(width: 40),
-            _buildNavItem(2, Icons.favorite_border_rounded, "Saved"),
-            _buildNavItem(3, Icons.person_outline_rounded, "Profile"),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(int index, IconData icon, String label) {
-    final isSelected = _currentIndex == index;
-    return GestureDetector(
-      onTap: () {
-        if (index == 1) Navigator.push(context, MaterialPageRoute(builder: (_) => OrdersPage()));
-        else if (index == 2) Navigator.push(context, MaterialPageRoute(builder: (_) => const WishlistPage()));
-        else if (index == 3) Navigator.push(context, MaterialPageRoute(builder: (_) => AccountPage(customerId: widget.customerId, user: context.read<AuthController>().currentUser)));
-        else setState(() => _currentIndex = index);
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: isSelected ? AppColors.primary : AppColors.textMuted),
-          Text(label, style: TextStyle(color: isSelected ? AppColors.primary : AppColors.textMuted, fontSize: 10)),
-        ],
-      ),
-    );
- }
 }

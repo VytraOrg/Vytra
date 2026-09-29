@@ -6,7 +6,8 @@ import '../../../shop/domain/entities/product_entity.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
 
 class WishlistPage extends StatefulWidget {
-  const WishlistPage({super.key});
+  final bool isTab;
+  const WishlistPage({super.key, this.isTab = false});
 
   @override
   State<WishlistPage> createState() => _WishlistPageState();
@@ -105,10 +106,13 @@ class _WishlistPageState extends State<WishlistPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: !widget.isTab,
+        leading: widget.isTab
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
+                onPressed: () => Navigator.pop(context),
+              ),
         title: const Text('My Wishlist', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
       ),
@@ -126,7 +130,12 @@ class _WishlistPageState extends State<WishlistPage> {
               ),
             ).animate().fadeIn(duration: 400.ms)
           : GridView.builder(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                widget.isTab ? 100 : AppSpacing.lg,
+              ),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: AppSpacing.md,

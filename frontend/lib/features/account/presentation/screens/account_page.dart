@@ -17,8 +17,9 @@ import 'notifications_page.dart';
 class AccountPage extends StatefulWidget {
   final String customerId;
   final UserEntity? user;
+  final bool isTab;
 
-  const AccountPage({super.key, required this.customerId, this.user});
+  const AccountPage({super.key, required this.customerId, this.user, this.isTab = false});
 
   @override
   State<AccountPage> createState() => _AccountPageState();
@@ -112,7 +113,7 @@ class _AccountPageState extends State<AccountPage> {
 
                 const SizedBox(height: AppSpacing.xl),
                 _buildLogoutButton(),
-                const SizedBox(height: AppSpacing.xxl),
+                SizedBox(height: widget.isTab ? 100 : AppSpacing.xxl),
               ]),
             ),
           ),
@@ -148,15 +149,17 @@ class _AccountPageState extends State<AccountPage> {
           children: [
             Row(
               children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadius.md)),
-                    child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                if (!widget.isTab && Navigator.canPop(context)) ...[
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(AppRadius.md)),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                    ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.md),
+                  const SizedBox(width: AppSpacing.md),
+                ],
                 const Text('My Profile', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
               ],
             ).animate().fadeIn(duration: 400.ms),

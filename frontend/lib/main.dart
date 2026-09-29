@@ -17,10 +17,7 @@ import 'features/cart/domain/cart_repository.dart';
 import 'features/cart/presentation/controllers/cart_controller.dart';
 import 'features/account/presentation/controllers/account_controller.dart';
 import 'features/shop/presentation/controllers/shop_controller.dart';
-import 'features/shop/presentation/screens/customer_home.dart';
-import 'features/auth/presentation/screens/welcome_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
-import 'features/shopkeeper/presentation/screens/shopkeeper_route_handler.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'core/cache/cache_manager.dart';
 
@@ -67,6 +64,7 @@ void main() async {
             loginUseCase: context.read<LoginUseCase>(),
             registerUseCase: context.read<RegisterUseCase>(),
             getCachedUserUseCase: context.read<GetCachedUserUseCase>(),
+            authRepository: context.read<IAuthRepository>(),
           ),
         ),
         ChangeNotifierProvider(

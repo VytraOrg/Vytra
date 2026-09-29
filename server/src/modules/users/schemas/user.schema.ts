@@ -23,6 +23,9 @@ export class User {
   @Prop()
   phone?: string;
 
+  @Prop({ default: '' })
+  imageUrl?: string;
+
   @Prop({ type: [{ type: Object }] })
   addresses: any[];
 

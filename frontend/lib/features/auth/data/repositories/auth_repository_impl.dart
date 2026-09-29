@@ -27,6 +27,13 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   @override
+  Future<UserEntity> updateProfile(Map<String, dynamic> profileData) async {
+    final userModel = await remoteDataSource.updateProfile(profileData);
+    await localDataSource.saveUser(userModel);
+    return userModel;
+  }
+
+  @override
   UserEntity? getCachedUser() {
     return localDataSource.getCachedUser();
   }

@@ -41,10 +41,14 @@ class ShopController extends ChangeNotifier {
     String? search,
     double? lat,
     double? lng,
+    bool forceRefresh = false,
   }) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+    // Only show full loading spinner if we don't already have cached shops
+    if (_shops.isEmpty) {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+    }
 
     try {
       _shops = await _repository.getShops(
@@ -53,6 +57,7 @@ class ShopController extends ChangeNotifier {
         search: search,
         lat: lat,
         lng: lng,
+        forceRefresh: forceRefresh,
       );
     } catch (e) {
       _error = e.toString();
@@ -62,7 +67,13 @@ class ShopController extends ChangeNotifier {
     }
   }
 
-  Future<void> searchGlobal(String query, {String? shopType, double? lat, double? lng}) async {
+  Future<void> searchGlobal(
+    String query, {
+    String? shopType,
+    double? lat,
+    double? lng,
+    bool forceRefresh = false,
+  }) async {
     if (query.isEmpty) {
       _searchResults = [];
       _isAutoCorrected = false;
@@ -72,9 +83,11 @@ class ShopController extends ChangeNotifier {
       return;
     }
 
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+    if (_searchResults.isEmpty) {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+    }
 
     try {
       final payload = await _repository.searchGlobalProducts(
@@ -82,6 +95,7 @@ class ShopController extends ChangeNotifier {
         shopType: shopType,
         lat: lat,
         lng: lng,
+        forceRefresh: forceRefresh,
       );
       _searchResults = payload.items;
       _isAutoCorrected = payload.isAutoCorrected;

@@ -9,7 +9,8 @@ import '../controllers/cart_controller.dart';
 import '../../domain/cart_model.dart';
 
 class CartPage extends StatefulWidget {
-  const CartPage({super.key});
+  final bool isTab;
+  const CartPage({super.key, this.isTab = false});
 
   @override
   State<CartPage> createState() => _CartPageState();
@@ -32,6 +33,7 @@ class _CartPageState extends State<CartPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: !widget.isTab,
         title: const Text("My Cart"),
         centerTitle: true,
       ),
@@ -144,7 +146,12 @@ class _CartPageState extends State<CartPage> {
 
   Widget _buildCheckoutSection(BuildContext context, dynamic cart) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.xl),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.xl,
+        AppSpacing.xl,
+        widget.isTab ? 90 : AppSpacing.xl,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),

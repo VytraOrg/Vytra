@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../domain/entities/user_entity.dart';
+import '../domain/repositories/i_auth_repository.dart';
 import '../domain/usecases/login_usecase.dart';
 import '../domain/usecases/register_usecase.dart';
 import '../domain/usecases/get_cached_user_usecase.dart';
@@ -10,14 +11,17 @@ class AuthController with ChangeNotifier {
   final LoginUseCase _loginUseCase;
   final RegisterUseCase _registerUseCase;
   final GetCachedUserUseCase _getCachedUserUseCase;
+  final IAuthRepository? _authRepository;
 
   AuthController({
     required LoginUseCase loginUseCase,
     required RegisterUseCase registerUseCase,
     required GetCachedUserUseCase getCachedUserUseCase,
+    IAuthRepository? authRepository,
   })  : _loginUseCase = loginUseCase,
         _registerUseCase = registerUseCase,
-        _getCachedUserUseCase = getCachedUserUseCase {
+        _getCachedUserUseCase = getCachedUserUseCase,
+        _authRepository = authRepository {
     initSession();
   }
 
@@ -80,6 +84,15 @@ class AuthController with ChangeNotifier {
     _currentUser = updatedUser;
     await CacheManager.saveUser(updatedUser.toJson());
     notifyListeners();
+
+    // Persist to remote backend so it survives logout / login
+    if (_authRepository != null) {
+      try {
+        await _authRepository.updateProfile({'phone': newPhone});
+      } catch (e) {
+        if (kDebugMode) print('⚠️ Failed to sync phone to remote backend: $e');
+      }
+    }
   }
 
   Future<void> updateAvatar(String newImageUrl) async {
@@ -98,6 +111,15 @@ class AuthController with ChangeNotifier {
     _currentUser = updatedUser;
     await CacheManager.saveUser(updatedUser.toJson());
     notifyListeners();
+
+    // Persist to remote backend so it survives logout / login
+    if (_authRepository != null) {
+      try {
+        await _authRepository.updateProfile({'imageUrl': newImageUrl});
+      } catch (e) {
+        if (kDebugMode) print('⚠️ Failed to sync avatar to remote backend: $e');
+      }
+    }
   }
 
   Future<void> logout() async {

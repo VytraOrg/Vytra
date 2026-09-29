@@ -30,6 +30,7 @@ class ShopRepository {
     String? search,
     double? lat,
     double? lng,
+    bool forceRefresh = false,
   }) async {
     try {
       final queryParams = <String, String>{};
@@ -42,16 +43,26 @@ class ShopRepository {
       final queryString = queryParams.entries.map((e) => '${e.key}=${e.value}').join('&');
       final endpoint = queryString.isEmpty ? '/shops' : '/shops?$queryString';
       
-      final response = await _apiClient.get(endpoint); 
+      final response = await _apiClient.get(
+        endpoint,
+        useCache: true,
+        maxAge: const Duration(minutes: 5),
+        forceRefresh: forceRefresh,
+      ); 
       return (response as List).map((e) => ShopModel.fromJson(Map<String, dynamic>.from(e))).toList();
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<List<ProductModel>> getProducts(String shopId) async {
+  Future<List<ProductModel>> getProducts(String shopId, {bool forceRefresh = false}) async {
     try {
-      final response = await _apiClient.get('/products?shopId=$shopId&limit=100');
+      final response = await _apiClient.get(
+        '/products?shopId=$shopId&limit=100',
+        useCache: true,
+        maxAge: const Duration(minutes: 5),
+        forceRefresh: forceRefresh,
+      );
       // Backend returns paginated { items: [...], meta: {...} }
       final List<dynamic> items = response is Map
           ? (response['items'] as List? ?? [])
@@ -67,6 +78,7 @@ class ShopRepository {
     String? shopType,
     double? lat,
     double? lng,
+    bool forceRefresh = false,
   }) async {
     try {
       final trimmed = query.trim();
@@ -80,7 +92,12 @@ class ShopRepository {
 
       final queryString = queryParams.entries.map((e) => '${e.key}=${e.value}').join('&');
       final endpoint = '/products/search?$queryString';
-      final response = await _apiClient.get(endpoint);
+      final response = await _apiClient.get(
+        endpoint,
+        useCache: true,
+        maxAge: const Duration(minutes: 3),
+        forceRefresh: forceRefresh,
+      );
 
       if (response is Map) {
         final List<dynamic> rawItems = response['items'] as List? ?? [];

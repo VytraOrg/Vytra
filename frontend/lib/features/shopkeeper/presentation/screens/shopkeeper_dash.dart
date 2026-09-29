@@ -288,7 +288,10 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
       backgroundColor: AppColors.background,
       body: _isLoadingShop && _myShop == null
           ? const Center(child: CircularProgressIndicator())
-          : pages[_currentIndex],
+          : IndexedStack(
+              index: _currentIndex,
+              children: pages,
+            ),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }

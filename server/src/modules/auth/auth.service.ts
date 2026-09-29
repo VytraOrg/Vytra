@@ -116,6 +116,35 @@ export class AuthService {
     return { success: true };
   }
 
+  async updateProfile(
+    userId: string,
+    updateDto: { phone?: string; imageUrl?: string; name?: string; businessName?: string },
+  ) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (updateDto.phone !== undefined) user.phone = updateDto.phone;
+    if (updateDto.imageUrl !== undefined) user.imageUrl = updateDto.imageUrl;
+    if (updateDto.name !== undefined) user.name = updateDto.name;
+    if (updateDto.businessName !== undefined) user.businessName = updateDto.businessName;
+
+    await user.save();
+
+    return {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        businessName: user.businessName,
+        phone: user.phone || '',
+        imageUrl: user.imageUrl || '',
+      },
+    };
+  }
+
   private async generateToken(user: UserDocument) {
     const payload = { sub: user._id, email: user.email, role: user.role, tokenType: 'access' };
     const refreshPayload = { sub: user._id, tokenType: 'refresh' };
@@ -135,6 +164,8 @@ export class AuthService {
         email: user.email,
         role: user.role,
         businessName: user.businessName,
+        phone: user.phone || '',
+        imageUrl: user.imageUrl || '',
       },
       access_token: accessToken,
       refresh_token: refreshToken,

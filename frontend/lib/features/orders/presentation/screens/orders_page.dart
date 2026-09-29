@@ -7,7 +7,8 @@ import '../controllers/order_controller.dart';
 import 'order_details_page.dart';
 
 class OrdersPage extends StatefulWidget {
-  const OrdersPage({super.key});
+  final bool isTab;
+  const OrdersPage({super.key, this.isTab = false});
 
   @override
   State<OrdersPage> createState() => _OrdersPageState();
@@ -29,6 +30,7 @@ class _OrdersPageState extends State<OrdersPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: !widget.isTab,
         title: const Text("My Orders"),
         centerTitle: true,
         actions: [
@@ -45,7 +47,12 @@ class _OrdersPageState extends State<OrdersPage> {
               : orderController.orders.isEmpty
                   ? const Center(child: Text("No orders found yet."))
                   : ListView.builder(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        AppSpacing.lg,
+                        AppSpacing.lg,
+                        widget.isTab ? 100 : AppSpacing.lg,
+                      ),
                       itemCount: orderController.orders.length,
                       itemBuilder: (context, index) {
                         return _buildOrderCard(context, orderController.orders[index], index);

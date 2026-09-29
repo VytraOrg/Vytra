@@ -112,12 +112,46 @@ class ApiClient {
     }
   }
 
-  Future<dynamic> get(String endpoint) async {
+  Future<dynamic> get(
+    String endpoint, {
+    bool useCache = false,
+    Duration? maxAge,
+    bool forceRefresh = false,
+  }) async {
+    final cacheKey = endpoint;
+    if (useCache && !forceRefresh) {
+      final cached = CacheManager.getCachedResponse(
+        cacheKey,
+        maxAge: maxAge ?? const Duration(minutes: 5),
+      );
+      if (cached != null) {
+        if (kDebugMode) print('⚡ CACHE HIT: $cacheKey');
+        return cached;
+      }
+    }
+
     if (kDebugMode) print('📡 GET: $apiBaseUrl$endpoint');
-    return _execute(() => _client.get(
-      Uri.parse('$apiBaseUrl$endpoint'),
-      headers: _defaultHeaders(),
-    ));
+    try {
+      final response = await _execute(() => _client.get(
+        Uri.parse('$apiBaseUrl$endpoint'),
+        headers: _defaultHeaders(),
+      ));
+
+      if (useCache && response != null) {
+        await CacheManager.cacheResponse(cacheKey, response);
+      }
+      return response;
+    } catch (e) {
+      // Offline fallback: return stale cached response if available
+      if (useCache) {
+        final staleCache = CacheManager.getCachedResponse(cacheKey);
+        if (staleCache != null) {
+          if (kDebugMode) print('⚠️ Returning stale cache due to network error: $e');
+          return staleCache;
+        }
+      }
+      rethrow;
+    }
   }
 
   Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
@@ -132,6 +166,15 @@ class ApiClient {
   Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
     if (kDebugMode) print('📡 PUT: $apiBaseUrl$endpoint | Body: $body');
     return _execute(() => _client.put(
+      Uri.parse('$apiBaseUrl$endpoint'),
+      headers: _defaultHeaders(),
+      body: jsonEncode(body),
+    ));
+  }
+
+  Future<dynamic> patch(String endpoint, Map<String, dynamic> body) async {
+    if (kDebugMode) print('📡 PATCH: $apiBaseUrl$endpoint | Body: $body');
+    return _execute(() => _client.patch(
       Uri.parse('$apiBaseUrl$endpoint'),
       headers: _defaultHeaders(),
       body: jsonEncode(body),
