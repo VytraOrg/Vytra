@@ -139,42 +139,43 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
     return AnimatedBuilder(
       animation: Listenable.merge([_animController, _scaleController]),
       builder: (context, child) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final totalWidth = constraints.maxWidth - (AppSpacing.md * 2);
-            final tabWidth = totalWidth > 0 ? totalWidth / 5 : 60.0;
-            final activeIndex = _position.round().clamp(0, 4);
+        final activeIndex = _position.round().clamp(0, 4);
 
-            return Transform.scale(
-              scale: _navScaleAnim.value,
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(32),
-                  border: Border.all(
-                    color: AppColors.primaryLight,
-                    width: 1.2,
+        return Transform.scale(
+          scale: _navScaleAnim.value,
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(
+                color: AppColors.primaryLight,
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(
+                    alpha: 0.12 + 0.06 * _scaleController.value,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(
-                        alpha: 0.12 + 0.06 * _scaleController.value,
-                      ),
-                      blurRadius: 24 + 6 * _scaleController.value,
-                      spreadRadius: 0,
-                      offset: Offset(0, 8 + 2 * _scaleController.value),
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  blurRadius: 24 + 6 * _scaleController.value,
+                  spreadRadius: 0,
+                  offset: Offset(0, 8 + 2 * _scaleController.value),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(30),
-                  child: GestureDetector(
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(30),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final totalWidth = constraints.maxWidth;
+                  final tabWidth = totalWidth > 0 ? totalWidth / 5 : 60.0;
+
+                  return GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onHorizontalDragStart: _onHorizontalDragStart,
                     onHorizontalDragUpdate: (details) =>
@@ -226,11 +227,11 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
                         ),
                       ],
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ),
         );
       },
     );
