@@ -378,4 +378,85 @@ export class MailService {
       text: `Your order #${shortId} has been updated to ${data.status}. Contact support@vytra.co.in for help.`,
     });
   }
+
+  /**
+   * Password Reset OTP Email
+   */
+  async sendPasswordResetOtp(to: string, otp: string, name?: string): Promise<boolean> {
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Password Reset Code - Vytra</title>
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f7f9fc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1f2937;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f7f9fc; padding: 32px 16px;">
+        <tr>
+          <td align="center">
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 540px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
+              <!-- Header -->
+              <tr>
+                <td style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%); padding: 32px; text-align: center;">
+                  <h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff;">
+                    VYTRA
+                  </h1>
+                  <p style="margin: 6px 0 0 0; font-size: 13px; color: #c7d2fe; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600;">
+                    Password Recovery
+                  </p>
+                </td>
+              </tr>
+
+              <!-- Content -->
+              <tr>
+                <td style="padding: 32px 32px 20px 32px; text-align: center;">
+                  <h2 style="margin: 0 0 12px 0; font-size: 22px; font-weight: 700; color: #111827;">
+                    Reset Your Password
+                  </h2>
+                  <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #4b5563;">
+                    Hi ${name || 'there'}, we received a request to reset your Vytra account password. Use the 6-digit verification code below to continue:
+                  </p>
+
+                  <!-- OTP Box -->
+                  <div style="background-color: #eef2ff; border: 2px dashed #6366f1; border-radius: 12px; padding: 20px; margin: 0 auto 24px auto; display: inline-block;">
+                    <span style="font-family: 'Courier New', Courier, monospace; font-size: 34px; font-weight: 800; letter-spacing: 10px; color: #3730a3; padding-left: 10px;">
+                      ${otp}
+                    </span>
+                  </div>
+
+                  <p style="margin: 0 0 12px 0; font-size: 13px; color: #dc2626; font-weight: 600;">
+                    ⏱ This verification code is valid for 10 minutes.
+                  </p>
+                  <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #64748b;">
+                    If you did not request a password reset, you can safely disregard this email. Your password will remain unchanged.
+                  </p>
+                </td>
+              </tr>
+
+              <!-- Footer -->
+              <tr>
+                <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 32px; text-align: center;">
+                  <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b;">
+                    Need help? Contact <a href="mailto:support@vytra.co.in" style="color: #4338ca; text-decoration: underline;">support@vytra.co.in</a>
+                  </p>
+                  <p style="margin: 8px 0 0 0; font-size: 11px; color: #94a3b8;">
+                    © ${new Date().getFullYear()} Vytra. All rights reserved.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+    `;
+
+    return this.sendMail({
+      to,
+      subject: `Your Vytra Password Reset Code: ${otp}`,
+      html,
+      text: `Your Vytra verification code is ${otp}. Valid for 10 minutes. Contact support@vytra.co.in if you did not request this.`,
+    });
+  }
 }

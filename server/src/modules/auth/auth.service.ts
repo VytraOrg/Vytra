@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -7,6 +7,7 @@ import { User, UserDocument } from '../users/schemas/user.schema';
 import { Shop, ShopDocument } from '../shops/schemas/shop.schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto, VerifyResetOtpDto, ResetPasswordDto } from './dto/password-reset.dto';
 import { MailService } from '../mail/mail.service';
 
 @Injectable()
@@ -176,4 +177,83 @@ export class AuthService {
       refresh_token: refreshToken,
     };
   }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const email = dto.email.trim().toLowerCase();
+    const user = await this.userModel.findOne({ email });
+    if (!user) {
+      throw new NotFoundException('No account found with this email address');
+    }
+
+    // Generate random 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.resetPasswordOtp = otp;
+    user.resetPasswordOtpExpires = expires;
+    await user.save();
+
+    // Send OTP via MailService
+    await this.mailService.sendPasswordResetOtp(user.email, otp, user.name);
+
+    return {
+      success: true,
+      message: 'Verification code sent to your email address',
+    };
+  }
+
+  async verifyResetOtp(dto: VerifyResetOtpDto) {
+    const email = dto.email.trim().toLowerCase();
+    const user = await this.userModel
+      .findOne({ email })
+      .select('+resetPasswordOtp +resetPasswordOtpExpires');
+
+    if (!user) {
+      throw new NotFoundException('No account found with this email address');
+    }
+
+    if (!user.resetPasswordOtp || user.resetPasswordOtp !== dto.otp.trim()) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    if (!user.resetPasswordOtpExpires || user.resetPasswordOtpExpires < new Date()) {
+      throw new BadRequestException('Verification code has expired. Please request a new one.');
+    }
+
+    return {
+      success: true,
+      message: 'Verification code verified successfully',
+    };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const email = dto.email.trim().toLowerCase();
+    const user = await this.userModel
+      .findOne({ email })
+      .select('+resetPasswordOtp +resetPasswordOtpExpires +password');
+
+    if (!user) {
+      throw new NotFoundException('No account found with this email address');
+    }
+
+    if (!user.resetPasswordOtp || user.resetPasswordOtp !== dto.otp.trim()) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    if (!user.resetPasswordOtpExpires || user.resetPasswordOtpExpires < new Date()) {
+      throw new BadRequestException('Verification code has expired. Please request a new one.');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+    user.password = hashedPassword;
+    user.resetPasswordOtp = undefined;
+    user.resetPasswordOtpExpires = undefined;
+    await user.save();
+
+    return {
+      success: true,
+      message: 'Password has been reset successfully. You can now login with your new password.',
+    };
+  }
 }
+

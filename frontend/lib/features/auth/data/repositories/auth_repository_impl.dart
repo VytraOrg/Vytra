@@ -34,6 +34,21 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   @override
+  Future<void> forgotPassword(String email) async {
+    await remoteDataSource.forgotPassword(email);
+  }
+
+  @override
+  Future<void> verifyResetOtp(String email, String otp) async {
+    await remoteDataSource.verifyResetOtp(email, otp);
+  }
+
+  @override
+  Future<void> resetPassword(String email, String otp, String newPassword) async {
+    await remoteDataSource.resetPassword(email, otp, newPassword);
+  }
+
+  @override
   UserEntity? getCachedUser() {
     return localDataSource.getCachedUser();
   }

@@ -10,6 +10,7 @@ import '../../../shopkeeper/presentation/screens/shopkeeper_dash.dart';
 import '../../../shopkeeper/presentation/screens/shopkeeper_route_handler.dart';
 import '../../../distributor/presentation/screens/distributor_dash.dart';
 import 'register_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -135,7 +136,36 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _passwordController,
                         ),
                         
-                        const SizedBox(height: AppSpacing.xl),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ForgotPasswordScreen(
+                                    initialEmail: _emailController.text.trim(),
+                                  ),
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.only(top: 4, bottom: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text(
+                              "Forgot Password?",
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: AppSpacing.lg),
                         
                         ElevatedButton(
                           onPressed: authController.isLoading ? null : () => _handleLogin(authController),

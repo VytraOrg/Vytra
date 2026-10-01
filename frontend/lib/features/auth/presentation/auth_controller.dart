@@ -128,6 +128,54 @@ class AuthController with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<String?> sendPasswordResetOtp(String email) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      if (_authRepository == null) throw Exception('Auth repository not available');
+      await _authRepository.forgotPassword(email.trim().toLowerCase());
+      return null;
+    } catch (e) {
+      final msg = e.toString().replaceAll('AppError: ', '').replaceAll('Exception: ', '');
+      _error = msg;
+      return msg;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<String?> verifyResetOtp(String email, String otp) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      if (_authRepository == null) throw Exception('Auth repository not available');
+      await _authRepository.verifyResetOtp(email.trim().toLowerCase(), otp.trim());
+      return null;
+    } catch (e) {
+      final msg = e.toString().replaceAll('AppError: ', '').replaceAll('Exception: ', '');
+      _error = msg;
+      return msg;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<String?> resetPassword(String email, String otp, String newPassword) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      if (_authRepository == null) throw Exception('Auth repository not available');
+      await _authRepository.resetPassword(email.trim().toLowerCase(), otp.trim(), newPassword);
+      return null;
+    } catch (e) {
+      final msg = e.toString().replaceAll('AppError: ', '').replaceAll('Exception: ', '');
+      _error = msg;
+      return msg;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();

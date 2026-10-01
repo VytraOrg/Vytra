@@ -228,7 +228,7 @@ class ApiClient {
       case 403:
         throw AuthError("Forbidden: Insufficient permissions");
       case 404:
-        throw AppError("Resource not found");
+        throw AppError(message.isNotEmpty && message != "Not Found" ? message : "Resource not found");
       case 500:
         throw ServerError(statusCode: 500);
       default:
