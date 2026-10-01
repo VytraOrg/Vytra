@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 /// Production hosted backend URL (used for production builds & release APK/web)
-const String _prodBackendUrl = 'https://localcommerceapp-1.onrender.com/api/v1';
+const String _prodBackendUrl = 'https://api.vytra.co.in/api/v1';
 
 /// Local development backend URLs (used during development)
 const String _localWebUrl = 'http://localhost:5001/api/v1';

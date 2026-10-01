@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.0.13",
+    "buildNumber": 13,
+    "timestamp": "2026-10-01T16:31:12.198Z",
+    "date": "01 Oct 2026, 10:01 PM",
+    "commit": "f0ed698",
+    "branch": "master",
+    "size": "58.3 MB",
+    "apkName": "Vytra.apk",
+    "archivePath": "archives/Vytra-v1.0.13.apk",
+    "changes": [
+      "Switch production API base URL to custom domain api.vytra.co.in"
+    ]
+  },
+  {
     "version": "1.0.12",
     "buildNumber": 12,
     "timestamp": "2026-09-29T20:52:32.827Z",
