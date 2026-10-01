@@ -1,19 +1,25 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { InjectModel, InjectConnection } from '@nestjs/mongoose';
 import { Model, Types, Connection } from 'mongoose';
 import { Order, OrderDocument } from './schemas/order.schema';
 import { CartService } from '../cart/cart.service';
 import { ShopsService } from '../shops/shops.service';
 import { Product, ProductDocument } from '../products/schemas/product.schema';
+import { User, UserDocument } from '../users/schemas/user.schema';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectConnection() private readonly connection: Connection,
     private cartService: CartService,
     private shopsService: ShopsService,
+    private mailService: MailService,
   ) {}
 
   async createOrder(userId: string, deliveryAddress: any) {
@@ -61,6 +67,12 @@ export class OrdersService {
       await this.cartService.clearCart(userId, session);
 
       await session.commitTransaction();
+
+      // Dispatch confirmation email asynchronously (fire-and-forget so order flow is never blocked)
+      this.sendOrderConfirmationEmail(savedOrder, userId).catch((err) => {
+        this.logger.error(`Failed to send order confirmation email: ${err.message}`);
+      });
+
       return savedOrder;
     } catch (error) {
       await session.abortTransaction();
@@ -75,7 +87,46 @@ export class OrdersService {
   }
 
   async updateOrderStatus(id: string, status: string) {
-    return this.orderModel.findByIdAndUpdate(id, { status }, { new: true });
+    const updatedOrder = await this.orderModel
+      .findByIdAndUpdate(id, { status }, { new: true })
+      .populate('userId', 'name email');
+
+    if (updatedOrder && (updatedOrder.userId as any)?.email) {
+      this.mailService
+        .sendOrderStatusUpdate((updatedOrder.userId as any).email, {
+          orderId: updatedOrder._id.toString(),
+          customerName: (updatedOrder.userId as any).name || 'Customer',
+          status,
+        })
+        .catch((err) => {
+          this.logger.error(`Failed to send order status email: ${err.message}`);
+        });
+    }
+
+    return updatedOrder;
+  }
+
+  private async sendOrderConfirmationEmail(order: OrderDocument, userId: string) {
+    try {
+      const user = await this.userModel.findById(userId).select('name email');
+      if (!user || !user.email) return;
+
+      const itemsSummary = (order.items || []).map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }));
+
+      await this.mailService.sendOrderConfirmation(user.email, {
+        orderId: order._id.toString(),
+        customerName: user.name || 'Valued Customer',
+        items: itemsSummary,
+        totalAmount: order.totalAmount,
+        deliveryAddress: order.deliveryAddress,
+      });
+    } catch (e: any) {
+      this.logger.warn(`Could not dispatch order confirmation email: ${e.message}`);
+    }
   }
 
   async getMyShopOrders(ownerId: string) {

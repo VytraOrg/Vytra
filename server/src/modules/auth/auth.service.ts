@@ -7,6 +7,7 @@ import { User, UserDocument } from '../users/schemas/user.schema';
 import { Shop, ShopDocument } from '../shops/schemas/shop.schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -14,6 +15,7 @@ export class AuthService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Shop.name) private shopModel: Model<ShopDocument>,
     private jwtService: JwtService,
+    private mailService: MailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -53,6 +55,9 @@ export class AuthService {
       });
       await newShop.save();
     }
+
+    // Fire welcome email asynchronously
+    this.mailService.sendWelcome(user.email, user.name).catch(() => {});
 
     return this.generateToken(user);
   }

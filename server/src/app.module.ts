@@ -10,6 +10,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { CacheModule } from './modules/cache/cache.module';
 import { CartModule } from './modules/cart/cart.module';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { CartModule } from './modules/cart/cart.module';
     OrdersModule,
     CacheModule,
     CartModule,
+    MailModule,
   ],
   providers: [
     {

@@ -7,6 +7,7 @@ import { AuthController } from './auth.controller';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { Shop, ShopSchema } from '../shops/schemas/shop.schema';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       { name: User.name, schema: UserSchema },
       { name: Shop.name, schema: ShopSchema },
     ]),
+    MailModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
