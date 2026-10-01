@@ -171,16 +171,16 @@ export class MailService {
       <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #FAF9F6; padding: 36px 16px;">
         <tr>
           <td align="center">
-            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; overflow: hidden; border: 1px solid #EFE9E1; box-shadow: 0 8px 30px rgba(56, 36, 13, 0.06);">
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; overflow: hidden; border: 1px solid #EFE9E1;">
               <!-- Header -->
               <tr>
-                <td style="background: linear-gradient(135deg, #1E1B18 0%, #38240D 60%, #4A3728 100%); padding: 36px 32px; text-align: center; border-bottom: 3px solid #D4A373;">
-                  <h1 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 2px; color: #FFFFFF;">
+                <td style="background: linear-gradient(135deg, #1E1B18 0%, #38240D 60%, #4A3728 100%); padding: 32px; text-align: center; border-bottom: 3px solid #D4A373;">
+                  <h1 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 3px; color: #FFFFFF;">
                     VYTRA
                   </h1>
-                  <div style="display: inline-block; margin-top: 10px; padding: 4px 14px; background: rgba(212, 163, 115, 0.18); border: 1px solid rgba(212, 163, 115, 0.45); border-radius: 20px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 700; color: #D4A373;">
+                  <p style="margin: 6px 0 0 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; color: #D4A373;">
                     Order Confirmation
-                  </div>
+                  </p>
                 </td>
               </tr>
 
@@ -188,7 +188,7 @@ export class MailService {
               <tr>
                 <td style="padding: 32px 32px 20px 32px;">
                   <h2 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 800; color: #1E1B18;">
-                    Thank you for your order, ${data.customerName || 'valued customer'}! 🎉
+                    Thank you for your order, ${data.customerName || 'valued customer'}!
                   </h2>
                   <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #7D6E63;">
                     We have received your order <strong style="color: #38240D;">#${shortId}</strong> and our team is already preparing it for speedy delivery.
@@ -206,7 +206,7 @@ export class MailService {
                     </tr>
                     <tr>
                       <td style="font-size: 13px; color: #7D6E63; font-weight: 600; padding-top: 8px;">Status:</td>
-                      <td style="font-size: 13px; color: #2D6A4F; font-weight: 700; text-align: right; padding-top: 8px;">● Confirmed & Preparing</td>
+                      <td style="font-size: 13px; color: #2D6A4F; font-weight: 700; text-align: right; padding-top: 8px;">Confirmed & Preparing</td>
                     </tr>
                   </table>
                 </td>
@@ -245,7 +245,7 @@ export class MailService {
                 <td style="padding: 0 32px 32px 32px;">
                   <div style="background-color: #FDFBF9; border: 1px solid #EFE9E1; border-radius: 14px; padding: 16px 20px;">
                     <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; color: #7D6E63; margin-bottom: 6px;">
-                      📍 Delivery Address
+                      Delivery Address
                     </div>
                     <div style="font-size: 14px; color: #1E1B18; line-height: 1.5; font-weight: 500;">
                       ${addressText}
@@ -300,31 +300,31 @@ export class MailService {
       <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #FAF9F6; padding: 36px 16px;">
         <tr>
           <td align="center">
-            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; overflow: hidden; border: 1px solid #EFE9E1; box-shadow: 0 8px 30px rgba(56, 36, 13, 0.06);">
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; overflow: hidden; border: 1px solid #EFE9E1;">
               <!-- Header -->
               <tr>
-                <td style="background: linear-gradient(135deg, #1E1B18 0%, #38240D 60%, #4A3728 100%); padding: 36px 32px; text-align: center; border-bottom: 3px solid #D4A373;">
-                  <h1 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 2px; color: #FFFFFF;">
+                <td style="background: linear-gradient(135deg, #1E1B18 0%, #38240D 60%, #4A3728 100%); padding: 32px; text-align: center; border-bottom: 3px solid #D4A373;">
+                  <h1 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 3px; color: #FFFFFF;">
                     VYTRA
                   </h1>
-                  <div style="display: inline-block; margin-top: 10px; padding: 4px 14px; background: rgba(212, 163, 115, 0.18); border: 1px solid rgba(212, 163, 115, 0.45); border-radius: 20px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 700; color: #D4A373;">
-                    Welcome
-                  </div>
+                  <p style="margin: 6px 0 0 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; color: #D4A373;">
+                    Welcome to Vytra
+                  </p>
                 </td>
               </tr>
               <!-- Content -->
               <tr>
                 <td style="padding: 36px 32px 28px 32px;">
                   <h2 style="margin: 0 0 12px 0; font-size: 22px; font-weight: 800; color: #1E1B18;">
-                    Welcome to Vytra, ${name || 'Friend'}! 🌿
+                    Welcome to Vytra, ${name || 'Friend'}!
                   </h2>
                   <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #7D6E63;">
                     Your account has been successfully created. With Vytra, you get fast, reliable local commerce, instant updates, and verified local merchants delivered straight to your doorstep.
                   </p>
 
                   <div style="text-align: center; margin: 28px 0;">
-                    <a href="https://download.vytra.co.in" style="display: inline-block; background-color: #38240D; color: #FFFFFF; font-size: 14px; font-weight: 700; padding: 14px 28px; border-radius: 12px; text-decoration: none; border: 1px solid #D4A373; box-shadow: 0 4px 12px rgba(56, 36, 13, 0.15);">
-                      Download Mobile App 📱
+                    <a href="https://download.vytra.co.in" style="display: inline-block; background-color: #38240D; color: #FFFFFF; font-size: 14px; font-weight: 700; padding: 14px 28px; border-radius: 12px; text-decoration: none; border: 1px solid #D4A373;">
+                      Download Mobile App
                     </a>
                   </div>
 
@@ -353,7 +353,7 @@ export class MailService {
 
     return this.sendMail({
       to,
-      subject: 'Welcome to Vytra! 🌿',
+      subject: 'Welcome to Vytra',
       html,
       text: `Welcome to Vytra, ${name}! Your account is active. Visit download.vytra.co.in for the mobile app, or contact support@vytra.co.in if you need anything.`,
     });
@@ -367,7 +367,7 @@ export class MailService {
     const isDelivered = data.status.toLowerCase().includes('delivered');
     const isCancelled = data.status.toLowerCase().includes('cancel');
     const statusColor = isDelivered ? '#2D6A4F' : isCancelled ? '#BC4749' : '#38240D';
-    const statusBg = isDelivered ? '#EBF5EE' : isCancelled ? '#FDF0ED' : '#F5EBE0';
+    const statusBg = isDelivered ? '#EBF5EE' : isCancelled ? '#FDF0ED' : '#FAF5EF';
 
     const html = `
     <!DOCTYPE html>
@@ -381,16 +381,16 @@ export class MailService {
       <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #FAF9F6; padding: 36px 16px;">
         <tr>
           <td align="center">
-            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; overflow: hidden; border: 1px solid #EFE9E1; box-shadow: 0 8px 30px rgba(56, 36, 13, 0.06);">
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 20px; overflow: hidden; border: 1px solid #EFE9E1;">
               <!-- Header -->
               <tr>
-                <td style="background: linear-gradient(135deg, #1E1B18 0%, #38240D 60%, #4A3728 100%); padding: 36px 32px; text-align: center; border-bottom: 3px solid #D4A373;">
-                  <h1 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 2px; color: #FFFFFF;">
+                <td style="background: linear-gradient(135deg, #1E1B18 0%, #38240D 60%, #4A3728 100%); padding: 32px; text-align: center; border-bottom: 3px solid #D4A373;">
+                  <h1 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 3px; color: #FFFFFF;">
                     VYTRA
                   </h1>
-                  <div style="display: inline-block; margin-top: 10px; padding: 4px 14px; background: rgba(212, 163, 115, 0.18); border: 1px solid rgba(212, 163, 115, 0.45); border-radius: 20px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 700; color: #D4A373;">
+                  <p style="margin: 6px 0 0 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; color: #D4A373;">
                     Order Update
-                  </div>
+                  </p>
                 </td>
               </tr>
               <!-- Content -->
@@ -402,7 +402,7 @@ export class MailService {
                   <p style="margin: 0 0 20px 0; font-size: 15px; color: #7D6E63; line-height: 1.6;">
                     Your order <strong style="color: #38240D;">#${shortId}</strong> status has been updated:
                   </p>
-                  <div style="background-color: ${statusBg}; border-left: 4px solid ${statusColor}; border: 1px solid #EFE9E1; border-left-width: 4px; padding: 16px 20px; border-radius: 12px; margin-bottom: 24px;">
+                  <div style="background-color: ${statusBg}; border: 1px solid #EFE9E1; border-left: 4px solid ${statusColor}; padding: 16px 20px; border-radius: 12px; margin-bottom: 24px;">
                     <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; color: #7D6E63; margin-bottom: 4px;">
                       Current Status
                     </div>
@@ -453,16 +453,16 @@ export class MailService {
       <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #FAF9F6; padding: 36px 16px;">
         <tr>
           <td align="center">
-            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 540px; background-color: #FFFFFF; border-radius: 20px; overflow: hidden; border: 1px solid #EFE9E1; box-shadow: 0 8px 30px rgba(56, 36, 13, 0.06);">
+            <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 540px; background-color: #FFFFFF; border-radius: 20px; overflow: hidden; border: 1px solid #EFE9E1;">
               <!-- Header -->
               <tr>
-                <td style="background: linear-gradient(135deg, #1E1B18 0%, #38240D 60%, #4A3728 100%); padding: 36px 32px; text-align: center; border-bottom: 3px solid #D4A373;">
-                  <h1 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: 2px; color: #FFFFFF;">
+                <td style="background: linear-gradient(135deg, #1E1B18 0%, #38240D 60%, #4A3728 100%); padding: 32px; text-align: center; border-bottom: 3px solid #D4A373;">
+                  <h1 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 3px; color: #FFFFFF;">
                     VYTRA
                   </h1>
-                  <div style="display: inline-block; margin-top: 10px; padding: 4px 14px; background: rgba(212, 163, 115, 0.18); border: 1px solid rgba(212, 163, 115, 0.45); border-radius: 20px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 700; color: #D4A373;">
+                  <p style="margin: 6px 0 0 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; color: #D4A373;">
                     Password Recovery
-                  </div>
+                  </p>
                 </td>
               </tr>
 
@@ -477,7 +477,7 @@ export class MailService {
                   </p>
 
                   <!-- OTP Card -->
-                  <div style="background: linear-gradient(180deg, #FDFBF9 0%, #F5EBE0 100%); border: 1.5px solid #D4A373; border-radius: 16px; padding: 22px 28px; margin: 0 auto 20px auto; display: inline-block; box-shadow: 0 4px 16px rgba(56, 36, 13, 0.05);">
+                  <div style="background-color: #FAF5EF; border: 1.5px solid #D4A373; border-radius: 16px; padding: 22px 28px; margin: 0 auto 18px auto; display: inline-block;">
                     <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; color: #7D6E63; margin-bottom: 10px;">
                       Verification Code
                     </div>
@@ -488,8 +488,8 @@ export class MailService {
 
                   <!-- Expiry Badge -->
                   <div style="margin-bottom: 22px;">
-                    <span style="display: inline-block; background-color: #FAF4EB; border: 1px solid #EFE4D2; border-radius: 20px; padding: 5px 14px; font-size: 12px; font-weight: 600; color: #9C6634;">
-                      ⏱ Valid for 10 minutes
+                    <span style="display: inline-block; background-color: #FAF4EB; border: 1px solid #EFE4D2; border-radius: 20px; padding: 5px 16px; font-size: 12px; font-weight: 600; color: #9C6634;">
+                      Valid for 10 minutes
                     </span>
                   </div>
 
