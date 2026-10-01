@@ -24,7 +24,8 @@ class ProductModel extends Product {
       category: json['category'] ?? 'General',
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       unit: json['unit'] ?? 'pcs',
-      imageUrl: json['imageUrl'],
+      imageUrl: json['imageUrl'] ??
+          (json['images'] is List && (json['images'] as List).isNotEmpty ? json['images'][0] : null),
       isAvailable: json['isAvailable'] ?? true,
       shopId: (json['shop'] is Map ? json['shop']['_id'] : json['shop'])?.toString() ?? '',
       shopName: json['shopInfo'] != null ? json['shopInfo']['name']?.toString() : (json['shop'] is Map ? json['shop']['name']?.toString() : null),

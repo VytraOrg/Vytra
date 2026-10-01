@@ -7,8 +7,8 @@ import '../../../orders/presentation/screens/orders_page.dart';
 import '../controllers/cart_controller.dart';
 import '../../../../core/services/live_order_tracking_service.dart';
 import '../../../../shared/widgets/app_notification.dart';
-
 import '../../domain/cart_model.dart';
+import '../widgets/cart_recommendation_section.dart';
 
 class CartPage extends StatefulWidget {
   final bool isTab;
@@ -47,13 +47,22 @@ class _CartPageState extends State<CartPage> {
               : Column(
                   children: [
                     Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        itemCount: cart.items.length,
-                        itemBuilder: (context, index) {
-                          final item = cart.items[index];
-                          return _buildCartItem(context, item, index);
-                        },
+                      child: ListView(
+                        padding: EdgeInsets.zero,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+                            child: Column(
+                              children: cart.items.asMap().entries.map((entry) {
+                                return _buildCartItem(context, entry.value, entry.key);
+                              }).toList(),
+                            ),
+                          ),
+                          CartRecommendationSection(
+                            cartProductIds: cart.items.map((it) => it.productId).toList(),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                        ],
                       ),
                     ),
                     _buildCheckoutSection(context, cart),
