@@ -100,6 +100,57 @@ class GlobalProductCard extends StatelessWidget {
                       ],
                     ],
                   ),
+                  if (!product.isAvailable || product.stockQuantity <= 0) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        border: Border.all(color: Colors.red.shade200, width: 0.8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.remove_circle_outline_rounded, size: 11, color: Colors.red.shade700),
+                          const SizedBox(width: 3),
+                          Text(
+                            "Out of stock",
+                            style: TextStyle(
+                              color: Colors.red.shade800,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else if (product.stockQuantity <= 5) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF3E0),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        border: Border.all(color: const Color(0xFFFFB74D), width: 0.8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.local_fire_department_rounded, size: 11, color: Color(0xFFE65100)),
+                          const SizedBox(width: 3),
+                          Text(
+                            product.stockQuantity == 1 ? "Only 1 left in stock!" : "Only ${product.stockQuantity} left",
+                            style: const TextStyle(
+                              color: Color(0xFFE65100),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -109,27 +160,37 @@ class GlobalProductCard extends StatelessWidget {
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.freshGreen),
                       ),
                       GestureDetector(
-                        onTap: () async {
-                          final cartController = context.read<CartController>();
-                          await cartController.addToCart(product.id, quantity: 1);
-                          if (context.mounted) {
-                            AppNotification.showAddedToCart(
-                              context,
-                              productName: product.name,
-                              priceInfo: '₹${product.price} / ${product.unit}',
-                              isTab: isTab,
-                            );
-                          }
-                        },
+                        onTap: (!product.isAvailable || product.stockQuantity <= 0)
+                            ? null
+                            : () async {
+                                final cartController = context.read<CartController>();
+                                await cartController.addToCart(product.id, quantity: 1);
+                                if (context.mounted) {
+                                  AppNotification.showAddedToCart(
+                                    context,
+                                    productName: product.name,
+                                    priceInfo: '₹${product.price} / ${product.unit}',
+                                    isTab: isTab,
+                                  );
+                                }
+                              },
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: AppColors.primary,
+                            color: (!product.isAvailable || product.stockQuantity <= 0)
+                                ? Colors.grey.shade300
+                                : AppColors.primary,
                             borderRadius: BorderRadius.circular(AppRadius.md),
                           ),
-                          child: const Text(
-                            "ADD",
-                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                          child: Text(
+                            (!product.isAvailable || product.stockQuantity <= 0) ? "OUT" : "ADD",
+                            style: TextStyle(
+                              color: (!product.isAvailable || product.stockQuantity <= 0)
+                                  ? Colors.grey.shade600
+                                  : Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
