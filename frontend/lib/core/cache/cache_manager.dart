@@ -101,17 +101,7 @@ class CacheManager {
     return data != null ? Map<String, dynamic>.from(data) : null;
   }
 
-  // --- Dynamic Island Settings ---
-  static bool isDynamicIslandEnabled() {
-    final box = Hive.box(_settingsBox);
-    return box.get('dynamic_island_enabled', defaultValue: kIsWeb);
-  }
-
-  static Future<void> setDynamicIslandEnabled(bool enabled) async {
-    final box = Hive.box(_settingsBox);
-    await box.put('dynamic_island_enabled', enabled);
-    await box.flush();
-  }
+  // --- Clear Cache ---
 
   static Future<void> clearAll() async {
     await Hive.box(_apiBox).clear();

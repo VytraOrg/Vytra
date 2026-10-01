@@ -21,7 +21,6 @@ import '../../../orders/presentation/screens/orders_page.dart';
 import '../../../orders/presentation/controllers/order_controller.dart';
 import '../../../../core/services/live_order_tracking_service.dart';
 import '../../../../shared/widgets/floating_pill_nav_bar.dart';
-import '../../../../shared/widgets/dynamic_island_widget.dart';
 import '../../data/shop_model.dart';
 import '../../data/product_model.dart';
 

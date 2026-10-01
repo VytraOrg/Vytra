@@ -28,15 +28,6 @@ class LiveOrderTrackingService extends ChangeNotifier {
   String _currentStatus = 'Placed';
   String get currentStatus => _currentStatus;
 
-  bool _isDynamicIslandEnabled = CacheManager.isDynamicIslandEnabled();
-  bool get isDynamicIslandEnabled => _isDynamicIslandEnabled;
-
-  void setDynamicIslandEnabled(bool value) {
-    _isDynamicIslandEnabled = value;
-    CacheManager.setDynamicIslandEnabled(value);
-    notifyListeners();
-  }
-
   Timer? _countdownTimer;
   Timer? _stageTimer;
   static const int _notificationId = 9901;
