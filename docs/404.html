@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Vytra Hub</title>
+  <script>
+    // GitHub Pages SPA router fallback:
+    // Transforms /commits or /commits.html into /#commits cleanly
+    var path = window.location.pathname.replace(/^\/+/, '').replace(/\.html$/, '');
+    var search = window.location.search || '';
+    window.location.replace('/#' + path + search);
+  </script>
+</head>
+<body style="background: #FAF7F2; font-family: 'Plus Jakarta Sans', sans-serif; text-align: center; padding-top: 80px; color: #7E7469;">
+  <p>Loading Vytra Hub...</p>
+</body>
+</html>
