@@ -103,10 +103,33 @@ export class ProductsService {
     return updated;
   }
 
-  private buildPipeline(search: string, shopType?: string, lat?: number, lng?: number): any[] {
-    const trimmed = search.trim();
-    const tokens = trimmed.split(/\s+/).filter((t) => t.length > 0);
-    const tokenGroups = this.synonymsService.expandTokens(tokens);
+  private getCategoryRegex(cat: string): RegExp | null {
+    const c = cat.toLowerCase().trim();
+    if (!c || c === 'all') return null;
+
+    if (c === 'staples') {
+      return /staple|grocery|grain|atta|rice|dal|salt|oil|sugar|wheat|flour|pulse|spice|masala/i;
+    }
+    if (c === 'dairy') {
+      return /dairy|milk|butter|cheese|curd|paneer|ghee|dahi|yogurt|bakery/i;
+    }
+    if (c === 'veggies') {
+      return /veggie|vegetable|fruit|potato|onion|tomato|apple|banana|fresh/i;
+    }
+    if (c === 'snacks') {
+      return /snack|chip|kurkure|lays|biscuit|cookie|namkeen|bhujia|crisp|chocolate|candy/i;
+    }
+    if (c === 'household') {
+      return /household|cleaning|soap|detergent|sanitizer|cleaner|shampoo|toothpaste|wash/i;
+    }
+
+    return new RegExp(cat.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'i');
+  }
+
+  private buildPipeline(search?: string, category?: string, shopType?: string, lat?: number, lng?: number): any[] {
+    const trimmed = (search || '').trim();
+    const tokens = trimmed.length > 0 ? trimmed.split(/\s+/).filter((t) => t.length > 0) : [];
+    const tokenGroups = tokens.length > 0 ? this.synonymsService.expandTokens(tokens) : [];
 
     const tokenMatches = tokenGroups.map((group) => {
       const orClauses: any[] = [];
@@ -121,12 +144,26 @@ export class ProductsService {
       return { $or: orClauses };
     });
 
+    const matchConditions: any[] = [{ isAvailable: true }];
+
+    if (tokenMatches.length > 0) {
+      matchConditions.push({ $and: tokenMatches });
+    }
+
+    const catRegex = this.getCategoryRegex(category || '');
+    if (catRegex) {
+      matchConditions.push({
+        $or: [
+          { category: { $regex: catRegex } },
+          { name: { $regex: catRegex } },
+          { description: { $regex: catRegex } },
+        ],
+      });
+    }
+
     const pipeline: any[] = [
       {
-        $match: {
-          isAvailable: true,
-          $and: tokenMatches,
-        },
+        $match: matchConditions.length === 1 ? matchConditions[0] : { $and: matchConditions },
       },
       {
         $addFields: {
@@ -162,18 +199,26 @@ export class ProductsService {
       });
     }
 
-    const escapedFull = trimmed.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-    pipeline.push({
-      $addFields: {
-        score: {
-          $add: [
-            { $cond: [{ $regexMatch: { input: '$name', regex: `^${escapedFull}`, options: 'i' } }, 10, 0] },
-            { $cond: [{ $regexMatch: { input: '$name', regex: escapedFull, options: 'i' } }, 5, 0] },
-            { $cond: [{ $regexMatch: { input: '$category', regex: escapedFull, options: 'i' } }, 3, 0] },
-          ],
+    if (trimmed.length > 0) {
+      const escapedFull = trimmed.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+      pipeline.push({
+        $addFields: {
+          score: {
+            $add: [
+              { $cond: [{ $regexMatch: { input: '$name', regex: `^${escapedFull}`, options: 'i' } }, 10, 0] },
+              { $cond: [{ $regexMatch: { input: '$name', regex: escapedFull, options: 'i' } }, 5, 0] },
+              { $cond: [{ $regexMatch: { input: '$category', regex: escapedFull, options: 'i' } }, 3, 0] },
+            ],
+          },
         },
-      },
-    });
+      });
+    } else {
+      pipeline.push({
+        $addFields: {
+          score: 1,
+        },
+      });
+    }
 
     if (lat !== undefined && lng !== undefined && !isNaN(Number(lat)) && !isNaN(Number(lng))) {
       const latitude = Number(lat);
@@ -241,24 +286,28 @@ export class ProductsService {
     return pipeline;
   }
 
-  async searchGlobal(search: string, shopType?: string, lat?: number, lng?: number) {
-    if (!search || !search.trim()) {
+  async searchGlobal(search?: string, category?: string, shopType?: string, lat?: number, lng?: number) {
+    const hasSearch = search && search.trim().length > 0;
+    const hasCategory = category && category.trim().length > 0 && category.toLowerCase().trim() !== 'all';
+
+    if (!hasSearch && !hasCategory) {
       return { items: [], isAutoCorrected: false, originalQuery: '', correctedQuery: '' };
     }
 
-    const pipeline = this.buildPipeline(search, shopType, lat, lng);
+    const queryText = search ? search.trim() : '';
+    const pipeline = this.buildPipeline(queryText, category, shopType, lat, lng);
     let items = await this.productModel.aggregate(pipeline).exec();
 
     let isAutoCorrected = false;
     let correctedQuery = '';
     let didYouMean: string | undefined = undefined;
 
-    // If query returned 0 items, attempt spelling correction
-    if (items.length === 0) {
-      const correction = this.spellcheckService.correctPhrase(search);
+    // If query returned 0 items and search text was provided, attempt spelling correction
+    if (items.length === 0 && hasSearch) {
+      const correction = this.spellcheckService.correctPhrase(queryText);
       if (correction.wasChanged) {
         didYouMean = correction.corrected;
-        const correctedPipeline = this.buildPipeline(correction.corrected, shopType, lat, lng);
+        const correctedPipeline = this.buildPipeline(correction.corrected, category, shopType, lat, lng);
         const correctedItems = await this.productModel.aggregate(correctedPipeline).exec();
         if (correctedItems.length > 0) {
           items = correctedItems;
@@ -271,8 +320,8 @@ export class ProductsService {
     return {
       items,
       isAutoCorrected,
-      originalQuery: search,
-      correctedQuery: isAutoCorrected ? correctedQuery : search,
+      originalQuery: queryText,
+      correctedQuery: isAutoCorrected ? correctedQuery : queryText,
       didYouMean,
     };
   }

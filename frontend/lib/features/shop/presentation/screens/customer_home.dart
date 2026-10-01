@@ -105,13 +105,7 @@ class _CustomerHomeState extends State<CustomerHome> {
     super.dispose();
   }
 
-  static const Map<String, String> _categorySearchMap = {
-    'Staples': 'rice dal salt atta',
-    'Dairy': 'milk butter curd cheese',
-    'Veggies': 'apple banana veggie fresh',
-    'Snacks': 'lays kurkure chips biscuit',
-    'Household': 'sanitizer soap detergent',
-  };
+
 
   Future<void> _loadData({bool forceRefresh = false}) async {
     final user = context.read<AuthController>().currentUser;
@@ -132,12 +126,9 @@ class _CustomerHomeState extends State<CustomerHome> {
     );
 
     // 2. Fetch products for global search/category
-    final productQuery = effectiveQuery.isNotEmpty 
-        ? effectiveQuery 
-        : (selectedCategory != 'All' ? (_categorySearchMap[selectedCategory] ?? selectedCategory) : '');
-
     final productsFuture = shopController.searchGlobal(
-      productQuery,
+      effectiveQuery,
+      category: selectedCategory != 'All' ? selectedCategory : null,
       shopType: isShopkeeper ? 'Distributor' : 'Retailer',
       lat: _userLat,
       lng: _userLng,
@@ -342,10 +333,12 @@ class _CustomerHomeState extends State<CustomerHome> {
                         Text(
                           _searchQuery.isNotEmpty 
                             ? "Results for \"$_searchQuery\"" 
-                            : (isShopkeeper ? "Top Distributors" : "Nearby Stores"),
+                            : (selectedCategory != 'All'
+                                ? "$selectedCategory Items & Stores"
+                                : (isShopkeeper ? "Top Distributors" : "Nearby Stores")),
                           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary),
                         ),
-                        if (_searchQuery.isNotEmpty)
+                        if (_searchQuery.isNotEmpty || selectedCategory != 'All')
                           Text(
                             "${shopController.shops.length + shopController.searchResults.length} found",
                             style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
@@ -697,10 +690,16 @@ class _CustomerHomeState extends State<CustomerHome> {
   }
 
   Widget _buildResultsList(ShopController controller) {
-    final items = [
-      ...controller.shops.map((s) => {'type': 'shop', 'data': s}),
-      ...controller.searchResults.map((p) => {'type': 'product', 'data': p}),
-    ];
+    final isFiltered = selectedCategory != 'All' || _searchQuery.isNotEmpty;
+    final items = isFiltered
+        ? [
+            ...controller.searchResults.map((p) => {'type': 'product', 'data': p}),
+            ...controller.shops.map((s) => {'type': 'shop', 'data': s}),
+          ]
+        : [
+            ...controller.shops.map((s) => {'type': 'shop', 'data': s}),
+            ...controller.searchResults.map((p) => {'type': 'product', 'data': p}),
+          ];
 
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),

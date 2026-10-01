@@ -75,6 +75,7 @@ class ShopRepository {
 
   Future<SearchResultPayload> searchGlobalProducts({
     required String query,
+    String? category,
     String? shopType,
     double? lat,
     double? lng,
@@ -82,10 +83,14 @@ class ShopRepository {
   }) async {
     try {
       final trimmed = query.trim();
-      if (trimmed.isEmpty) return SearchResultPayload(items: []);
+      final hasQuery = trimmed.isNotEmpty;
+      final hasCategory = category != null && category != 'All' && category.trim().isNotEmpty;
 
-      final q = Uri.encodeComponent(trimmed);
-      final queryParams = <String, String>{'q': q};
+      if (!hasQuery && !hasCategory) return SearchResultPayload(items: []);
+
+      final queryParams = <String, String>{};
+      if (hasQuery) queryParams['q'] = Uri.encodeComponent(trimmed);
+      if (hasCategory) queryParams['category'] = Uri.encodeComponent(category.trim());
       if (shopType != null) queryParams['shopType'] = shopType;
       if (lat != null) queryParams['lat'] = lat.toString();
       if (lng != null) queryParams['lng'] = lng.toString();

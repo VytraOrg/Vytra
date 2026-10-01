@@ -17,6 +17,29 @@ export class ShopsService {
     return this.shopModel.find().exec();
   }
 
+  private getCategoryRegex(cat: string): RegExp | null {
+    const c = cat.toLowerCase().trim();
+    if (!c || c === 'all') return null;
+
+    if (c === 'staples') {
+      return /staple|grocery|grain|general|retail|supermarket/i;
+    }
+    if (c === 'dairy') {
+      return /dairy|milk|bakery|grocery|general|supermarket/i;
+    }
+    if (c === 'veggies') {
+      return /veggie|vegetable|fruit|fresh|grocery|supermarket/i;
+    }
+    if (c === 'snacks') {
+      return /snack|bakery|confectionery|grocery|general|supermarket|retail/i;
+    }
+    if (c === 'household') {
+      return /household|cleaning|pharmacy|general|supermarket|grocery/i;
+    }
+
+    return new RegExp(cat.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&'), 'i');
+  }
+
   async findFiltered(
     category?: string,
     shopType?: string,
@@ -26,7 +49,16 @@ export class ShopsService {
     maxDistanceKm: number = 50,
   ) {
     const filter: any = { status: 'Open' };
-    if (category) filter.category = category;
+    if (category && category !== 'All') {
+      const catRegex = this.getCategoryRegex(category);
+      if (catRegex) {
+        filter.$or = [
+          { category: { $regex: catRegex } },
+          { name: { $regex: catRegex } },
+          { description: { $regex: catRegex } },
+        ];
+      }
+    }
     if (shopType) filter.shopType = shopType;
     if (search && search.trim()) {
       const tokens = search.trim().split(/\s+/).filter((t) => t.length > 0);

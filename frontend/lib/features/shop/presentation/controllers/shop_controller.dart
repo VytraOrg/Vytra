@@ -69,12 +69,16 @@ class ShopController extends ChangeNotifier {
 
   Future<void> searchGlobal(
     String query, {
+    String? category,
     String? shopType,
     double? lat,
     double? lng,
     bool forceRefresh = false,
   }) async {
-    if (query.isEmpty) {
+    final hasQuery = query.trim().isNotEmpty;
+    final hasCategory = category != null && category != 'All' && category.trim().isNotEmpty;
+
+    if (!hasQuery && !hasCategory) {
       _searchResults = [];
       _isAutoCorrected = false;
       _correctedQuery = '';
@@ -92,6 +96,7 @@ class ShopController extends ChangeNotifier {
     try {
       final payload = await _repository.searchGlobalProducts(
         query: query,
+        category: category,
         shopType: shopType,
         lat: lat,
         lng: lng,
