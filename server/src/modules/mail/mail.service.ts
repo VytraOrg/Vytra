@@ -30,7 +30,7 @@ export class MailService {
 
   constructor(private readonly configService: ConfigService) {
     const host = this.configService.get<string>('SMTP_HOST', 'smtpout.secureserver.net');
-    const port = parseInt(this.configService.get<string>('SMTP_PORT', '465'), 10);
+    const port = parseInt(this.configService.get<string>('SMTP_PORT', '587'), 10);
     const user = this.configService.get<string>('SMTP_USER', 'support@vytra.co.in');
     const pass = this.configService.get<string>('SMTP_PASS', '');
     const secure = port === 465 || this.configService.get<string>('SMTP_SECURE') === 'true';
@@ -46,6 +46,9 @@ export class MailService {
           user,
           pass,
         },
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 8000,
       });
 
       this.transporter.verify((error) => {

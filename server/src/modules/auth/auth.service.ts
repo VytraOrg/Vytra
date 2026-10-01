@@ -193,8 +193,8 @@ export class AuthService {
     user.resetPasswordOtpExpires = expires;
     await user.save();
 
-    // Send OTP via MailService
-    await this.mailService.sendPasswordResetOtp(user.email, otp, user.name);
+    // Send OTP via MailService asynchronously so user never suffers HTTP timeouts
+    this.mailService.sendPasswordResetOtp(user.email, otp, user.name).catch(() => {});
 
     return {
       success: true,

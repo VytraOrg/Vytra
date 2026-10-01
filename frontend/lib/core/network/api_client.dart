@@ -15,14 +15,14 @@ class ApiClient {
 
   Future<dynamic> _execute(Future<http.Response> Function() requestFn) async {
     try {
-      final response = await requestFn().timeout(const Duration(seconds: 15));
+      final response = await requestFn().timeout(const Duration(seconds: 30));
       
       if (response.statusCode == 401) {
         if (kDebugMode) print('🔑 API Client: Unauthorized (401), attempting token refresh...');
         final refreshSuccess = await _attemptTokenRefresh();
         if (refreshSuccess) {
           if (kDebugMode) print('🔁 API Client: Retrying request...');
-          final retryResponse = await requestFn().timeout(const Duration(seconds: 15));
+          final retryResponse = await requestFn().timeout(const Duration(seconds: 30));
           return _handleResponse(retryResponse);
         }
       }
