@@ -1,9 +1,9 @@
-name: Build & Publish Release APK
+name: Build & Publish Daily Release APK
 
 on:
-  push:
-    tags:
-      - 'v*'
+  schedule:
+    # Runs once daily after 04:00 AM IST (04:15 AM IST / 22:45 UTC)
+    - cron: '45 22 * * *'
   workflow_dispatch:
 
 permissions:
@@ -48,11 +48,23 @@ jobs:
           mkdir -p dist
           cp frontend/build/app/outputs/flutter-apk/app-release.apk dist/Vytra.apk
 
+      - name: Generate Release Tag & Name
+        id: release_info
+        run: |
+          VERSION=$(grep '^version:' frontend/pubspec.yaml | awk '{print $2}' | cut -d'+' -f1)
+          DATE_STR=$(date +'%Y.%m.%d')
+          TAG="v${VERSION}-${DATE_STR}"
+          NAME="Vytra v${VERSION} (${DATE_STR})"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "name=${NAME}" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release and Attach Vytra.apk
         uses: softprops/action-gh-release@v2
         with:
           files: dist/Vytra.apk
-          name: Vytra ${{ github.ref_name }}
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: ${{ steps.release_info.outputs.name }}
           draft: false
           prerelease: false
+          make_latest: true
           generate_release_notes: true
