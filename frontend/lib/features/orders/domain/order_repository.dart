@@ -48,4 +48,13 @@ class OrderRepository {
       rethrow;
     }
   }
+
+  Future<OrderModel> cancelOrder(String orderId) async {
+    try {
+      final response = await _apiClient.put('/orders/$orderId/cancel', {});
+      return OrderModel.fromJson(Map<String, dynamic>.from(response));
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

@@ -51,6 +51,26 @@ class OrderModel {
     this.customerInfo,
   });
 
+  OrderModel copyWith({
+    String? id,
+    List<OrderItem>? items,
+    double? totalAmount,
+    String? status,
+    DateTime? createdAt,
+    dynamic deliveryAddress,
+    Map<String, dynamic>? customerInfo,
+  }) {
+    return OrderModel(
+      id: id ?? this.id,
+      items: items ?? this.items,
+      totalAmount: totalAmount ?? this.totalAmount,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      deliveryAddress: deliveryAddress ?? this.deliveryAddress,
+      customerInfo: customerInfo ?? this.customerInfo,
+    );
+  }
+
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
       id: json['_id'] ?? json['id'] ?? '',

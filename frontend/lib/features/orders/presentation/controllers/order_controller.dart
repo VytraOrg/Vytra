@@ -51,4 +51,23 @@ class OrderController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<String?> cancelOrder(String orderId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _repository.cancelOrder(orderId);
+      await fetchOrders(); // Refresh list after cancellation
+      return null; // success
+    } catch (e) {
+      final msg = e.toString().replaceAll('AppError: ', '').replaceAll('Exception: ', '');
+      _error = msg;
+      return msg;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

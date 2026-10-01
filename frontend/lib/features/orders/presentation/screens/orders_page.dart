@@ -72,6 +72,8 @@ class _OrdersPageState extends State<OrdersPage> {
         break;
       case 'Processing':
       case 'Shipped':
+      case 'Dispatched':
+      case 'Out for Delivery':
         statusColor = AppColors.skyBlue;
         break;
       default:

@@ -41,4 +41,10 @@ export class OrdersController {
   updateStatus(@Param('id') id: string, @Body() updateOrderStatusDto: UpdateOrderStatusDto) {
     return this.ordersService.updateOrderStatus(id, updateOrderStatusDto.status);
   }
+
+  @Put(':id/cancel')
+  @ApiOperation({ summary: 'Cancel an order (Customer or Admin)' })
+  cancelOrder(@Param('id') id: string, @Request() req) {
+    return this.ordersService.cancelOrder(id, req.user._id, req.user.role);
+  }
 }

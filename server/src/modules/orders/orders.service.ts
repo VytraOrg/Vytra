@@ -106,6 +106,71 @@ export class OrdersService {
     return updatedOrder;
   }
 
+  async cancelOrder(orderId: string, userId: string, role?: string) {
+    const order = await this.orderModel.findById(orderId);
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    // Security: Only order owner or Admin can cancel
+    if (order.userId.toString() !== userId && role !== 'Admin') {
+      throw new BadRequestException('You are not authorized to cancel this order');
+    }
+
+    const currentStatus = (order.status || '').toLowerCase();
+
+    // Business rule: When the order is dispatched / shipped, it CANNOT be cancelled
+    if (
+      currentStatus === 'dispatched' ||
+      currentStatus === 'shipped' ||
+      currentStatus === 'out for delivery'
+    ) {
+      throw new BadRequestException('This order has already been dispatched and cannot be cancelled.');
+    }
+
+    if (currentStatus === 'delivered') {
+      throw new BadRequestException('Delivered orders cannot be cancelled.');
+    }
+
+    if (currentStatus === 'cancelled') {
+      throw new BadRequestException('This order is already cancelled.');
+    }
+
+    // Restore stock for all products in this order
+    for (const item of order.items || []) {
+      if (item.productId) {
+        await this.productModel
+          .updateOne(
+            { _id: item.productId },
+            { $inc: { stockQuantity: item.quantity } },
+          )
+          .exec();
+      }
+    }
+
+    order.status = 'Cancelled';
+    const savedOrder = await order.save();
+
+    // Notify customer via email non-blockingly
+    this.userModel
+      .findById(order.userId)
+      .select('name email')
+      .then((user) => {
+        if (user && user.email) {
+          this.mailService
+            .sendOrderStatusUpdate(user.email, {
+              orderId: order._id.toString(),
+              customerName: user.name || 'Customer',
+              status: 'Cancelled',
+            })
+            .catch(() => {});
+        }
+      })
+      .catch(() => {});
+
+    return savedOrder;
+  }
+
   private async sendOrderConfirmationEmail(order: OrderDocument, userId: string) {
     try {
       const user = await this.userModel.findById(userId).select('name email');
