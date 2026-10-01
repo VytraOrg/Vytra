@@ -21,6 +21,7 @@ class CartRecommendationSection extends StatefulWidget {
 
 class _CartRecommendationSectionState extends State<CartRecommendationSection> {
   final RecommendationsService _recommendationsService = RecommendationsService();
+  final ScrollController _scrollController = ScrollController();
   List<ProductModel> _recommendations = [];
   bool _isLoading = false;
   String _lastFetchedKey = '';
@@ -29,6 +30,12 @@ class _CartRecommendationSectionState extends State<CartRecommendationSection> {
   void initState() {
     super.initState();
     _fetchRecommendations();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -63,6 +70,28 @@ class _CartRecommendationSectionState extends State<CartRecommendationSection> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _scrollLeft() {
+    if (!_scrollController.hasClients) return;
+    final current = _scrollController.offset;
+    final target = (current - 164.0).clamp(0.0, _scrollController.position.maxScrollExtent);
+    _scrollController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _scrollRight() {
+    if (!_scrollController.hasClients) return;
+    final current = _scrollController.offset;
+    final target = (current + 164.0).clamp(0.0, _scrollController.position.maxScrollExtent);
+    _scrollController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -122,6 +151,15 @@ class _CartRecommendationSectionState extends State<CartRecommendationSection> {
                   ],
                 ),
               ),
+              // Left / Right Navigation Arrow Buttons
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildNavArrowButton(Icons.arrow_back_ios_new_rounded, _scrollLeft),
+                  const SizedBox(width: 8),
+                  _buildNavArrowButton(Icons.arrow_forward_ios_rounded, _scrollRight),
+                ],
+              ),
             ],
           ),
         ),
@@ -129,6 +167,7 @@ class _CartRecommendationSectionState extends State<CartRecommendationSection> {
         SizedBox(
           height: 228,
           child: ListView.separated(
+            controller: _scrollController,
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
@@ -143,6 +182,35 @@ class _CartRecommendationSectionState extends State<CartRecommendationSection> {
         const SizedBox(height: AppSpacing.md),
       ],
     ).animate().fadeIn(duration: 350.ms);
+  }
+
+  Widget _buildNavArrowButton(IconData icon, VoidCallback onTap) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.primaryLight, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.06),
+                blurRadius: 6,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Icon(icon, size: 13, color: AppColors.primary),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildRecommendationCard(
