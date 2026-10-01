@@ -79,6 +79,13 @@ class _CartPageState extends State<CartPage> {
                 Navigator.pop(context);
               }
             },
+            style: ElevatedButton.styleFrom(
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+              ),
+            ),
             child: const Text("Go Shopping"),
           ),
         ],
