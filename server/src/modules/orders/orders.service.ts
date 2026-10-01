@@ -112,8 +112,12 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
+    const rawOrderUserId = (order.userId as any)?._id || order.userId;
+    const orderUserId = rawOrderUserId ? rawOrderUserId.toString() : '';
+    const currentUserId = userId ? userId.toString() : '';
+
     // Security: Only order owner or Admin can cancel
-    if (order.userId.toString() !== userId && role !== 'Admin') {
+    if (orderUserId !== currentUserId && role !== 'Admin') {
       throw new BadRequestException('You are not authorized to cancel this order');
     }
 

@@ -317,7 +317,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            order.deliveryAddress?.toString() ?? "Default Address",
+            order.deliveryAddress is Map
+                ? ((order.deliveryAddress as Map)['address'] ?? (order.deliveryAddress as Map)['street'] ?? order.deliveryAddress.toString())
+                : (order.deliveryAddress?.toString() ?? "Default Address"),
             style: const TextStyle(color: AppColors.textSecondary, height: 1.5),
           ),
         ],

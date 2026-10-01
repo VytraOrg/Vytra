@@ -45,6 +45,7 @@ export class OrdersController {
   @Put(':id/cancel')
   @ApiOperation({ summary: 'Cancel an order (Customer or Admin)' })
   cancelOrder(@Param('id') id: string, @Request() req) {
-    return this.ordersService.cancelOrder(id, req.user._id, req.user.role);
+    const userId = (req.user?._id || req.user?.id || req.user?.sub)?.toString();
+    return this.ordersService.cancelOrder(id, userId, req.user?.role);
   }
 }
