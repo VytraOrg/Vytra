@@ -12,44 +12,134 @@ export class CartService {
   ) {}
 
   async getCart(userId: string, session?: any) {
-    let cart = await this.cartModel.findOne({ userId: new Types.ObjectId(userId) }).session(session);
+    const userObjId = new Types.ObjectId(userId);
+    let cart = await this.cartModel.findOne({ userId: userObjId }).session(session);
     if (!cart) {
-      cart = new this.cartModel({ userId: new Types.ObjectId(userId), items: [] });
+      cart = new this.cartModel({ userId: userObjId, items: [] });
       await cart.save({ session });
+      return cart;
     }
-    return cart;
+    return this.deduplicateCart(cart);
   }
 
   async addItem(userId: string, productId: string, quantity: number) {
     const product = await this.productModel.findById(productId);
     if (!product) throw new NotFoundException('Product not found');
 
-    const cart = await this.getCart(userId);
-    const itemIndex = cart.items.findIndex(item => item.productId.toString() === productId);
+    const userObjId = new Types.ObjectId(userId);
+    const productObjId = new Types.ObjectId(productId);
 
-    if (itemIndex > -1) {
-      cart.items[itemIndex].quantity += quantity;
-    } else {
-      cart.items.push({
-        productId: new Types.ObjectId(productId),
-        name: product.name,
-        price: product.price,
-        quantity,
-      } as any);
+    // Ensure cart exists
+    await this.getCart(userId);
+
+    // Handle decrement
+    if (quantity < 0) {
+      const updated = await this.cartModel.findOneAndUpdate(
+        { userId: userObjId, 'items.productId': productObjId },
+        { $inc: { 'items.$.quantity': quantity } },
+        { new: true },
+      );
+
+      if (updated) {
+        // Automatically remove any item whose quantity is 0 or negative
+        const cleaned = await this.cartModel.findOneAndUpdate(
+          { userId: userObjId },
+          { $pull: { items: { quantity: { $lte: 0 } } } as any },
+          { new: true },
+        );
+        return cleaned || updated;
+      }
+      return this.getCart(userId);
     }
 
-    return cart.save();
+    // Atomic Step 1: Increment if product already in cart
+    const updated = await this.cartModel.findOneAndUpdate(
+      { userId: userObjId, 'items.productId': productObjId },
+      { $inc: { 'items.$.quantity': quantity } },
+      { new: true },
+    );
+
+    if (updated) {
+      return this.deduplicateCart(updated);
+    }
+
+    // Atomic Step 2: Push new item only if it does NOT already exist
+    const pushed = await this.cartModel.findOneAndUpdate(
+      { userId: userObjId, 'items.productId': { $ne: productObjId } },
+      {
+        $push: {
+          items: {
+            productId: productObjId,
+            name: product.name,
+            price: product.price,
+            quantity,
+          },
+        },
+      },
+      { new: true },
+    );
+
+    if (pushed) {
+      return pushed;
+    }
+
+    // Fallback: If a concurrent request inserted the item in between, increment it
+    const fallbackUpdated = await this.cartModel.findOneAndUpdate(
+      { userId: userObjId, 'items.productId': productObjId },
+      { $inc: { 'items.$.quantity': quantity } },
+      { new: true },
+    );
+
+    return fallbackUpdated || (await this.getCart(userId));
   }
 
   async removeItem(userId: string, productId: string) {
-    const cart = await this.getCart(userId);
-    cart.items = cart.items.filter(item => item.productId.toString() !== productId);
-    return cart.save();
+    const userObjId = new Types.ObjectId(userId);
+    const productObjId = new Types.ObjectId(productId);
+    const cart = await this.cartModel.findOneAndUpdate(
+      { userId: userObjId },
+      { $pull: { items: { productId: productObjId } } as any },
+      { new: true },
+    );
+    return cart || (await this.getCart(userId));
   }
 
   async clearCart(userId: string, session?: any) {
-    const cart = await this.getCart(userId, session);
-    cart.items = [];
-    return cart.save({ session });
+    const userObjId = new Types.ObjectId(userId);
+    const cart = await this.cartModel.findOneAndUpdate(
+      { userId: userObjId },
+      { $set: { items: [] } },
+      { new: true, session },
+    );
+    return cart || (await this.getCart(userId, session));
+  }
+
+  private async deduplicateCart(cart: CartDocument): Promise<CartDocument> {
+    if (!cart.items || cart.items.length <= 1) return cart;
+
+    const seen = new Map<string, any>();
+    let hasDuplicates = false;
+
+    for (const item of cart.items) {
+      const pId = item.productId.toString();
+      if (seen.has(pId)) {
+        hasDuplicates = true;
+        seen.get(pId).quantity += item.quantity;
+      } else {
+        seen.set(pId, {
+          productId: item.productId,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        });
+      }
+    }
+
+    if (hasDuplicates) {
+      cart.items = Array.from(seen.values()) as any;
+      return cart.save();
+    }
+
+    return cart;
   }
 }

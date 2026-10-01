@@ -26,6 +26,10 @@ class GlobalProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cartController = context.watch<CartController>();
+    final inCartQty = cartController.getProductQuantity(product.id);
+    final isPending = cartController.isProductPending(product.id);
+
     return GestureDetector(
       onTap: disableShopNavigation
           ? null
@@ -159,41 +163,133 @@ class GlobalProductCard extends StatelessWidget {
                         "₹${product.price} / ${product.unit}",
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.freshGreen),
                       ),
-                      GestureDetector(
-                        onTap: (!product.isAvailable || product.stockQuantity <= 0)
-                            ? null
-                            : () async {
-                                final cartController = context.read<CartController>();
-                                await cartController.addToCart(product.id, quantity: 1);
-                                if (context.mounted) {
-                                  AppNotification.showAddedToCart(
-                                    context,
-                                    productName: product.name,
-                                    priceInfo: '₹${product.price} / ${product.unit}',
-                                    isTab: isTab,
-                                  );
-                                }
-                              },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      if (!product.isAvailable || product.stockQuantity <= 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                           decoration: BoxDecoration(
-                            color: (!product.isAvailable || product.stockQuantity <= 0)
-                                ? Colors.grey.shade300
-                                : AppColors.primary,
+                            color: Colors.grey.shade200,
                             borderRadius: BorderRadius.circular(AppRadius.md),
                           ),
                           child: Text(
-                            (!product.isAvailable || product.stockQuantity <= 0) ? "OUT" : "ADD",
+                            "OUT",
                             style: TextStyle(
-                              color: (!product.isAvailable || product.stockQuantity <= 0)
-                                  ? Colors.grey.shade600
-                                  : Colors.white,
+                              color: Colors.grey.shade500,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                        )
+                      else if (inCartQty > 0)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              InkWell(
+                                onTap: isPending
+                                    ? null
+                                    : () {
+                                        if (inCartQty > 1) {
+                                          cartController.addToCart(product.id, quantity: -1);
+                                        } else {
+                                          cartController.removeFromCart(product.id);
+                                        }
+                                      },
+                                borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  child: Icon(Icons.remove, size: 15, color: Colors.white),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                child: isPending
+                                    ? const SizedBox(
+                                        width: 12,
+                                        height: 12,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : Text(
+                                        "$inCartQty",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                              ),
+                              InkWell(
+                                onTap: isPending
+                                    ? null
+                                    : () {
+                                        if (inCartQty >= product.stockQuantity) {
+                                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text("Only ${product.stockQuantity} available in stock"),
+                                              duration: const Duration(seconds: 1),
+                                              backgroundColor: AppColors.organicAmber,
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        cartController.addToCart(product.id, quantity: 1);
+                                      },
+                                borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  child: Icon(Icons.add, size: 15, color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        GestureDetector(
+                          onTap: isPending
+                              ? null
+                              : () async {
+                                  await cartController.addToCart(product.id, quantity: 1);
+                                  if (context.mounted) {
+                                    AppNotification.showAddedToCart(
+                                      context,
+                                      productName: product.name,
+                                      priceInfo: '₹${product.price} / ${product.unit}',
+                                      isTab: isTab,
+                                    );
+                                  }
+                                },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isPending ? AppColors.primary.withOpacity(0.6) : AppColors.primary,
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                            ),
+                            child: isPending
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    "ADD",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ],

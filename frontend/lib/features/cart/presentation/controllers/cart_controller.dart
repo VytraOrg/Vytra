@@ -16,6 +16,22 @@ class CartController extends ChangeNotifier {
   String? _error;
   String? get error => _error;
 
+  // Track in-flight operations per product to prevent spamming
+  final Set<String> _pendingProductIds = <String>{};
+  bool isProductPending(String productId) => _pendingProductIds.contains(productId);
+
+  int getProductQuantity(String productId) {
+    if (_cart == null) return 0;
+    try {
+      final item = _cart!.items.firstWhere(
+        (it) => it.productId == productId,
+      );
+      return item.quantity;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   Future<void> fetchCart() async {
     _isLoading = true;
     _error = null;
@@ -32,8 +48,9 @@ class CartController extends ChangeNotifier {
   }
 
   Future<void> addToCart(String productId, {int quantity = 1}) async {
-    _isLoading = true;
-    _error = null;
+    if (_pendingProductIds.contains(productId)) return;
+
+    _pendingProductIds.add(productId);
     notifyListeners();
 
     try {
@@ -41,14 +58,15 @@ class CartController extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
     } finally {
-      _isLoading = false;
+      _pendingProductIds.remove(productId);
       notifyListeners();
     }
   }
 
   Future<void> removeFromCart(String productId) async {
-    _isLoading = true;
-    _error = null;
+    if (_pendingProductIds.contains(productId)) return;
+
+    _pendingProductIds.add(productId);
     notifyListeners();
 
     try {
@@ -56,7 +74,7 @@ class CartController extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
     } finally {
-      _isLoading = false;
+      _pendingProductIds.remove(productId);
       notifyListeners();
     }
   }
