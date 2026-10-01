@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vytra - Daily Engineering Devlog</title>
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #38240D;
+      --primary-dark: #1E1B18;
+      --primary-light: #F5EBE0;
+      --accent: #D4A373;
+      --bg: #FAF7F2;
+      --card-bg: #FFFFFF;
+      --text: #1E1A17;
+      --text-muted: #7E7469;
+      --border: #EDE4D8;
+      --success: #2D6A4F;
+      --amber: #E9C46A;
+      --radius: 20px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 16px 80px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1.5px solid var(--border);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .brand-icon {
+      width: 50px;
+      height: 50px;
+      background: var(--primary);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 16px rgba(56, 36, 13, 0.18);
+      padding: 7px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .brand-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .brand-title h1 {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: -0.5px;
+    }
+    .brand-title p {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .portal-nav {
+      display: flex;
+      flex-wrap: wrap;
+      background: #EDE4D8;
+      padding: 5px;
+      border-radius: 14px;
+      gap: 6px;
+      margin-bottom: 32px;
+      border: 1px solid var(--border);
+    }
+    .nav-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .nav-tab:hover {
+      color: var(--primary);
+      background: rgba(255, 255, 255, 0.5);
+    }
+    .nav-tab.active {
+      background: var(--card-bg);
+      color: var(--primary);
+      box-shadow: 0 2px 8px rgba(56, 36, 13, 0.08);
+    }
+
+    .hero-banner {
+      background: linear-gradient(135deg, #1E1B18 0%, #38240D 60%, #4A3728 100%);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      color: #FFFFFF;
+      margin-bottom: 36px;
+      border: 1.5px solid var(--accent);
+      box-shadow: 0 12px 36px rgba(56, 36, 13, 0.16);
+    }
+    .hero-tag {
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(212, 163, 115, 0.2);
+      border: 1px solid rgba(212, 163, 115, 0.4);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    .hero-title {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .hero-desc {
+      font-size: 15px;
+      color: var(--primary-light);
+      max-width: 680px;
+      line-height: 1.6;
+    }
+
+    .devlog-day {
+      margin-bottom: 40px;
+    }
+    .day-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border);
+    }
+    .day-badge {
+      background: var(--primary);
+      color: #FFFFFF;
+      font-weight: 800;
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    .day-date {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .log-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 24px;
+      border: 1.5px solid var(--border);
+      box-shadow: 0 4px 16px rgba(56, 36, 13, 0.04);
+      margin-bottom: 20px;
+      transition: all 0.2s ease;
+    }
+    .log-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 8px 24px rgba(56, 36, 13, 0.08);
+    }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .log-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-feat { background: #EBF5EE; color: var(--success); border: 1px solid #D8EADF; }
+    .badge-fix { background: #FDF0ED; color: #BC4749; border: 1px solid #F5D3CE; }
+    .badge-perf { background: #FFF9E6; color: #B38600; border: 1px solid #F5E5AD; }
+
+    .meta-box {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .meta-box p {
+      margin-bottom: 6px;
+    }
+    .meta-box p:last-child {
+      margin-bottom: 0;
+    }
+    .meta-label {
+      font-weight: 800;
+      color: var(--primary);
+      margin-right: 6px;
+    }
+
+    .code-snippet {
+      background: #1E1B18;
+      border-radius: 12px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #E6DFD5;
+      overflow-x: auto;
+      margin: 14px 0;
+      border: 1px solid #38240D;
+    }
+    .code-snippet .add { color: #81C784; }
+    .code-snippet .rem { color: #E57373; }
+    .code-snippet .keyword { color: #D4A373; font-weight: 700; }
+
+    footer {
+      margin-top: 60px;
+      text-align: center;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="brand-icon">
+          <img src="/logo_transparent.png" alt="Vytra Logo">
+        </div>
+        <div class="brand-title">
+          <h1>Vytra Documentation</h1>
+          <p>Daily Engineering Devlog & Changelog</p>
+        </div>
+      </div>
+      <div class="status-badge" style="background: #FAF4EB; color: #9C6634; border-color: #EFE4D2;">
+        Active Engineering Sprint
+      </div>
+    </header>
+
+    <nav class="portal-nav">
+      <a href="/" class="nav-tab">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        Releases & APKs
+      </a>
+      <a href="/architecture" class="nav-tab">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+        Architecture
+      </a>
+      <a href="/devlog" class="nav-tab active">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        Daily Devlog
+      </a>
+      <a href="/api" class="nav-tab">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+        API Reference
+      </a>
+      <a href="/commits" class="nav-tab">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="1.05" y1="12" x2="7" y2="12"></line><line x1="17.01" y1="12" x2="22.96" y2="12"></line></svg>
+        Commit Activity
+      </a>
+    </nav>
+
+    <div class="hero-banner">
+      <div class="hero-tag">Engineering Chronicles</div>
+      <div class="hero-title">Day-to-Day Product & Tech Devlog</div>
+      <div class="hero-desc">
+        Detailed breakdowns of core challenges, architecture decisions, bug post-mortems, and performance enhancements across every iteration of Vytra.
+      </div>
+    </div>
+
+    <!-- Day 3 -->
+    <div class="devlog-day">
+      <div class="day-header">
+        <span class="day-badge">DAY 3</span>
+        <span class="day-date">October 2, 2026 — Intelligence, Polish & Touch Isolation</span>
+      </div>
+
+      <div class="log-card">
+        <div class="log-header">
+          <div class="log-title">
+            Smart Cart Hybrid Recommendation Engine & 1-Tap Carousel
+            <span class="badge badge-feat">Feature</span>
+          </div>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Phase 1, 2 & 3</span>
+        </div>
+        <div class="meta-box">
+          <p><span class="meta-label">Problem:</span> Customers adding items to cart had no cross-sell discovery, resulting in lower basket sizes and missing grocery pairings.</p>
+          <p><span class="meta-label">Architecture Solution:</span> Built a 3-tier hybrid recommendation pipeline on NestJS with Redis caching (600s TTL). Tier 1 performs MongoDB order co-occurrence aggregation on past carts. Tier 2 uses a complementary category affinity matrix (e.g. Milk ➔ Bread, Eggs, Tea). Tier 3 falls back to same-shop in-stock bestsellers. On frontend, added an interactive horizontal carousel with instant 1-tap <code>[+ ADD]</code>, steppers, and left/right arrow buttons.</p>
+          <p><span class="meta-label">Impact:</span> Sub-10ms response time for repeat carts; zero-latency addition to cart without screen reloads.</p>
+        </div>
+      </div>
+
+      <div class="log-card">
+        <div class="log-header">
+          <div class="log-title">
+            Bottom Navigation Touch Pass-Through Isolation
+            <span class="badge badge-fix">Bug Fix</span>
+          </div>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">UI & Gestures</span>
+        </div>
+        <div class="meta-box">
+          <p><span class="meta-label">Problem:</span> The floating pill nav bar container had transparent margins and SafeArea insets, causing taps around and underneath the bar to click buttons (e.g. Log Out) and links scrolled behind it.</p>
+          <p><span class="meta-label">Architecture Solution:</span> Wrapped the bottom nav bar in <code>customer_home.dart</code> with an opaque <code>GestureDetector(behavior: HitTestBehavior.opaque, onTap: () {}, onVerticalDragStart: (_) {})</code> to intercept and absorb all touch events. Increased bottom scroll clearance from 90px to 120px across Account, Cart, Orders, and Wishlist pages.</p>
+        </div>
+      </div>
+
+      <div class="log-card">
+        <div class="log-header">
+          <div class="log-title">
+            Dynamic App Versioning & In-Place Android APK Upgrades
+            <span class="badge badge-perf">DevOps</span>
+          </div>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">CI / CD</span>
+        </div>
+        <div class="meta-box">
+          <p><span class="meta-label">Problem:</span> The Account screen had a hardcoded stale string <code>Vytra v1.0.3 (Build 3)</code>, and daily builds on GitHub Actions were firing multiple times per day on every tag.</p>
+          <p><span class="meta-label">Architecture Solution:</span> Integrated <code>package_info_plus</code> to dynamically query the running build at runtime. In GitHub Actions, scheduled APK compilation once daily after 4:00 AM IST (<code>45 22 * * *</code>) and computed incremental <code>versionCode</code> (13 + run_number) passed directly to <code>flutter build apk</code>, ensuring Android permits in-place upgrades.</p>
+        </div>
+      </div>
+
+      <div class="log-card">
+        <div class="log-header">
+          <div class="log-title">
+            Vytra Luxury Theme HTML Email Templates
+            <span class="badge badge-feat">Brand & Mail</span>
+          </div>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Communications</span>
+        </div>
+        <div class="meta-box">
+          <p><span class="meta-label">Problem:</span> Transactional emails used generic purple gradients and emojis that didn't align with Vytra's earthy chocolate and gold identity.</p>
+          <p><span class="meta-label">Architecture Solution:</span> Redesigned Password Reset OTP, Order Confirmation, Order Status Update, and Welcome templates with clean table-based layouts, dark chocolate gradients (<code>#1E1B18</code> to <code>#38240D</code>), warm gold accents (<code>#D4A373</code>), and crisp serif-free typography without emojis.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day 2 -->
+    <div class="devlog-day">
+      <div class="day-header">
+        <span class="day-badge">DAY 2</span>
+        <span class="day-date">October 1, 2026 — Concurrency, Cache Resilience & Stock Urgency</span>
+      </div>
+
+      <div class="log-card">
+        <div class="log-header">
+          <div class="log-title">
+            Cart Spamming, Race Conditions & Atomic Mutex
+            <span class="badge badge-fix">Concurrency</span>
+          </div>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Database</span>
+        </div>
+        <div class="meta-box">
+          <p><span class="meta-label">Problem:</span> Rapidly tapping the "Add to Cart" button created duplicate array entries in MongoDB carts and produced race conditions on quantity updates.</p>
+          <p><span class="meta-label">Architecture Solution:</span> Upgraded <code>cart.service.ts</code> to atomic MongoDB <code>$inc</code> and conditional <code>$push</code> with automatic deduplication. Added an in-flight locking set (<code>_pendingProductIds</code>) and quick-commerce stepper on the Flutter frontend.</p>
+        </div>
+      </div>
+
+      <div class="log-card">
+        <div class="log-header">
+          <div class="log-title">
+            Dual-Layer Cloud Redis (TLS) with Node Memory Fallback
+            <span class="badge badge-perf">Performance</span>
+          </div>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Caching</span>
+        </div>
+        <div class="meta-box">
+          <p><span class="meta-label">Problem:</span> Cloud Redis connections on free-tier providers could drop or timeout, risking application errors.</p>
+          <p><span class="meta-label">Architecture Solution:</span> Enhanced <code>cache.service.ts</code> with <code>rediss://</code> TLS support, lazy connection, and an autonomous in-memory Map fallback with automatic TTL expiration.</p>
+        </div>
+      </div>
+
+      <div class="log-card">
+        <div class="log-header">
+          <div class="log-title">
+            Order Cancellation & Dispatched Status Locks
+            <span class="badge badge-feat">Feature</span>
+          </div>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Orders</span>
+        </div>
+        <div class="meta-box">
+          <p><span class="meta-label">Problem:</span> Customers needed a self-serve way to cancel mistakenly placed orders, but without cancelling dispatched deliveries.</p>
+          <p><span class="meta-label">Architecture Solution:</span> Implemented <code>PUT /orders/:id/cancel</code> with strict state machine validation (blocked if Dispatched, Delivered, or Cancelled) and automatic stock restoration (<code>$inc: { stockQuantity: quantity }</code>).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day 1 -->
+    <div class="devlog-day">
+      <div class="day-header">
+        <span class="day-badge">DAY 1</span>
+        <span class="day-date">September 30, 2026 — Platform Launch & Live Updates</span>
+      </div>
+
+      <div class="log-card">
+        <div class="log-header">
+          <div class="log-title">
+            Xiaomi HyperOS Live Updates & In-App Dynamic Island
+            <span class="badge badge-feat">Innovation</span>
+          </div>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Notifications</span>
+        </div>
+        <div class="meta-box">
+          <p><span class="meta-label">Architecture Solution:</span> Integrated Xiaomi HyperOS promoted notification attributes and engineered a Flutter dynamic island pill widget that auto-detects and centers itself directly under modern phone camera punch-holes.</p>
+        </div>
+      </div>
+
+      <div class="log-card">
+        <div class="log-header">
+          <div class="log-title">
+            Multi-Role Local Commerce Foundation
+            <span class="badge badge-feat">Architecture</span>
+          </div>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Core</span>
+        </div>
+        <div class="meta-box">
+          <p><span class="meta-label">Architecture Solution:</span> Designed unified schema models supporting Customer B2C shopping, Shopkeeper B2B wholesale sourcing, and Distributor product fulfillment.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>© 2026 Vytra Inc. • Continuous Engineering Devlog</p>
+    </footer>
+  </div>
+</body>
+</html>
