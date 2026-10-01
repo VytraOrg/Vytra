@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vytra - REST API Reference & Documentation</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #38240D;
+      --primary-light: #F5EBE0;
+      --accent: #D4A373;
+      --bg: #FAF7F2;
+      --card-bg: #FFFFFF;
+      --text: #1E1A17;
+      --text-muted: #7E7469;
+      --border: #EDE4D8;
+      --success: #2E7D32;
+      --error: #C62828;
+      --warning: #F57F17;
+      --info: #0277BD;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 16px 80px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1.5px solid var(--border);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--primary);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 16px rgba(56, 36, 13, 0.18);
+      padding: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .brand-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .brand-title h1 {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: -0.5px;
+    }
+    .brand-title p {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #EBF5EE;
+      color: var(--success);
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid #D8EADF;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.2);
+    }
+    .portal-nav {
+      display: flex;
+      flex-wrap: wrap;
+      background: #EDE4D8;
+      padding: 5px;
+      border-radius: 14px;
+      gap: 6px;
+      margin-bottom: 32px;
+      border: 1px solid var(--border);
+    }
+    .nav-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .nav-tab:hover {
+      color: var(--primary);
+      background: rgba(255, 255, 255, 0.5);
+    }
+    .nav-tab.active {
+      background: var(--card-bg);
+      color: var(--primary);
+      box-shadow: 0 2px 8px rgba(56, 36, 13, 0.08);
+    }
+
+    .hero-banner {
+      background: linear-gradient(135deg, #1E1B18 0%, #38240D 60%, #4A3728 100%);
+      border-radius: var(--radius);
+      padding: 32px 28px;
+      color: #FFFFFF;
+      margin-bottom: 32px;
+      border: 1.5px solid var(--accent);
+      box-shadow: 0 12px 36px rgba(56, 36, 13, 0.16);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-tag {
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(212, 163, 115, 0.2);
+      border: 1px solid rgba(212, 163, 115, 0.4);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    .hero-title {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .hero-desc {
+      font-size: 14px;
+      color: rgba(245, 235, 224, 0.85);
+      max-width: 680px;
+      line-height: 1.6;
+    }
+
+    .base-url-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .base-url-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13.5px;
+      font-weight: 600;
+    }
+    .base-url-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--primary);
+      background: var(--bg);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-weight: 700;
+    }
+
+    /* Filter pills */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      margin-bottom: 24px;
+    }
+    .filter-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover {
+      border-color: var(--accent);
+      color: var(--primary);
+    }
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 4px 10px rgba(56, 36, 13, 0.15);
+    }
+
+    /* Endpoint Cards */
+    .endpoint-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1.5px solid var(--border);
+      margin-bottom: 20px;
+      box-shadow: 0 4px 14px rgba(56, 36, 13, 0.04);
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .endpoint-card:hover {
+      border-color: var(--accent);
+    }
+    .endpoint-header {
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .endpoint-main {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .method-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 8px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .method-get { background: #E1F5FE; color: #0277BD; border: 1px solid #B3E5FC; }
+    .method-post { background: #E8F5E9; color: #2E7D32; border: 1px solid #C8E6C9; }
+    .method-patch { background: #FFF8E1; color: #F57F17; border: 1px solid #FFECB3; }
+    .method-delete { background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; }
+
+    .endpoint-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .endpoint-title {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .auth-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 9px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .auth-jwt { background: #F5EBE0; color: #5D4037; border: 1px solid #D7CCC8; }
+    .auth-public { background: #EDE7F6; color: #512DA8; border: 1px solid #D1C4E9; }
+
+    .endpoint-body {
+      padding: 0 22px 22px;
+      border-top: 1px solid var(--border);
+      background: #FDFAF6;
+    }
+    .endpoint-desc {
+      font-size: 13.5px;
+      color: var(--text);
+      margin: 16px 0 14px;
+    }
+
+    .spec-section-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--primary);
+      margin: 16px 0 8px;
+    }
+
+    /* Params Table */
+    .param-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      margin-bottom: 14px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .param-table th {
+      background: var(--bg);
+      text-align: left;
+      padding: 8px 12px;
+      font-weight: 800;
+      color: var(--primary);
+      border-bottom: 1px solid var(--border);
+    }
+    .param-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .param-table tr:last-child td {
+      border-bottom: none;
+    }
+    .type-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .req-mark {
+      color: var(--error);
+      font-weight: 800;
+    }
+
+    /* Code boxes */
+    .code-box {
+      background: #1E1B18;
+      border-radius: 10px;
+      padding: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #E6DFD5;
+      overflow-x: auto;
+      margin-bottom: 12px;
+      border: 1px solid #38240D;
+      position: relative;
+    }
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #FAF7F2;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover {
+      background: var(--accent);
+      color: #1E1B18;
+    }
+
+    footer {
+      margin-top: 60px;
+      text-align: center;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="brand-icon">
+          <img src="logo_transparent.png" alt="Vytra Logo">
+        </div>
+        <div class="brand-title">
+          <h1>Vytra Documentation</h1>
+          <p>REST API Specification & Integration Guide</p>
+        </div>
+      </div>
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        API Gateway: v1.0.0 Online
+      </div>
+    </header>
+
+    <nav class="portal-nav">
+      <a href="index.html" class="nav-tab">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        Releases & APKs
+      </a>
+      <a href="architecture.html" class="nav-tab">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+        Architecture
+      </a>
+      <a href="devlog.html" class="nav-tab">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        Daily Devlog
+      </a>
+      <a href="api.html" class="nav-tab active">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+        API Reference
+      </a>
+      <a href="commits.html" class="nav-tab">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="1.05" y1="12" x2="7" y2="12"></line><line x1="17.01" y1="12" x2="22.96" y2="12"></line></svg>
+        Commit Activity
+      </a>
+    </nav>
+
+    <div class="hero-banner">
+      <div class="hero-tag">Developer Portal</div>
+      <div class="hero-title">Vytra REST API Reference</div>
+      <div class="hero-desc">
+        Complete specification of all backend HTTP endpoints, payload formats, authentication headers, error codes, and real-time recommendation endpoints.
+      </div>
+    </div>
+
+    <div class="base-url-card">
+      <div class="base-url-info">
+        <span>Cloud API Gateway:</span>
+        <code class="base-url-code" id="baseUrlText">https://api.vytra.co.in/api/v1</code>
+      </div>
+      <button class="copy-btn" style="background: var(--primary); color: white;" onclick="copyToClipboard('https://api.vytra.co.in/api/v1')">Copy Base URL</button>
+    </div>
+
+    <!-- Filter Pills -->
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterCategory('all', this)">All Endpoints</button>
+      <button class="filter-btn" onclick="filterCategory('auth', this)">Auth & Accounts</button>
+      <button class="filter-btn" onclick="filterCategory('cart', this)">Cart & Mutex</button>
+      <button class="filter-btn" onclick="filterCategory('recommendations', this)">Recommendations</button>
+      <button class="filter-btn" onclick="filterCategory('orders', this)">Orders & Tracking</button>
+      <button class="filter-btn" onclick="filterCategory('products', this)">Catalog & Products</button>
+      <button class="filter-btn" onclick="filterCategory('shops', this)">Shops & Geofencing</button>
+    </div>
+
+    <div id="endpointsContainer">
+
+      <!-- ================= AUTH ENDPOINTS ================= -->
+      <!-- POST /auth/register -->
+      <div class="endpoint-card" data-cat="auth">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+          <div class="endpoint-main">
+            <span class="method-pill method-post">POST</span>
+            <span class="endpoint-path">/auth/register</span>
+            <span class="endpoint-title">Create New Account</span>
+          </div>
+          <span class="auth-badge auth-public">Public</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-desc">Registers a new customer, shopkeeper, or delivery agent. Returns JWT auth credentials upon creation.</p>
+          <div class="spec-section-title">Request Body (JSON)</div>
+          <div class="code-box">
+            <div class="code-header"><span>Application/json</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "name": "Sayan Pandit",
+  "email": "sayan@example.com",
+  "password": "StrongPassword123!",
+  "role": "customer" // "customer" | "shopkeeper" | "delivery"
+}</pre>
+          </div>
+          <div class="spec-section-title">Response (201 Created)</div>
+          <div class="code-box">
+            <div class="code-header"><span>Response Body</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "statusCode": 201,
+  "accessToken": "eyJhbGciOiJIUzI1NiIsIn...",
+  "user": {
+    "id": "674128f...",
+    "name": "Sayan Pandit",
+    "email": "sayan@example.com",
+    "role": "customer"
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- POST /auth/login -->
+      <div class="endpoint-card" data-cat="auth">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+          <div class="endpoint-main">
+            <span class="method-pill method-post">POST</span>
+            <span class="endpoint-path">/auth/login</span>
+            <span class="endpoint-title">Authenticate Credentials</span>
+          </div>
+          <span class="auth-badge auth-public">Public</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-desc">Authenticates email and password. Generates Bearer JWT with 30-day session lifetime.</p>
+          <div class="spec-section-title">Request Body (JSON)</div>
+          <div class="code-box">
+            <div class="code-header"><span>Application/json</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "email": "sayan@example.com",
+  "password": "StrongPassword123!"
+}</pre>
+          </div>
+          <div class="spec-section-title">Response (200 OK)</div>
+          <div class="code-box">
+            <div class="code-header"><span>Response Body</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "statusCode": 200,
+  "accessToken": "eyJhbGciOiJIUzI1NiIsIn...",
+  "user": {
+    "id": "674128f...",
+    "name": "Sayan Pandit",
+    "email": "sayan@example.com",
+    "role": "customer"
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- POST /auth/forgot-password -->
+      <div class="endpoint-card" data-cat="auth">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+          <div class="endpoint-main">
+            <span class="method-pill method-post">POST</span>
+            <span class="endpoint-path">/auth/forgot-password</span>
+            <span class="endpoint-title">Request 6-Digit Password Reset OTP</span>
+          </div>
+          <span class="auth-badge auth-public">Public</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-desc">Generates a cryptographically secure 6-digit numeric OTP with 10-minute expiry and sends via Titan/Resend luxury HTML email template.</p>
+          <div class="spec-section-title">Request Body</div>
+          <div class="code-box">
+            <div class="code-header"><span>Application/json</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "email": "customer@vytra.co.in"
+}</pre>
+          </div>
+          <div class="spec-section-title">Response (200 OK)</div>
+          <div class="code-box">
+            <div class="code-header"><span>Response Body</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "success": true,
+  "message": "Reset verification code sent to your email"
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- POST /auth/reset-password -->
+      <div class="endpoint-card" data-cat="auth">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+          <div class="endpoint-main">
+            <span class="method-pill method-post">POST</span>
+            <span class="endpoint-path">/auth/reset-password</span>
+            <span class="endpoint-title">Confirm OTP & Update Password</span>
+          </div>
+          <span class="auth-badge auth-public">Public</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-desc">Validates OTP code and updates user bcrypt hash. Invalidates previous tokens.</p>
+          <div class="spec-section-title">Request Body</div>
+          <div class="code-box">
+            <div class="code-header"><span>Application/json</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "email": "customer@vytra.co.in",
+  "otp": "481920",
+  "newPassword": "NewSecurePassword2026!"
+}</pre>
+          </div>
+          <div class="spec-section-title">Response (200 OK)</div>
+          <div class="code-box">
+            <div class="code-header"><span>Response Body</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "success": true,
+  "message": "Password updated successfully. Please log in with your new password."
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= CART ENDPOINTS ================= -->
+      <!-- GET /cart -->
+      <div class="endpoint-card" data-cat="cart">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+          <div class="endpoint-main">
+            <span class="method-pill method-get">GET</span>
+            <span class="endpoint-path">/cart</span>
+            <span class="endpoint-title">Fetch Active User Cart</span>
+          </div>
+          <span class="auth-badge auth-jwt">Bearer JWT</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-desc">Retrieves the active cart for the authenticated user, populated with product stock, pricing, and live total calculations.</p>
+          <div class="spec-section-title">Response (200 OK)</div>
+          <div class="code-box">
+            <div class="code-header"><span>Response Body</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "_id": "674128f...",
+  "user": "674128f...",
+  "items": [
+    {
+      "product": {
+        "_id": "6741a2...",
+        "name": "Tata Tea Gold 500g",
+        "price": 280,
+        "stock": 45,
+        "category": "Groceries",
+        "images": ["https://..."]
+      },
+      "quantity": 2,
+      "price": 280
+    }
+  ],
+  "totalAmount": 560
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- POST /cart/items -->
+      <div class="endpoint-card" data-cat="cart">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+          <div class="endpoint-main">
+            <span class="method-pill method-post">POST</span>
+            <span class="endpoint-path">/cart/items</span>
+            <span class="endpoint-title">Atomic Add / Increment Cart Item</span>
+          </div>
+          <span class="auth-badge auth-jwt">Bearer JWT</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-desc">Safely adds an item to cart or increments quantity using atomic MongoDB <code>$inc</code> mutex, preventing race condition over-ordering.</p>
+          <div class="spec-section-title">Request Body</div>
+          <div class="code-box">
+            <div class="code-header"><span>Application/json</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "productId": "6741a2e4...",
+  "quantity": 1
+}</pre>
+          </div>
+          <div class="spec-section-title">Response (200 OK)</div>
+          <div class="code-box">
+            <div class="code-header"><span>Response Body</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "success": true,
+  "cart": {
+    "totalItems": 3,
+    "totalAmount": 840
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- PATCH /cart/items/:productId -->
+      <div class="endpoint-card" data-cat="cart">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+          <div class="endpoint-main">
+            <span class="method-pill method-patch">PATCH</span>
+            <span class="endpoint-path">/cart/items/:productId</span>
+            <span class="endpoint-title">Update Item Quantity</span>
+          </div>
+          <span class="auth-badge auth-jwt">Bearer JWT</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-desc">Updates item quantity directly. If quantity is 0, item is automatically pruned from the cart.</p>
+          <div class="spec-section-title">URL Parameters</div>
+          <table class="param-table">
+            <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+            <tr><td><code>productId</code> <span class="req-mark">*</span></td><td class="type-pill">ObjectId</td><td>Target product ID</td></tr>
+          </table>
+          <div class="spec-section-title">Request Body</div>
+          <div class="code-box">
+            <div class="code-header"><span>Application/json</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "quantity": 3
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= RECOMMENDATION ENDPOINTS ================= -->
+      <!-- GET /recommendations/cart -->
+      <div class="endpoint-card" data-cat="recommendations">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+          <div class="endpoint-main">
+            <span class="method-pill method-get">GET</span>
+            <span class="endpoint-path">/recommendations/cart</span>
+            <span class="endpoint-title">Hybrid Cross-Sell Cart Recommendations</span>
+          </div>
+          <span class="auth-badge auth-jwt">Bearer JWT / Optional</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-desc">Sub-10ms intelligent cross-sell recommendation engine. Reads cart items, queries Upstash Redis TLS cache, and generates complementary items within the same shop ordered by price tier and category affinity.</p>
+          <div class="spec-section-title">Query Parameters (Optional if JWT provided)</div>
+          <table class="param-table">
+            <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+            <tr><td><code>shopId</code></td><td class="type-pill">String</td><td>Restricts suggestions to products stocked in this shop</td></tr>
+            <tr><td><code>productIds</code></td><td class="type-pill">Comma-separated Strings</td><td>List of product IDs currently in cart to exclude</td></tr>
+            <tr><td><code>limit</code></td><td class="type-pill">Number</td><td>Default 6 (max 12)</td></tr>
+          </table>
+          <div class="spec-section-title">Response (200 OK)</div>
+          <div class="code-box">
+            <div class="code-header"><span>Response Body</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "success": true,
+  "source": "redis_cache", // "redis_cache" | "mongo_pipeline"
+  "recommendations": [
+    {
+      "_id": "6741b8...",
+      "name": "Britannia Marie Gold 300g",
+      "price": 40,
+      "category": "Snacks",
+      "stock": 80,
+      "images": ["https://..."],
+      "relevanceScore": 0.94
+    },
+    {
+      "_id": "6741c1...",
+      "name": "Sugar 1kg",
+      "price": 48,
+      "category": "Groceries",
+      "stock": 120,
+      "images": ["https://..."],
+      "relevanceScore": 0.89
+    }
+  ]
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= ORDERS ENDPOINTS ================= -->
+      <!-- POST /orders -->
+      <div class="endpoint-card" data-cat="orders">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+          <div class="endpoint-main">
+            <span class="method-pill method-post">POST</span>
+            <span class="endpoint-path">/orders</span>
+            <span class="endpoint-title">Checkout & Place Order</span>
+          </div>
+          <span class="auth-badge auth-jwt">Bearer JWT</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-desc">Validates stock with atomic decrement, empties cart, and spawns new order in <code>pending</code> status. Triggers HyperOS live notification pipeline.</p>
+          <div class="spec-section-title">Request Body</div>
+          <div class="code-box">
+            <div class="code-header"><span>Application/json</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "shopId": "67419a...",
+  "items": [
+    { "productId": "6741a2...", "quantity": 2 }
+  ],
+  "deliveryAddress": {
+    "street": "12/A College Road",
+    "city": "Kolkata",
+    "postalCode": "700001",
+    "coordinates": [88.3639, 22.5726]
+  },
+  "paymentMethod": "cod" // "cod" | "upi" | "card"
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- POST /orders/:id/cancel -->
+      <div class="endpoint-card" data-cat="orders">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+          <div class="endpoint-main">
+            <span class="method-pill method-post">POST</span>
+            <span class="endpoint-path">/orders/:id/cancel</span>
+            <span class="endpoint-title">Cancel Order & Auto-Restore Inventory</span>
+          </div>
+          <span class="auth-badge auth-jwt">Bearer JWT</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-desc">Cancels an order if it is in <code>pending</code> or <code>confirmed</code> state. Once an order is <code>packed</code> or <code>out_for_delivery</code>, cancellation is strictly rejected with <code>409 Conflict</code>. Restores product inventory via <code>$inc</code>.</p>
+          <div class="spec-section-title">Response (200 OK)</div>
+          <div class="code-box">
+            <div class="code-header"><span>Response Body</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>{
+  "success": true,
+  "message": "Order #VY-8921 cancelled successfully. Stock has been restored.",
+  "order": {
+    "_id": "6741d4...",
+    "status": "cancelled",
+    "cancellationTimestamp": "2026-10-02T01:30:00.000Z"
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PRODUCTS ENDPOINTS ================= -->
+      <!-- GET /products -->
+      <div class="endpoint-card" data-cat="products">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+          <div class="endpoint-main">
+            <span class="method-pill method-get">GET</span>
+            <span class="endpoint-path">/products</span>
+            <span class="endpoint-title">Search & Filter Catalog</span>
+          </div>
+          <span class="auth-badge auth-public">Public</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-desc">Paginated product catalog query supporting fuzzy regex search, category filtering, and shop filtering.</p>
+          <div class="spec-section-title">Query Parameters</div>
+          <table class="param-table">
+            <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+            <tr><td><code>search</code></td><td class="type-pill">String</td><td>Fuzzy title match</td></tr>
+            <tr><td><code>category</code></td><td class="type-pill">String</td><td>Category filter (Groceries, Dairy, Snacks)</td></tr>
+            <tr><td><code>shopId</code></td><td class="type-pill">ObjectId</td><td>Limit to specific shop vendor</td></tr>
+            <tr><td><code>page</code></td><td class="type-pill">Number</td><td>Page number (default 1)</td></tr>
+            <tr><td><code>limit</code></td><td class="type-pill">Number</td><td>Items per page (default 20)</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================= SHOPS ENDPOINTS ================= -->
+      <!-- GET /shops/nearby -->
+      <div class="endpoint-card" data-cat="shops">
+        <div class="endpoint-header" onclick="toggleEndpoint(this)">
+          <div class="endpoint-main">
+            <span class="method-pill method-get">GET</span>
+            <span class="endpoint-path">/shops/nearby</span>
+            <span class="endpoint-title">Geospatial Hyperlocal Shop Discovery</span>
+          </div>
+          <span class="auth-badge auth-public">Public</span>
+        </div>
+        <div class="endpoint-body">
+          <p class="endpoint-desc">Finds verified open shops within a specified radius using MongoDB 2dsphere indexing and calculates straight-line distance in kilometers.</p>
+          <div class="spec-section-title">Query Parameters</div>
+          <table class="param-table">
+            <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+            <tr><td><code>lat</code> <span class="req-mark">*</span></td><td class="type-pill">Float</td><td>Customer GPS latitude</td></tr>
+            <tr><td><code>lng</code> <span class="req-mark">*</span></td><td class="type-pill">Float</td><td>Customer GPS longitude</td></tr>
+            <tr><td><code>radius</code></td><td class="type-pill">Float</td><td>Radius in km (default 5.0)</td></tr>
+          </table>
+          <div class="spec-section-title">Response (200 OK)</div>
+          <div class="code-box">
+            <div class="code-header"><span>Response Body</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+            <pre>[
+  {
+    "_id": "67419a...",
+    "name": "Green Supermarket",
+    "address": "45 Park St, Kolkata",
+    "isOpen": true,
+    "distanceKm": 1.2,
+    "rating": 4.8
+  }
+]</pre>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <footer>
+      <p>&copy; 2026 Vytra Technologies &bull; Vytra Quick-Commerce Engine &bull; Built with NestJS, Redis & Flutter</p>
+    </footer>
+  </div>
+
+  <script>
+    function toggleEndpoint(headerEl) {
+      const card = headerEl.closest('.endpoint-card');
+      const body = card.querySelector('.endpoint-body');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+      } else {
+        body.style.display = 'none';
+      }
+    }
+
+    function filterCategory(cat, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const cards = document.querySelectorAll('.endpoint-card');
+      cards.forEach(card => {
+        if (cat === 'all' || card.dataset.cat === cat) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text);
+      alert('Copied to clipboard: ' + text);
+    }
+
+    function copyCode(btn) {
+      const codeBlock = btn.closest('.code-box').querySelector('pre');
+      navigator.clipboard.writeText(codeBlock.innerText);
+      const orig = btn.innerText;
+      btn.innerText = 'Copied!';
+      setTimeout(() => btn.innerText = orig, 1500);
+    }
+  </script>
+</body>
+</html>
