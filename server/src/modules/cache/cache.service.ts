@@ -2,93 +2,108 @@ import {
   Injectable,
   OnModuleInit,
   OnModuleDestroy,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis';
+import Redis, { RedisOptions } from 'ioredis';
 
 @Injectable()
 export class CacheService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(CacheService.name);
   private redisClient: Redis | null = null;
+  // Local in-memory fallback cache when Redis is unavailable
+  private inMemoryCache = new Map<string, { value: string; expiry?: number }>();
 
-  constructor(private configService: ConfigService) { }
+  constructor(private configService: ConfigService) {}
 
   onModuleInit() {
     try {
       const redisUrl = this.configService.get<string>('REDIS_URL');
 
-      console.log('REDIS_URL:', redisUrl);
+      if (redisUrl && redisUrl.trim()) {
+        const masked = redisUrl.replace(/:([^:@]+)@/, ':****@');
+        this.logger.log(`Connecting to Redis using REDIS_URL (${masked})...`);
 
-      if (redisUrl) {
-        console.log('🔄 Connecting to Redis using REDIS_URL...');
-
-        // Parse URL manually
-        const parsedUrl = new URL(redisUrl);
-
-        this.redisClient = new Redis({
-          host: parsedUrl.hostname,
-          port: Number(parsedUrl.port),
-          username: decodeURIComponent(parsedUrl.username),
-          password: decodeURIComponent(parsedUrl.password),
-          maxRetriesPerRequest: 1,
-          connectTimeout: 2000,
-          retryStrategy: () => null,
+        const isTls = redisUrl.startsWith('rediss://');
+        const redisOptions: RedisOptions = {
+          maxRetriesPerRequest: 3,
+          connectTimeout: 5000,
+          retryStrategy: (times) => {
+            if (times > 5) {
+              this.logger.warn('Redis reconnection stopped after 5 attempts.');
+              return null;
+            }
+            return Math.min(times * 300, 3000);
+          },
           lazyConnect: true,
-        });
-        this.redisClient.connect().catch((err) => {
-          console.warn('⚠️ Redis connection failed. Caching disabled:', err.message);
-        });
+        };
+
+        if (isTls) {
+          redisOptions.tls = { rejectUnauthorized: false };
+        }
+
+        this.redisClient = new Redis(redisUrl, redisOptions);
       } else {
-        console.log('🔄 Connecting to local Redis...');
+        const host = this.configService.get<string>('REDIS_HOST', 'localhost');
+        const port = this.configService.get<number>('REDIS_PORT', 6379);
+        this.logger.log(`Connecting to local Redis at ${host}:${port}...`);
 
         this.redisClient = new Redis({
-          host: this.configService.get<string>('REDIS_HOST', 'localhost'),
-          port: this.configService.get<number>('REDIS_PORT', 6379),
+          host,
+          port,
           maxRetriesPerRequest: 1,
           connectTimeout: 2000,
           retryStrategy: () => null,
           lazyConnect: true,
-        });
-        this.redisClient.connect().catch((err) => {
-          console.warn('⚠️ Redis connection failed. Caching disabled:', err.message);
         });
       }
 
       this.redisClient.on('connect', () => {
-        console.log('✅ Redis connected successfully');
+        this.logger.log('✅ Redis connected successfully');
       });
 
       this.redisClient.on('ready', () => {
-        console.log('🚀 Redis is ready');
+        this.logger.log('🚀 Redis is ready');
       });
 
       this.redisClient.on('error', (err) => {
-        console.warn(
-          '⚠️ Redis connection failed. Caching will be disabled.',
-          err.message,
-        );
+        this.logger.warn(`⚠️ Redis error: ${err.message}. Falling back to in-memory caching.`);
       });
-    } catch (error) {
-      console.warn('⚠️ Redis initialization failed:', error);
+
+      this.redisClient.connect().catch((err) => {
+        this.logger.warn(`⚠️ Initial Redis connection failed: ${err.message}. In-memory caching active.`);
+      });
+    } catch (error: any) {
+      this.logger.warn(`⚠️ Redis initialization failed: ${error.message}`);
     }
   }
 
   onModuleDestroy() {
     if (this.redisClient) {
       this.redisClient.disconnect();
-      console.log('🔌 Redis disconnected');
+      this.logger.log('🔌 Redis disconnected');
     }
   }
 
   async get(key: string): Promise<string | null> {
-    if (!this.redisClient || this.redisClient.status !== 'ready') {
-      return null;
+    if (this.redisClient && this.redisClient.status === 'ready') {
+      try {
+        return await this.redisClient.get(key);
+      } catch {
+        // Fall back to memory
+      }
     }
 
-    try {
-      return await this.redisClient.get(key);
-    } catch {
-      return null;
+    // In-memory fallback
+    const item = this.inMemoryCache.get(key);
+    if (item) {
+      if (item.expiry && Date.now() > item.expiry) {
+        this.inMemoryCache.delete(key);
+        return null;
+      }
+      return item.value;
     }
+    return null;
   }
 
   async set(
@@ -96,56 +111,59 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     value: any,
     ttlInSeconds?: number,
   ): Promise<void> {
-    if (!this.redisClient || this.redisClient.status !== 'ready') {
-      return;
-    }
+    const stringValue =
+      typeof value === 'string'
+        ? value
+        : JSON.stringify(value);
 
-    try {
-      const stringValue =
-        typeof value === 'string'
-          ? value
-          : JSON.stringify(value);
+    // Save in-memory
+    const expiry = ttlInSeconds ? Date.now() + ttlInSeconds * 1000 : undefined;
+    this.inMemoryCache.set(key, { value: stringValue, expiry });
 
-      if (ttlInSeconds) {
-        await this.redisClient.set(
-          key,
-          stringValue,
-          'EX',
-          ttlInSeconds,
-        );
-      } else {
-        await this.redisClient.set(key, stringValue);
+    // Save to Redis if ready
+    if (this.redisClient && this.redisClient.status === 'ready') {
+      try {
+        if (ttlInSeconds) {
+          await this.redisClient.set(key, stringValue, 'EX', ttlInSeconds);
+        } else {
+          await this.redisClient.set(key, stringValue);
+        }
+      } catch {
+        // Ignore cache write errors
       }
-    } catch {
-      // Ignore cache errors
     }
   }
 
   async delete(key: string): Promise<void> {
-    if (!this.redisClient || this.redisClient.status !== 'ready') {
-      return;
-    }
+    this.inMemoryCache.delete(key);
 
-    try {
-      await this.redisClient.del(key);
-    } catch {
-      // Ignore cache errors
+    if (this.redisClient && this.redisClient.status === 'ready') {
+      try {
+        await this.redisClient.del(key);
+      } catch {
+        // Ignore cache delete errors
+      }
     }
   }
 
   async clearPattern(pattern: string): Promise<void> {
-    if (!this.redisClient || this.redisClient.status !== 'ready') {
-      return;
+    // Clear matching keys from memory
+    const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+    for (const k of this.inMemoryCache.keys()) {
+      if (regex.test(k)) {
+        this.inMemoryCache.delete(k);
+      }
     }
 
-    try {
-      const keys = await this.redisClient.keys(pattern);
-
-      if (keys.length > 0) {
-        await this.redisClient.del(...keys);
+    if (this.redisClient && this.redisClient.status === 'ready') {
+      try {
+        const keys = await this.redisClient.keys(pattern);
+        if (keys.length > 0) {
+          await this.redisClient.del(...keys);
+        }
+      } catch {
+        // Ignore cache errors
       }
-    } catch {
-      // Ignore cache errors
     }
   }
 }
