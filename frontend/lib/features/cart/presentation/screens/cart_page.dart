@@ -167,7 +167,7 @@ class _CartPageState extends State<CartPage> {
         AppSpacing.xl,
         AppSpacing.xl,
         AppSpacing.xl,
-        widget.isTab ? (90 + bottomInset) : (AppSpacing.xl + bottomInset),
+        widget.isTab ? (115 + bottomInset) : (AppSpacing.xl + bottomInset),
       ),
       decoration: const BoxDecoration(
         color: Colors.white,

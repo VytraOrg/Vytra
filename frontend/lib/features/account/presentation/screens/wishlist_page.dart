@@ -124,7 +124,7 @@ class _WishlistPageState extends State<WishlistPage> {
                 AppSpacing.lg,
                 AppSpacing.lg,
                 AppSpacing.lg,
-                (widget.isTab ? 100 : AppSpacing.lg) + MediaQuery.of(context).padding.bottom,
+                (widget.isTab ? 120 : AppSpacing.lg) + MediaQuery.of(context).padding.bottom,
               ),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,

@@ -248,19 +248,25 @@ class _CustomerHomeState extends State<CustomerHome> {
             ),
           ),
 
-          // Floating Pill Nav Bar
+          // Floating Pill Nav Bar (wrapped with opaque gesture interceptor so underneath area cannot be clicked)
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: SafeArea(
-              top: false,
-              child: FloatingPillNavBar(
-                currentIndex: _currentIndex,
-                cartCount: cartCount,
-                onTabSelected: (index) {
-                  setState(() => _currentIndex = index);
-                },
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {}, // Absorbs taps so underlying content cannot be clicked
+              onVerticalDragStart: (_) {}, // Absorbs drag gestures in the nav bar zone
+              onVerticalDragUpdate: (_) {},
+              child: SafeArea(
+                top: false,
+                child: FloatingPillNavBar(
+                  currentIndex: _currentIndex,
+                  cartCount: cartCount,
+                  onTabSelected: (index) {
+                    setState(() => _currentIndex = index);
+                  },
+                ),
               ),
             ),
           ),

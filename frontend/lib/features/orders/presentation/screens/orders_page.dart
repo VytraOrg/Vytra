@@ -51,7 +51,7 @@ class _OrdersPageState extends State<OrdersPage> {
                         AppSpacing.lg,
                         AppSpacing.lg,
                         AppSpacing.lg,
-                        (widget.isTab ? 100 : AppSpacing.lg) + MediaQuery.of(context).padding.bottom,
+                        (widget.isTab ? 120 : AppSpacing.lg) + MediaQuery.of(context).padding.bottom,
                       ),
                       itemCount: orderController.orders.length,
                       itemBuilder: (context, index) {
