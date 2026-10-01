@@ -38,25 +38,27 @@ jobs:
           mkdir -p frontend/lib/core/config
           echo "class Secrets { static const String googleMapsApiKey = ''; }" > frontend/lib/core/config/secrets.dart
 
+      - name: Compute App Version & Build Number
+        id: release_info
+        run: |
+          VERSION=$(grep '^version:' frontend/pubspec.yaml | awk '{print $2}' | cut -d'+' -f1)
+          BUILD_NUM=$(( 13 + ${{ github.run_number }} ))
+          TAG="v${VERSION}-b${BUILD_NUM}"
+          NAME="Vytra v${VERSION} (Build ${BUILD_NUM})"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "build_num=${BUILD_NUM}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "name=${NAME}" >> $GITHUB_OUTPUT
+
       - name: Build Flutter APK
         run: |
           cd frontend
-          flutter build apk --release
+          flutter build apk --release --build-name=${{ steps.release_info.outputs.version }} --build-number=${{ steps.release_info.outputs.build_num }}
 
       - name: Copy & Rename APK
         run: |
           mkdir -p dist
           cp frontend/build/app/outputs/flutter-apk/app-release.apk dist/Vytra.apk
-
-      - name: Generate Release Tag & Name
-        id: release_info
-        run: |
-          VERSION=$(grep '^version:' frontend/pubspec.yaml | awk '{print $2}' | cut -d'+' -f1)
-          DATE_STR=$(date +'%Y.%m.%d')
-          TAG="v${VERSION}-${DATE_STR}"
-          NAME="Vytra v${VERSION} (${DATE_STR})"
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "name=${NAME}" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release and Attach Vytra.apk
         uses: softprops/action-gh-release@v2

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/design_system.dart';
 import '../../../auth/domain/entities/user_entity.dart';
@@ -29,12 +30,27 @@ class AccountPage extends StatefulWidget {
 }
 
 class _AccountPageState extends State<AccountPage> {
+  String _appVersion = 'Vytra v1.0.13 (Build 13)';
+
   @override
   void initState() {
     super.initState();
+    _loadAppVersion();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AccountController>().loadStats();
     });
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted && info.version.isNotEmpty) {
+        setState(() {
+          final build = info.buildNumber.isNotEmpty ? ' (Build ${info.buildNumber})' : '';
+          _appVersion = 'Vytra v${info.version}$build';
+        });
+      }
+    } catch (_) {}
   }
 
   String get _displayName {
@@ -119,7 +135,7 @@ class _AccountPageState extends State<AccountPage> {
                 const SizedBox(height: AppSpacing.lg),
                 Center(
                   child: Text(
-                    'Vytra v1.0.3 (Build 3)',
+                    _appVersion,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
