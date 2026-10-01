@@ -12,7 +12,8 @@ import '../../domain/cart_model.dart';
 
 class CartPage extends StatefulWidget {
   final bool isTab;
-  const CartPage({super.key, this.isTab = false});
+  final VoidCallback? onGoShopping;
+  const CartPage({super.key, this.isTab = false, this.onGoShopping});
 
   @override
   State<CartPage> createState() => _CartPageState();
@@ -71,7 +72,13 @@ class _CartPageState extends State<CartPage> {
           const Text("Your cart is empty", style: TextStyle(fontSize: 18, color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.md),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (widget.onGoShopping != null) {
+                widget.onGoShopping!();
+              } else if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
             child: const Text("Go Shopping"),
           ),
         ],
@@ -226,8 +233,12 @@ class _CartPageState extends State<CartPage> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context); // Close sheet
-                Navigator.pop(context); // Go back home
-                Navigator.push(context, MaterialPageRoute(builder: (_) => OrdersPage()));
+                if (widget.isTab && widget.onGoShopping != null) {
+                  widget.onGoShopping!();
+                } else if (!widget.isTab && Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersPage()));
               },
               child: const Text("Track Order"),
             ),

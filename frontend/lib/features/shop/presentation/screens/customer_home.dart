@@ -188,7 +188,10 @@ class _CustomerHomeState extends State<CustomerHome> {
       const OrdersPage(isTab: true),
       const WishlistPage(isTab: true),
       AccountPage(customerId: widget.customerId, user: user, isTab: true),
-      const CartPage(isTab: true),
+      CartPage(
+        isTab: true,
+        onGoShopping: () => setState(() => _currentIndex = 0),
+      ),
     ];
 
     return Scaffold(
