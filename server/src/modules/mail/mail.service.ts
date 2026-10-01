@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 export interface OrderItemSummary {
   name: string;
@@ -25,10 +26,17 @@ export interface OrderStatusData {
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
+  private resendClient: Resend | null = null;
   private transporter: nodemailer.Transporter | null = null;
   private readonly fromAddress: string;
 
   constructor(private readonly configService: ConfigService) {
+    const resendApiKey = this.configService.get<string>('RESEND_API_KEY');
+    if (resendApiKey) {
+      this.resendClient = new Resend(resendApiKey);
+      this.logger.log('Resend HTTPS Email Client initialized (Port 443 API)');
+    }
+
     const host = this.configService.get<string>('SMTP_HOST', 'smtpout.secureserver.net');
     const port = parseInt(this.configService.get<string>('SMTP_PORT', '587'), 10);
     const user = this.configService.get<string>('SMTP_USER', 'support@vytra.co.in');
@@ -58,9 +66,9 @@ export class MailService {
           this.logger.log(`SMTP transporter ready to deliver emails via ${host}:${port} as ${user}`);
         }
       });
-    } else {
+    } else if (!this.resendClient) {
       this.logger.warn(
-        'SMTP_PASS is not configured in .env. Outgoing emails will be logged to console (Simulation Mode).',
+        'Neither RESEND_API_KEY nor SMTP_PASS is configured. Outgoing emails will be logged to console (Simulation Mode).',
       );
     }
   }
@@ -70,22 +78,42 @@ export class MailService {
    */
   async sendMail(options: { to: string; subject: string; html: string; text?: string }): Promise<boolean> {
     try {
-      if (!this.transporter) {
-        this.logger.log(
-          `[SIMULATED EMAIL] To: ${options.to} | Subject: "${options.subject}" (Configure SMTP_PASS to send live)`,
-        );
+      // 1. Send via Resend HTTPS API (Works 100% reliably on Render / Cloud on port 443)
+      if (this.resendClient) {
+        const { data, error } = await this.resendClient.emails.send({
+          from: this.fromAddress,
+          to: [options.to],
+          subject: options.subject,
+          html: options.html,
+          text: options.text || options.subject,
+        });
+
+        if (error) {
+          this.logger.error(`Resend dispatch error to ${options.to}: ${error.message}`);
+        } else {
+          this.logger.log(`Resend email dispatched to ${options.to} (ID: ${data?.id})`);
+          return true;
+        }
+      }
+
+      // 2. Fallback to SMTP transporter
+      if (this.transporter) {
+        const info = await this.transporter.sendMail({
+          from: this.fromAddress,
+          to: options.to,
+          subject: options.subject,
+          text: options.text || options.subject,
+          html: options.html,
+        });
+
+        this.logger.log(`SMTP email dispatched to ${options.to} (MessageId: ${info.messageId})`);
         return true;
       }
 
-      const info = await this.transporter.sendMail({
-        from: this.fromAddress,
-        to: options.to,
-        subject: options.subject,
-        text: options.text || options.subject,
-        html: options.html,
-      });
-
-      this.logger.log(`Email dispatched to ${options.to} (MessageId: ${info.messageId})`);
+      // 3. Fallback to Simulation Mode
+      this.logger.log(
+        `[SIMULATED EMAIL] To: ${options.to} | Subject: "${options.subject}" (Configure RESEND_API_KEY or SMTP_PASS to send live)`,
+      );
       return true;
     } catch (err: any) {
       this.logger.error(`Failed to send email to ${options.to}: ${err.message}`, err.stack);
