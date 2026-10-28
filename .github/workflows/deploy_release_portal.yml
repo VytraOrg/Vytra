@@ -5,10 +5,6 @@ on:
     branches:
       - master
       - main
-    paths:
-      - 'docs/**'
-      - 'releases/**'
-      - '.github/workflows/deploy_release_portal.yml'
   workflow_dispatch:
 
 permissions:
@@ -30,6 +26,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Sync Releases Data into Docs
+        run: |
+          mkdir -p ./docs/releases
+          if [ -d "./releases" ]; then
+            cp -r ./releases/* ./docs/releases/ 2>/dev/null || true
+          fi
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
@@ -41,3 +44,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+

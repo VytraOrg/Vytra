@@ -127,3 +127,4 @@ DATA_FLOW.md
 
 # Build Artifacts
 *.apk
+docs/releases/

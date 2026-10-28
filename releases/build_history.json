@@ -1,6 +1,78 @@
 [
   {
     "version": "1.0.13",
+    "buildNumber": 25,
+    "timestamp": "2026-10-06T02:36:39.000Z",
+    "date": "06 Oct 2026, 08:06 AM",
+    "commit": "4d53921",
+    "branch": "master",
+    "size": "60.0 MB",
+    "apkName": "Vytra.apk",
+    "archivePath": "archives/Vytra-v1.0.13-b25.apk",
+    "changes": [
+      "Updated developer release portal domain to dev.vytra.co.in",
+      "Added real-time GitHub API commits feed with search and pagination",
+      "Unified single-page portal navigation with client-side SPA routing"
+    ]
+  },
+  {
+    "version": "1.0.13",
+    "buildNumber": 24,
+    "timestamp": "2026-10-05T01:22:58.000Z",
+    "date": "05 Oct 2026, 06:52 AM",
+    "commit": "4d53921",
+    "branch": "master",
+    "size": "60.0 MB",
+    "apkName": "Vytra.apk",
+    "archivePath": "archives/Vytra-v1.0.13-b24.apk",
+    "changes": [
+      "Automated daily production release build 24"
+    ]
+  },
+  {
+    "version": "1.0.13",
+    "buildNumber": 23,
+    "timestamp": "2026-10-04T02:05:26.000Z",
+    "date": "04 Oct 2026, 07:35 AM",
+    "commit": "4d53921",
+    "branch": "master",
+    "size": "60.0 MB",
+    "apkName": "Vytra.apk",
+    "archivePath": "archives/Vytra-v1.0.13-b23.apk",
+    "changes": [
+      "Automated daily production release build 23"
+    ]
+  },
+  {
+    "version": "1.0.13",
+    "buildNumber": 22,
+    "timestamp": "2026-10-03T01:34:19.000Z",
+    "date": "03 Oct 2026, 07:04 AM",
+    "commit": "4d53921",
+    "branch": "master",
+    "size": "60.0 MB",
+    "apkName": "Vytra.apk",
+    "archivePath": "archives/Vytra-v1.0.13-b22.apk",
+    "changes": [
+      "Automated daily production release build 22"
+    ]
+  },
+  {
+    "version": "1.0.13",
+    "buildNumber": 21,
+    "timestamp": "2026-10-02T01:56:37.000Z",
+    "date": "02 Oct 2026, 07:26 AM",
+    "commit": "4d53921",
+    "branch": "master",
+    "size": "60.0 MB",
+    "apkName": "Vytra.apk",
+    "archivePath": "archives/Vytra-v1.0.13-b21.apk",
+    "changes": [
+      "Automated daily production release build 21"
+    ]
+  },
+  {
+    "version": "1.0.13",
     "buildNumber": 13,
     "timestamp": "2026-10-01T16:31:12.198Z",
     "date": "01 Oct 2026, 10:01 PM",

@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vytra - Engineering & Release Hub</title>
   <meta name="description" content="Vytra engineering portal: releases, architecture, devlog, REST API reference, and live commit activity.">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <link rel="icon" type="image/png" href="/logo.png">
   <link rel="apple-touch-icon" href="/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -199,9 +202,9 @@
           <p>Release Monitor &amp; Technical Documentation</p>
         </div>
       </div>
-      <div class="status-badge">
+      <div class="status-badge" id="portalStatusBadge">
         <span class="status-dot"></span>
-        Production v1.0.13 Online
+        <span id="portalStatusText">Production v1.0.13 (Build 25) Online</span>
       </div>
     </header>
 
@@ -230,24 +233,61 @@
 
     <!-- Tab 1: Releases -->
     <div id="tab-releases" class="tab-panel">
-<div class="hero-card">
-      <div class="hero-tag">Current Active Build</div>
-      <div class="hero-title">Vytra v1.0.13</div>
-      <div class="hero-meta">Compiled on 01 Oct 2026, 10:01 PM • Size: 58.3 MB • Commit: <code>f0ed698</code></div>
-      <a href="https://github.com/VytraOrg/Vytra/releases/download/v1.0.13/Vytra.apk"
-         onclick="if(window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') { this.href = 'Vytra.apk'; }"
-         class="download-btn" download>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-        Download Vytra.apk
-      </a>
-    </div>
+      <div class="hero-card" id="latestHeroCard">
+        <div class="hero-tag">Current Active Build</div>
+        <div class="hero-title" id="latestHeroTitle">Vytra v1.0.13 (Build 25)</div>
+        <div class="hero-meta" id="latestHeroMeta">Compiled on 06 Oct 2026, 08:06 AM • Size: 60.0 MB • Release: <code>v1.0.13-b25</code></div>
+        <a href="https://github.com/VytraOrg/Vytra/releases/download/v1.0.13-b25/Vytra.apk"
+           id="latestHeroDownload"
+           onclick="if(window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') { this.href = 'Vytra.apk'; }"
+           class="download-btn" download>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Download Vytra.apk (60.0 MB)
+        </a>
+      </div>
 
-    <div class="section-header">
-      <div class="section-title">Build History & Changelog</div>
-      <div class="build-count">9 builds recorded</div>
-    </div>
+      <div class="section-header">
+        <div class="section-title">Build History &amp; Changelog</div>
+        <div class="build-count" id="releasesCount">14 builds recorded</div>
+      </div>
 
-    <div class="timeline">
+      <div class="timeline" id="releasesTimeline">
+        <div class="build-card">
+          <div class="build-card-header">
+            <div class="version-badge">
+              Vytra v1.0.13
+              <span class="version-pill">Build 25</span>
+            </div>
+            <div class="build-date">06 Oct 2026, 08:06 AM</div>
+          </div>
+          <div class="build-meta-row">
+            <div class="meta-tag">
+              <svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+              60.0 MB
+            </div>
+            <div class="meta-tag">
+              <svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="1.05" y1="12" x2="7" y2="12"></line><line x1="17.01" y1="12" x2="22.96" y2="12"></line></svg>
+              Commit: <code>4d53921</code>
+            </div>
+            <div class="meta-tag">
+              <svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+              master
+            </div>
+          </div>
+          <div class="changes-title">Changes in this build</div>
+          <ul class="changes-list">
+            <li>Updated developer release portal domain to dev.vytra.co.in</li>
+            <li>Added real-time GitHub API commits feed with search and pagination</li>
+            <li>Unified single-page portal navigation with client-side SPA routing</li>
+          </ul>
+          <div class="card-footer">
+            <a href="https://github.com/VytraOrg/Vytra/releases/download/v1.0.13-b25/Vytra.apk"
+               class="download-link" download>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Download (60.0 MB)
+            </a>
+          </div>
+        </div>
       
         <div class="build-card">
           <div class="build-card-header">
@@ -1397,6 +1437,7 @@
         const url = tab === 'releases' ? '/' : '/' + tab;
         history.pushState({ tab }, '', url);
       }
+      if (tab === 'releases' && !releasesLoaded) loadReleases();
       if (tab === 'commits' && !commitsLoaded) loadCommits();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -1419,14 +1460,10 @@
       if (window.location.hash) {
         history.replaceState({ tab: initial }, '', initial === 'releases' ? '/' : '/' + initial);
       }
+      loadReleases();
     });
 
-    // ===================== Live Commits =====================
-    const GITHUB_API = 'https://api.github.com/repos/VytraOrg/Vytra/commits';
-    let commitsLoaded = false;
-    let currentPage = 1;
-    let allCommits = [];
-
+    // ===================== Live Releases & Commits Helpers =====================
     function formatDate(iso) {
       const d = new Date(iso);
       return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -1436,6 +1473,159 @@
     function escapeHtml(s) {
       return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
+
+    // ===================== Live Releases =====================
+    const GITHUB_RELEASES_API = 'https://api.github.com/repos/VytraOrg/Vytra/releases';
+    let releasesLoaded = false;
+
+    async function loadReleases() {
+      if (releasesLoaded) return;
+      const isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      try {
+        const res = await fetch(`${GITHUB_RELEASES_API}?_t=${Date.now()}`);
+        if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
+        const releases = await res.json();
+        if (!Array.isArray(releases) || releases.length === 0) throw new Error('No releases found');
+        releasesLoaded = true;
+
+        // 1. Update Hero Card
+        const latest = releases[0];
+        const latestApk = (latest.assets || []).find(a => (a.name || '').endsWith('.apk')) || (latest.assets && latest.assets[0]);
+        const latestSize = latestApk ? (latestApk.size / (1024 * 1024)).toFixed(1) + ' MB' : '60.0 MB';
+        const latestDownloadUrl = isLocal ? 'Vytra.apk' : (latestApk ? latestApk.browser_download_url : `https://github.com/VytraOrg/Vytra/releases/download/${latest.tag_name}/Vytra.apk`);
+        const latestDate = formatDate(latest.published_at || latest.created_at);
+
+        const heroTitle = document.getElementById('latestHeroTitle');
+        const heroMeta = document.getElementById('latestHeroMeta');
+        const heroBtn = document.getElementById('latestHeroDownload');
+        const statusBadgeText = document.getElementById('portalStatusText');
+
+        const titleText = latest.name || ('Vytra ' + latest.tag_name);
+        if (heroTitle) heroTitle.textContent = titleText;
+        if (statusBadgeText) statusBadgeText.textContent = `Production ${latest.tag_name} Online`;
+
+        if (heroMeta) {
+          heroMeta.innerHTML = `Compiled on ${latestDate} • Size: ${latestSize} • Release: <code>${escapeHtml(latest.tag_name)}</code>`;
+        }
+
+        if (heroBtn) {
+          heroBtn.href = latestDownloadUrl;
+          heroBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Download Vytra.apk (${latestSize})
+          `;
+        }
+
+        // 2. Render Timeline
+        renderReleasesTimeline(releases, isLocal);
+      } catch (err) {
+        console.warn('Could not load live releases from GitHub API, checking local history:', err);
+        try {
+          const res = await fetch(`./releases/build_history.json?_t=${Date.now()}`);
+          if (res.ok) {
+            const builds = await res.json();
+            if (Array.isArray(builds) && builds.length > 0) {
+              const adapted = builds.map(b => ({
+                tag_name: `v${b.version}-b${b.buildNumber}`,
+                name: `Vytra v${b.version} (Build ${b.buildNumber})`,
+                created_at: b.timestamp,
+                published_at: b.timestamp,
+                target_commitish: b.branch || 'master',
+                body: (b.changes || []).map(c => `- ${c}`).join('\n'),
+                assets: [{
+                  name: b.apkName || 'Vytra.apk',
+                  size: parseFloat(b.size) * 1024 * 1024 || 62914560,
+                  browser_download_url: isLocal ? (b.archivePath || 'Vytra.apk') : `https://github.com/VytraOrg/Vytra/releases/download/v${b.version}-b${b.buildNumber}/Vytra.apk`
+                }]
+              }));
+              releasesLoaded = true;
+              renderReleasesTimeline(adapted, isLocal);
+            }
+          }
+        } catch (fallbackErr) {
+          console.warn('Fallback also failed:', fallbackErr);
+        }
+      }
+    }
+
+    function renderReleasesTimeline(releases, isLocal) {
+      const timeline = document.getElementById('releasesTimeline');
+      const countEl = document.getElementById('releasesCount');
+      if (!timeline) return;
+
+      if (countEl) countEl.textContent = `${releases.length} builds recorded`;
+
+      let html = '';
+      releases.forEach((r, idx) => {
+        const apk = (r.assets || []).find(a => (a.name || '').endsWith('.apk')) || (r.assets && r.assets[0]);
+        const size = apk ? (apk.size / (1024 * 1024)).toFixed(1) + ' MB' : '58.3 MB';
+        const downloadUrl = isLocal ? 'Vytra.apk' : (apk ? apk.browser_download_url : `https://github.com/VytraOrg/Vytra/releases/download/${r.tag_name}/Vytra.apk`);
+        const date = formatDate(r.published_at || r.created_at);
+
+        const buildMatch = (r.name || '').match(/Build\s+(\d+)/i) || (r.tag_name || '').match(/-b(\d+)/i);
+        const buildLabel = buildMatch ? `Build ${buildMatch[1]}` : (idx === 0 ? 'Build 25' : 'Release');
+
+        let changesHtml = '';
+        if (r.body && r.body.trim()) {
+          const lines = r.body
+            .split('\n')
+            .map(l => l.trim())
+            .filter(l => l && !l.startsWith('##') && !l.startsWith('###') && !l.startsWith('---'));
+          const bulletLines = lines.filter(l => l.startsWith('- ') || l.startsWith('* ')).map(l => l.replace(/^[-*]\s+/, ''));
+          if (bulletLines.length > 0) {
+            changesHtml = bulletLines.slice(0, 5).map(l => `<li>${escapeHtml(l)}</li>`).join('');
+          } else {
+            const cleanLine = lines.find(l => !l.startsWith('**Full Changelog**')) || r.name;
+            changesHtml = `<li>${escapeHtml(cleanLine)}</li>`;
+          }
+        } else {
+          changesHtml = `<li>Release build ${escapeHtml(r.tag_name)}</li>`;
+        }
+
+        html += `
+          <div class="build-card">
+            <div class="build-card-header">
+              <div class="version-badge">
+                ${escapeHtml(r.name || r.tag_name)}
+                <span class="version-pill">${escapeHtml(buildLabel)}</span>
+              </div>
+              <div class="build-date">${date}</div>
+            </div>
+            <div class="build-meta-row">
+              <div class="meta-tag">
+                <svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                ${size}
+              </div>
+              <div class="meta-tag">
+                <svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="1.05" y1="12" x2="7" y2="12"></line><line x1="17.01" y1="12" x2="22.96" y2="12"></line></svg>
+                Release: <code>${escapeHtml(r.tag_name)}</code>
+              </div>
+              <div class="meta-tag">
+                <svg class="meta-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+                ${escapeHtml(r.target_commitish || 'master')}
+              </div>
+            </div>
+            <div class="changes-title">Release Notes</div>
+            <ul class="changes-list">
+              ${changesHtml}
+            </ul>
+            <div class="card-footer">
+              <a href="${downloadUrl}" class="download-link" download>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Download (${size})
+              </a>
+            </div>
+          </div>
+        `;
+      });
+      timeline.innerHTML = html;
+    }
+
+    // ===================== Live Commits =====================
+    const GITHUB_API = 'https://api.github.com/repos/VytraOrg/Vytra/commits';
+    let commitsLoaded = false;
+    let currentPage = 1;
+    let allCommits = [];
 
     function renderCommits(commits) {
       const list = document.getElementById('commitsList');
@@ -1475,7 +1665,7 @@
     async function loadCommits() {
       commitsLoaded = true;
       try {
-        const res = await fetch(`${GITHUB_API}?per_page=30&page=${currentPage}`);
+        const res = await fetch(`${GITHUB_API}?per_page=30&page=${currentPage}&_t=${Date.now()}`);
         if (!res.ok) throw new Error(`GitHub API returned ${res.status}`);
         const data = await res.json();
         const list = document.getElementById('commitsList');

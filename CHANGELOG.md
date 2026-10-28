@@ -2,6 +2,48 @@
 
 All builds, versions, and change logs are automatically tracked here.
 
+## [v1.0.13] - Build 25 (06 Oct 2026, 08:06 AM)
+- **Commit**: `4d53921` (master)
+- **APK**: [`Vytra.apk`](https://github.com/VytraOrg/Vytra/releases/download/v1.0.13-b25/Vytra.apk) (60.0 MB)
+### Changes:
+- Updated developer release portal domain to dev.vytra.co.in
+- Added real-time GitHub API commits feed with search and pagination
+- Unified single-page portal navigation with client-side SPA routing
+
+---
+
+## [v1.0.13] - Build 24 (05 Oct 2026, 06:52 AM)
+- **Commit**: `4d53921` (master)
+- **APK**: [`Vytra.apk`](https://github.com/VytraOrg/Vytra/releases/download/v1.0.13-b24/Vytra.apk) (60.0 MB)
+### Changes:
+- Automated daily production release build 24
+
+---
+
+## [v1.0.13] - Build 23 (04 Oct 2026, 07:35 AM)
+- **Commit**: `4d53921` (master)
+- **APK**: [`Vytra.apk`](https://github.com/VytraOrg/Vytra/releases/download/v1.0.13-b23/Vytra.apk) (60.0 MB)
+### Changes:
+- Automated daily production release build 23
+
+---
+
+## [v1.0.13] - Build 22 (03 Oct 2026, 07:04 AM)
+- **Commit**: `4d53921` (master)
+- **APK**: [`Vytra.apk`](https://github.com/VytraOrg/Vytra/releases/download/v1.0.13-b22/Vytra.apk) (60.0 MB)
+### Changes:
+- Automated daily production release build 22
+
+---
+
+## [v1.0.13] - Build 21 (02 Oct 2026, 07:26 AM)
+- **Commit**: `4d53921` (master)
+- **APK**: [`Vytra.apk`](https://github.com/VytraOrg/Vytra/releases/download/v1.0.13-b21/Vytra.apk) (60.0 MB)
+### Changes:
+- Automated daily production release build 21
+
+---
+
 ## [v1.0.13] - Build 13 (01 Oct 2026, 10:01 PM)
 - **Commit**: `f0ed698` (master)
 - **APK**: [`Vytra.apk`](releases/archives/Vytra-v1.0.13.apk) (58.3 MB)
