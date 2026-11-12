@@ -1,320 +1,286 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/design_system.dart';
-import '../../../../core/network/api_client.dart';
+import 'distributor_controller.dart';
+import 'distributor_models.dart';
+import 'distributor_ui.dart';
 
+/// Inventory & rates.
+/// Tapping "Update Rates" puts the agency in UPDATING mode: no shopkeeper can
+/// order until the distributor taps "Save & Reopen" (or cancels).
 class DistributorInventoryPage extends StatefulWidget {
-  const DistributorInventoryPage({super.key});
+  final bool showBack;
+  const DistributorInventoryPage({super.key, this.showBack = false});
 
   @override
   State<DistributorInventoryPage> createState() => _DistributorInventoryPageState();
 }
 
 class _DistributorInventoryPageState extends State<DistributorInventoryPage> {
-  final ApiClient _apiClient = ApiClient();
-  List<dynamic> _products = [];
-  dynamic _myShop;
-  bool _isLoading = true;
-  String? _errorMessage;
+  final Map<String, TextEditingController> _rateCtrls = {};
+  String _query = '';
+
+  DistributorController get c => DistributorController.instance;
+
+  void _ensureControllers() {
+    if (_rateCtrls.isNotEmpty) return;
+    for (final p in c.inventory) {
+      _rateCtrls[p.id] = TextEditingController(text: _plain(p.rate));
+    }
+  }
+
+  void _disposeControllers() {
+    for (final t in _rateCtrls.values) {
+      t.dispose();
+    }
+    _rateCtrls.clear();
+  }
+
+  String _plain(double v) => v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 
   @override
-  void initState() {
-    super.initState();
-    _loadData();
+  void dispose() {
+    _disposeControllers();
+    super.dispose();
   }
 
-  Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      // 1. Get current user's shop info
-      final shop = await _apiClient.get('/shops/my');
-      _myShop = shop;
-      
-      // 2. Fetch products associated with this shop
-      final shopId = shop['id'] ?? shop['_id'];
-      final response = await _apiClient.get('/products?shopId=$shopId');
-      
-      setState(() {
-        // Backend returns paginated { items: [...], meta: {...} }
-        if (response is Map) {
-          _products = (response['items'] as List<dynamic>? ?? []);
-        } else if (response is List) {
-          _products = response;
-        } else {
-          _products = [];
-        }
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
-    }
+  Future<void> _startUpdate() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        icon: const Icon(Icons.sync_lock_rounded, color: DColors.blue, size: 36),
+        title: const Text('Start rate update?'),
+        content: const Text(
+          'Your agency will show "Updating" to all shopkeepers and nobody can place an order '
+          'until you save the new rates.',
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Not now')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Start Updating'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    _disposeControllers();
+    _ensureControllers();
+    c.startRateUpdate();
   }
 
-  Future<void> _addProduct(String name, String unit) async {
-    if (_myShop == null) return;
-    try {
-      final shopId = _myShop['id'] ?? _myShop['_id'];
-      await _apiClient.post('/products', {
-        'name': name,
-        'unit': unit,
-        'category': 'Grocery', // Required default category
-        'price': 0.0,          // Required default price
-        'shop': shopId,
-        'stockQuantity': 100,  // Optional default stock
-      });
-      _loadData(); // Reload items from DB after adding
-    } catch (e) {
-      if (mounted) {
+  void _save() {
+    final newRates = <String, double>{};
+    for (final p in c.inventory) {
+      final v = double.tryParse(_rateCtrls[p.id]?.text.trim() ?? '');
+      if (v == null || v <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error adding product: $e')),
+          SnackBar(content: Text('Enter a valid rate for ${p.name}')),
         );
+        return;
       }
+      newRates[p.id] = v;
     }
+    c.finishRateUpdate(newRates);
+    _disposeControllers();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Rates saved. Shopkeepers can order again.')),
+    );
   }
 
-  Future<void> _updateProduct(String id, String name, String unit) async {
-    try {
-      await _apiClient.put('/products/$id', {
-        'name': name,
-        'unit': unit,
-      });
-      _loadData(); // Reload items from DB after updating
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating product: $e')),
-        );
-      }
-    }
+  void _cancel() {
+    c.cancelRateUpdate();
+    _disposeControllers();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text("Stock Control", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(AppRadius.xl),
-            bottomRight: Radius.circular(AppRadius.xl),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            onPressed: _loadData,
-          )
-        ],
-      ),
-      body: _buildBody(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _myShop == null ? null : () => _showAddDialog(context),
-        backgroundColor: _myShop == null ? Colors.grey : AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-    );
-  }
+    return AnimatedBuilder(
+      animation: c,
+      builder: (context, _) {
+        final updating = c.isUpdatingRates;
+        if (updating) _ensureControllers();
 
-  Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 48),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.error),
+        final q = _query.toLowerCase();
+        final items = c.inventory
+            .where((p) => q.isEmpty || p.name.toLowerCase().contains(q) || p.category.toLowerCase().contains(q))
+            .toList();
+        final available = c.inventory.where((p) => p.isAvailable).length;
+
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: Column(children: [
+            DistributorHeader(
+              title: 'Inventory & Rates',
+              subtitle: '${c.inventory.length} products  •  $available available',
+              showBack: widget.showBack,
+              trailing: const AgencyStatusPill(),
+              bottom: TextField(
+                onChanged: (v) => setState(() => _query = v),
+                decoration: InputDecoration(
+                  hintText: 'Search products...',
+                  hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                ),
               ),
-              const SizedBox(height: AppSpacing.md),
-              ElevatedButton(
-                onPressed: _loadData,
-                child: const Text("Retry"),
-              )
-            ],
-          ),
-        ),
-      );
-    }
-    if (_products.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.inventory_2_outlined, size: 80, color: Colors.grey.shade300),
-            const SizedBox(height: AppSpacing.md),
-            const Text(
-              "No stock items found.",
-              style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: AppSpacing.xs),
-            const Text(
-              "Tap '+' to add your first agency product.",
-              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
-            ),
-          ],
-        ),
-      );
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      itemCount: _products.length,
-      itemBuilder: (context, index) {
-        final product = _products[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            side: BorderSide(color: AppColors.primary.withOpacity(0.1), width: 1),
-          ),
-          elevation: 0,
-          color: Colors.white,
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-            leading: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(AppRadius.md),
+            if (updating)
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: AgencyStatusBanner(),
               ),
-              child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                itemCount: items.length,
+                itemBuilder: (_, i) => _productTile(items[i], updating),
+              ),
             ),
-            title: Text(
-              product['name'] ?? '',
-              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 16),
-            ),
-            subtitle: Text(
-              "Unit: ${product['unit'] ?? ''}",
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
-              onPressed: () => _showAddDialog(context, product: product),
-            ),
-          ),
+          ]),
+          bottomNavigationBar: _bottomBar(updating),
         );
       },
     );
   }
 
-  void _showAddDialog(BuildContext context, {dynamic product}) {
-    final TextEditingController nameController = TextEditingController(text: product?['name'] ?? '');
-    final TextEditingController unitController = TextEditingController(text: product?['unit'] ?? '');
-    final bool isEdit = product != null;
+  Widget _productTile(InventoryItem p, bool updating) {
+    final lowStock = p.stock > 0 && p.stock < 20;
+    return DCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+      child: Row(children: [
+        Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(color: DColors.chipBg, borderRadius: BorderRadius.circular(14)),
+          child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Opacity(
+            opacity: p.isAvailable ? 1 : 0.5,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(p.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14.5)),
+              const SizedBox(height: 3),
+              Text('${p.category}  •  ${p.unit}',
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              const SizedBox(height: 5),
+              Row(children: [
+                TagChip(
+                  p.stock == 0 ? 'Out of stock' : '${p.stock} in stock',
+                  color: p.stock == 0 ? DColors.red : (lowStock ? DColors.amber : DColors.green),
+                ),
+                if (!p.isAvailable) ...[
+                  const SizedBox(width: 6),
+                  const TagChip('Hidden', color: DColors.grey),
+                ],
+              ]),
+            ]),
+          ),
+        ),
+        const SizedBox(width: 8),
+        if (updating)
+          SizedBox(
+            width: 96,
+            child: TextField(
+              controller: _rateCtrls[p.id],
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              decoration: InputDecoration(
+                prefixText: '₹ ',
+                isDense: true,
+                filled: true,
+                fillColor: DColors.blue.withOpacity(0.06),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: DColors.blue.withOpacity(0.4)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: DColors.blue.withOpacity(0.4)),
+                ),
+              ),
+            ),
+          )
+        else
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text(formatInr(p.rate, decimals: p.rate == p.rate.roundToDouble() ? 0 : 2),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+            Transform.scale(
+              scale: 0.85,
+              child: Switch(
+                value: p.isAvailable,
+                activeColor: Colors.white,
+                activeTrackColor: AppColors.primary,
+                onChanged: (v) => c.setProductAvailable(p.id, v),
+              ),
+            ),
+          ]),
+      ]),
+    );
+  }
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.primaryLight,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(AppRadius.xl),
-          topRight: Radius.circular(AppRadius.xl),
-        ),
+  Widget _bottomBar(bool updating) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 16)],
       ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20, left: 20, right: 20, top: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Text(
-                isEdit ? "Edit Agency Stock" : "Add Agency Stock", 
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            TextField(
-              controller: nameController,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-              decoration: InputDecoration(
-                labelText: "Product Name",
-                labelStyle: TextStyle(color: Colors.grey.shade600),
-                prefixIcon: const Icon(Icons.edit_note_rounded, color: AppColors.primary),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
+      child: SafeArea(
+        top: false,
+        child: updating
+            ? Row(children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _cancel,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.textPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: const Text('Cancel'),
+                  ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton.icon(
+                    onPressed: _save,
+                    icon: const Icon(Icons.lock_open_rounded),
+                    label: const Text('Save & Reopen'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: DColors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                  ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: unitController,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-              decoration: InputDecoration(
-                labelText: "Unit (e.g. Bag/Case)",
-                labelStyle: TextStyle(color: Colors.grey.shade600),
-                prefixIcon: const Icon(Icons.layers_outlined, color: AppColors.primary),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+              ])
+            : FilledButton.icon(
+                onPressed: _startUpdate,
+                icon: const Icon(Icons.edit_rounded),
+                label: const Text('Update Rates'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            ElevatedButton(
-              onPressed: () {
-                final name = nameController.text.trim();
-                final unit = unitController.text.trim();
-                if (name.isNotEmpty && unit.isNotEmpty) {
-                  if (isEdit) {
-                    _updateProduct(product['_id'] ?? product['id'], name, unit);
-                  } else {
-                    _addProduct(name, unit);
-                  }
-                  Navigator.pop(context);
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please fill out all fields.')),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
-              ),
-              child: Text(isEdit ? "Update Stock" : "Add Stock", style: const TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
       ),
     );
   }
