@@ -110,8 +110,8 @@ class _DistributorInventoryPageState extends State<DistributorInventoryPage> {
             .toList();
         final available = c.inventory.where((p) => p.isAvailable).length;
 
-        final double bottomMargin = widget.showBack ? 20.0 : 90.0;
-        final double listBottomPadding = widget.showBack ? 90.0 : 165.0;
+        final double bottomMargin = widget.showBack ? 20.0 : 88.0;
+        final double listBottomPadding = updating ? 220.0 : (widget.showBack ? 90.0 : 165.0);
 
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -137,9 +137,9 @@ class _DistributorInventoryPageState extends State<DistributorInventoryPage> {
                   ),
                 ),
                 if (updating)
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: AgencyStatusBanner(),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                    child: _buildUpdatingModeHeader(),
                   ),
                 Expanded(
                   child: RefreshIndicator(
@@ -223,29 +223,70 @@ class _DistributorInventoryPageState extends State<DistributorInventoryPage> {
         ),
         const SizedBox(width: 8),
         if (updating)
-          SizedBox(
-            width: 96,
-            child: TextField(
-              controller: _rateCtrls[p.id],
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
-              textAlign: TextAlign.right,
-              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-              decoration: InputDecoration(
-                prefixText: '₹ ',
-                isDense: true,
-                filled: true,
-                fillColor: DColors.blue.withOpacity(0.06),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: DColors.blue.withOpacity(0.4)),
+          Container(
+            width: 110,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.45), width: 1.3),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: DColors.blue.withOpacity(0.4)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'RATE / ${p.unit.toUpperCase()}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                    letterSpacing: 0.3,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 2),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    const Text(
+                      '₹',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: TextField(
+                        controller: _rateCtrls[p.id],
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                          color: AppColors.textPrimary,
+                        ),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           )
         else
@@ -266,37 +307,105 @@ class _DistributorInventoryPageState extends State<DistributorInventoryPage> {
     );
   }
 
+  Widget _buildUpdatingModeHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: DColors.green.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: DColors.green.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.sync_lock_rounded, color: DColors.green, size: 20),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Rates Updating in Progress',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: DColors.green,
+                    fontSize: 13.5,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Orders are paused. Enter new rates below and tap Save & Reopen.',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: AppColors.textSecondary,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _editingActionPanel() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.primaryLight, width: 1.2),
-        boxShadow: AppShadows.premium,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Expanded(
-            child: OutlinedButton(
+            flex: 2,
+            child: OutlinedButton.icon(
               onPressed: _cancel,
+              icon: const Icon(Icons.close_rounded, size: 16),
+              label: const Text('Cancel'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textPrimary,
+                foregroundColor: AppColors.textSecondary,
+                side: BorderSide(color: Colors.grey.shade300),
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              child: const Text('Cancel'),
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
-            flex: 2,
+            flex: 3,
             child: FilledButton.icon(
               onPressed: _save,
               icon: const Icon(Icons.lock_open_rounded, size: 18),
-              label: const Text('Save & Reopen'),
+              label: const Text(
+                'Save & Reopen',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
               style: FilledButton.styleFrom(
                 backgroundColor: DColors.green,
+                foregroundColor: Colors.white,
+                elevation: 2,
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
