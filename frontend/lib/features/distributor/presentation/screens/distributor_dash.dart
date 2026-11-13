@@ -59,39 +59,48 @@ class _DistributorDashState extends State<DistributorDash> {
           ),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: FloatingPillNavBar(
-          currentIndex: _index,
-          onTabSelected: _go,
-          items: const [
-            NavBarItem(
-              label: "Overview",
-              selectedIcon: Icons.dashboard_rounded,
-              unselectedIcon: Icons.dashboard_outlined,
+      bottomNavigationBar: AnimatedBuilder(
+        animation: DistributorController.instance,
+        builder: (context, _) {
+          final isUpdating = DistributorController.instance.isUpdatingRates;
+          if (isUpdating && _index == 2) {
+            return const SizedBox.shrink();
+          }
+          return SafeArea(
+            top: false,
+            child: FloatingPillNavBar(
+              currentIndex: _index,
+              onTabSelected: _go,
+              items: const [
+                NavBarItem(
+                  label: "Overview",
+                  selectedIcon: Icons.dashboard_rounded,
+                  unselectedIcon: Icons.dashboard_outlined,
+                ),
+                NavBarItem(
+                  label: "Orders",
+                  selectedIcon: Icons.receipt_long_rounded,
+                  unselectedIcon: Icons.receipt_long_outlined,
+                ),
+                NavBarItem(
+                  label: "Inventory",
+                  selectedIcon: Icons.inventory_2_rounded,
+                  unselectedIcon: Icons.inventory_2_outlined,
+                ),
+                NavBarItem(
+                  label: "Reports",
+                  selectedIcon: Icons.bar_chart_rounded,
+                  unselectedIcon: Icons.bar_chart_outlined,
+                ),
+                NavBarItem(
+                  label: "Profile",
+                  selectedIcon: Icons.person_rounded,
+                  unselectedIcon: Icons.person_outline_rounded,
+                ),
+              ],
             ),
-            NavBarItem(
-              label: "Orders",
-              selectedIcon: Icons.receipt_long_rounded,
-              unselectedIcon: Icons.receipt_long_outlined,
-            ),
-            NavBarItem(
-              label: "Inventory",
-              selectedIcon: Icons.inventory_2_rounded,
-              unselectedIcon: Icons.inventory_2_outlined,
-            ),
-            NavBarItem(
-              label: "Reports",
-              selectedIcon: Icons.bar_chart_rounded,
-              unselectedIcon: Icons.bar_chart_outlined,
-            ),
-            NavBarItem(
-              label: "Profile",
-              selectedIcon: Icons.person_rounded,
-              unselectedIcon: Icons.person_outline_rounded,
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

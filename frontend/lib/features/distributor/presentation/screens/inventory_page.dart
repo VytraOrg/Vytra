@@ -111,7 +111,7 @@ class _DistributorInventoryPageState extends State<DistributorInventoryPage> {
         final available = c.inventory.where((p) => p.isAvailable).length;
 
         final double bottomMargin = widget.showBack ? 20.0 : 88.0;
-        final double listBottomPadding = updating ? 220.0 : (widget.showBack ? 90.0 : 165.0);
+        final double listBottomPadding = updating ? 110.0 : (widget.showBack ? 90.0 : 165.0);
 
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -171,9 +171,9 @@ class _DistributorInventoryPageState extends State<DistributorInventoryPage> {
                 )
               else
                 Positioned(
-                  left: 20,
-                  right: 20,
-                  bottom: bottomMargin,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
                   child: _editingActionPanel(),
                 ),
             ],
@@ -209,9 +209,30 @@ class _DistributorInventoryPageState extends State<DistributorInventoryPage> {
                   style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               const SizedBox(height: 5),
               Row(children: [
-                TagChip(
-                  p.stock == 0 ? 'Out of stock' : '${p.stock} in stock',
-                  color: p.stock == 0 ? DColors.red : (lowStock ? DColors.amber : DColors.green),
+                InkWell(
+                  onTap: () => _showUpdateStockDialog(p),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TagChip(
+                          p.stock == 0 ? 'Out of stock' : '${p.stock} in stock',
+                          color: p.stock == 0 ? DColors.red : (lowStock ? DColors.amber : DColors.green),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.edit_outlined, size: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 if (!p.isAvailable) ...[
                   const SizedBox(width: 6),
@@ -356,62 +377,271 @@ class _DistributorInventoryPageState extends State<DistributorInventoryPage> {
     );
   }
 
+  void _showUpdateStockDialog(InventoryItem p) {
+    int currentStock = p.stock;
+    final stockCtrl = TextEditingController(text: currentStock.toString());
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            void setVal(int next) {
+              if (next < 0) next = 0;
+              setModalState(() {
+                currentStock = next;
+                stockCtrl.text = currentStock.toString();
+              });
+            }
+
+            return Container(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: DColors.chipBg,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              p.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            Text(
+                              '${p.category}  •  ${p.unit}',
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Available Stock Quantity',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      IconButton.filledTonal(
+                        onPressed: () => setVal(currentStock - 10),
+                        icon: const Text('-10', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.background,
+                          foregroundColor: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      IconButton.filledTonal(
+                        onPressed: () => setVal(currentStock - 1),
+                        icon: const Icon(Icons.remove_rounded, size: 20),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.background,
+                          foregroundColor: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: stockCtrl,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: AppColors.textPrimary),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: AppColors.background,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          onChanged: (val) {
+                            final parsed = int.tryParse(val) ?? 0;
+                            setModalState(() {
+                              currentStock = parsed;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filledTonal(
+                        onPressed: () => setVal(currentStock + 1),
+                        icon: const Icon(Icons.add_rounded, size: 20),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.background,
+                          foregroundColor: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      IconButton.filledTonal(
+                        onPressed: () => setVal(currentStock + 10),
+                        icon: const Text('+10', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.background,
+                          foregroundColor: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ActionChip(
+                        label: const Text('Out of Stock (0)'),
+                        labelStyle: const TextStyle(fontSize: 12, color: DColors.red),
+                        backgroundColor: DColors.red.withValues(alpha: 0.1),
+                        side: BorderSide.none,
+                        onPressed: () => setVal(0),
+                      ),
+                      ActionChip(
+                        label: const Text('+50'),
+                        labelStyle: const TextStyle(fontSize: 12, color: AppColors.primary),
+                        backgroundColor: AppColors.primaryLight.withValues(alpha: 0.5),
+                        side: BorderSide.none,
+                        onPressed: () => setVal(currentStock + 50),
+                      ),
+                      ActionChip(
+                        label: const Text('+100'),
+                        labelStyle: const TextStyle(fontSize: 12, color: AppColors.primary),
+                        backgroundColor: AppColors.primaryLight.withValues(alpha: 0.5),
+                        side: BorderSide.none,
+                        onPressed: () => setVal(currentStock + 100),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        final finalStock = int.tryParse(stockCtrl.text.trim()) ?? currentStock;
+                        Navigator.pop(ctx);
+                        c.updateStock(p.id, finalStock);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Stock for ${p.name} updated to $finalStock ${p.unit}'),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: const Icon(Icons.check_rounded, color: Colors.white),
+                      label: const Text(
+                        'Save Stock',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _editingActionPanel() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primaryLight, width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 18,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
           ),
         ],
+        border: const Border(
+          top: BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+        ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: OutlinedButton.icon(
-              onPressed: _cancel,
-              icon: const Icon(Icons.close_rounded, size: 16),
-              label: const Text('Cancel'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textSecondary,
-                side: BorderSide(color: Colors.grey.shade300),
-                padding: const EdgeInsets.symmetric(vertical: 13),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: OutlinedButton.icon(
+                  onPressed: _cancel,
+                  icon: const Icon(Icons.close_rounded, size: 16),
+                  label: const Text('Cancel'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    side: BorderSide(color: Colors.grey.shade300),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 3,
+                child: FilledButton.icon(
+                  onPressed: _save,
+                  icon: const Icon(Icons.lock_open_rounded, size: 18),
+                  label: const Text(
+                    'Save & Reopen',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: DColors.green,
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            flex: 3,
-            child: FilledButton.icon(
-              onPressed: _save,
-              icon: const Icon(Icons.lock_open_rounded, size: 18),
-              label: const Text(
-                'Save & Reopen',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: DColors.green,
-                foregroundColor: Colors.white,
-                elevation: 2,
-                padding: const EdgeInsets.symmetric(vertical: 13),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
