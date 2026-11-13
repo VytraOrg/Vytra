@@ -1,0 +1,72 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-backend:
+    name: Backend Build & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd server
+          npm ci
+
+      - name: Compile NestJS Server
+        run: |
+          cd server
+          npm run build
+
+  verify-frontend:
+    name: Frontend Analyze & Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: |
+          cd frontend
+          flutter pub get
+
+      - name: Generate placeholder secrets for CI
+        run: |
+          mkdir -p frontend/lib/core/config
+          echo "class Secrets { static const String googleMapsApiKey = ''; }" > frontend/lib/core/config/secrets.dart
+
+      - name: Run Flutter Analyze
+        run: |
+          cd frontend
+          flutter analyze --no-fatal-infos
