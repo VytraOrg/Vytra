@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/design_system.dart';
-import '../../../../shared/widgets/app_network_image.dart';
 import '../widgets/global_product_card.dart';
 import '../../domain/shop_repository.dart';
 import '../../data/product_model.dart';
 import '../../../cart/presentation/screens/cart_page.dart';
-import '../../../cart/presentation/controllers/cart_controller.dart';
 
 class ProductList extends StatefulWidget {
   final String shopName;

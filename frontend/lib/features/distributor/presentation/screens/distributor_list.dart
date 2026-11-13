@@ -12,7 +12,6 @@ class DistributorList extends StatefulWidget {
 
 class _DistributorListState extends State<DistributorList> {
   bool _isLoading = true;
-  String? _error;
   List<Map<String, dynamic>> _distributors = [];
 
   @override
@@ -24,7 +23,6 @@ class _DistributorListState extends State<DistributorList> {
   Future<void> _fetchDistributors() async {
     setState(() {
       _isLoading = true;
-      _error = null;
     });
 
     try {

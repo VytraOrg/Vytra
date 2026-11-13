@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../features/orders/domain/order_model.dart';
-import '../cache/cache_manager.dart';
 
 /// Service managing active order live tracking both in-app (Dynamic Island)
 /// and system-level (Android ongoing progress notification for HyperOS Super Island).

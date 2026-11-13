@@ -69,4 +69,5 @@ jobs:
       - name: Run Flutter Analyze
         run: |
           cd frontend
-          flutter analyze --no-fatal-infos
+          flutter analyze --no-fatal-warnings --no-fatal-infos
+

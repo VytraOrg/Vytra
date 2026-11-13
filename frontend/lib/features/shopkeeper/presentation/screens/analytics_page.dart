@@ -98,10 +98,6 @@ class AnalyticsPage extends StatelessWidget {
   }
 
   Widget _buildQuickInsights(double weeklySales) {
-    String growthText = "+0.0%";
-    if (orders.isNotEmpty) {
-      growthText = weeklySales > 0 ? "+12.5%" : "+0.0%";
-    }
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
