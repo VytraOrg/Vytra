@@ -132,6 +132,22 @@ class DistributorController extends ChangeNotifier {
     }
   }
 
+  Future<void> updateStock(String productId, int newStock) async {
+    for (final item in inventory) {
+      if (item.id == productId) {
+        item.stock = newStock;
+        break;
+      }
+    }
+    notifyListeners();
+
+    try {
+      await _apiClient?.put('/distributors/inventory/$productId', {'stock': newStock});
+    } catch (e) {
+      debugPrint('[DistributorController] Error updating stock: $e');
+    }
+  }
+
   void cancelRateUpdate() {
     isUpdatingRates = false;
     notifyListeners();
