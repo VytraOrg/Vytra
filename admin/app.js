@@ -2,10 +2,16 @@
 // Vytra Admin Portal Logic (app.js)
 // ==========================================================================
 
-// Base API URL configuration (defaults to live Render server, local fallback via localStorage override)
-const API_BASE_URL = localStorage.getItem('use_local_backend') === 'true'
-  ? 'http://localhost:5001/api/v1'
-  : 'https://localcommerceapp-1.onrender.com/api/v1';
+// Smart Local Backend Auto-Detection
+const isLocalEnvironment = window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1' ||
+  window.location.protocol === 'file:';
+
+const API_BASE_URL = localStorage.getItem('use_local_backend') === 'false'
+  ? 'https://localcommerceapp-1.onrender.com/api/v1'
+  : (isLocalEnvironment || localStorage.getItem('use_local_backend') === 'true'
+      ? 'http://localhost:5001/api/v1'
+      : 'https://localcommerceapp-1.onrender.com/api/v1');
 
 // App State Management
 let token = localStorage.getItem('admin_token') || null;
@@ -253,6 +259,25 @@ function setupEventListeners() {
     logoutBtn.addEventListener('click', logout);
   }
 
+  // Quick Dev Demo Login Chip
+  const demoChip = document.getElementById('demo-login-chip');
+  if (demoChip) {
+    demoChip.addEventListener('click', () => {
+      document.getElementById('email').value = 'admin@commerce.com';
+      document.getElementById('password').value = 'admin123';
+      showToast('Admin test credentials filled', 'info');
+    });
+  }
+
+  // Refresh Distributors Button
+  const refreshDistBtn = document.getElementById('refresh-distributors-btn');
+  if (refreshDistBtn) {
+    refreshDistBtn.addEventListener('click', () => {
+      loadDistributors();
+      showToast('Distributor list refreshed', 'info');
+    });
+  }
+
   // Tab Menu Switching
   const menuItems = document.querySelectorAll('.menu-item');
   menuItems.forEach(item => {
@@ -263,18 +288,30 @@ function setupEventListeners() {
       
       activeTab = item.getAttribute('data-tab');
       
-      // Update filters/UI based on selected tab
-      const filterBtns = document.querySelectorAll('.filter-btn');
-      if (activeTab === 'verifications') {
-        // Show pending
-        filterBtns.forEach(btn => {
-          if (btn.getAttribute('data-filter') === 'Pending') btn.click();
-        });
+      const verificationsView = document.getElementById('verifications-view');
+      const distributorsView = document.getElementById('distributors-view');
+
+      if (activeTab === 'distributors') {
+        if (verificationsView) verificationsView.classList.add('hidden');
+        if (distributorsView) distributorsView.classList.remove('hidden');
+        loadDistributors();
       } else {
-        // Show all
-        filterBtns.forEach(btn => {
-          if (btn.getAttribute('data-filter') === 'all') btn.click();
-        });
+        if (distributorsView) distributorsView.classList.add('hidden');
+        if (verificationsView) verificationsView.classList.remove('hidden');
+        
+        // Update filters/UI based on selected tab
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        if (activeTab === 'verifications') {
+          // Show pending
+          filterBtns.forEach(btn => {
+            if (btn.getAttribute('data-filter') === 'Pending') btn.click();
+          });
+        } else {
+          // Show all
+          filterBtns.forEach(btn => {
+            if (btn.getAttribute('data-filter') === 'all') btn.click();
+          });
+        }
       }
     });
   });
@@ -341,9 +378,34 @@ async function fetchShops() {
     }
     
     shopsData = await response.json();
+    
+    // Smart Defaulting: If there are 0 Pending shops and Verified shops exist,
+    // seamlessly switch to 'Verified' so the screen isn't empty on load.
+    const pendingCount = shopsData.filter(s => s.verificationStatus === 'Pending').length;
+    const verifiedCount = shopsData.filter(s => s.verificationStatus === 'Verified').length;
+    
+    if (pendingCount === 0 && verifiedCount > 0 && activeFilter === 'Pending') {
+      activeFilter = 'Verified';
+      const filterBtns = document.querySelectorAll('.queue-panel-card .filter-btn');
+      filterBtns.forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-filter') === 'Verified');
+      });
+    }
+
     updateMetrics();
     renderAnalytics();
     renderShops();
+
+    // Auto-select the first visible shop so inspector and viewer immediately light up!
+    if (!selectedShopId) {
+      let visible = shopsData;
+      if (activeFilter !== 'all') {
+        visible = shopsData.filter(s => s.verificationStatus === activeFilter);
+      }
+      if (visible.length > 0) {
+        selectShop(visible[0]._id);
+      }
+    }
   } catch (err) {
     showToast(err.message, 'error');
     if (qList) {
@@ -358,11 +420,13 @@ async function fetchShops() {
   }
 }
 
-// Update Dashboard Header metrics with trends
+// Update Dashboard Header metrics with trends and filter counts
 function updateMetrics() {
   const pending = shopsData.filter(s => s.verificationStatus === 'Pending').length;
   const verified = shopsData.filter(s => s.verificationStatus === 'Verified').length;
   const rejected = shopsData.filter(s => s.verificationStatus === 'Rejected').length;
+  const review = shopsData.filter(s => s.verificationStatus === 'Under Review').length;
+  const changes = shopsData.filter(s => s.verificationStatus === 'Changes Requested').length;
   const total = shopsData.length;
   
   document.getElementById('pending-count').textContent = pending;
@@ -370,58 +434,150 @@ function updateMetrics() {
   document.getElementById('rejected-count').textContent = rejected;
   document.getElementById('total-count').textContent = total;
   
+  // Update live badges on filter buttons
+  const filterBtns = document.querySelectorAll('.queue-panel-card .filter-btn');
+  filterBtns.forEach(btn => {
+    const filter = btn.getAttribute('data-filter');
+    let count = 0;
+    if (filter === 'Pending') count = pending;
+    else if (filter === 'Under Review') count = review;
+    else if (filter === 'Changes Requested') count = changes;
+    else if (filter === 'Verified') count = verified;
+    else if (filter === 'Rejected') count = rejected;
+    else if (filter === 'all') count = total;
+    
+    // Set formatted label with badge
+    const label = filter === 'Under Review' ? 'Review' : (filter === 'Changes Requested' ? 'Changes' : filter === 'all' ? 'All' : filter);
+    btn.innerHTML = `<span>${label}</span> <span class="filter-count-badge">${count}</span>`;
+  });
+
   // Calculate dynamic ratios to show in trend badges
   const verifiedRate = total > 0 ? Math.round((verified / total) * 100) : 0;
-  const pendingRate = total > 0 ? Math.round((pending / total) * 100) : 0;
-  const rejectedRate = total > 0 ? Math.round((rejected / total) * 100) : 0;
 
-  // Update trend pills content
-  document.querySelector('#total-trend .trend-val').textContent = `+12%`;
-  document.querySelector('#pending-trend .trend-val').textContent = `${pendingRate}% rate`;
-  document.querySelector('#verified-trend .trend-val').textContent = `${verifiedRate}% rate`;
-  document.querySelector('#rejected-trend .trend-val').textContent = `${rejectedRate}% rate`;
+  // Rich professional KPI status pills
+  const totalTrend = document.getElementById('total-trend');
+  if (totalTrend) {
+    totalTrend.innerHTML = `<i data-lucide="sparkles"></i> <span class="trend-val">Active Catalog</span>`;
+  }
+
+  const pendingTrend = document.getElementById('pending-trend');
+  if (pendingTrend) {
+    if (pending === 0) {
+      pendingTrend.className = 'trend-badge success';
+      pendingTrend.innerHTML = `<i data-lucide="check-check"></i> <span class="trend-val">Queue Clear</span>`;
+    } else {
+      pendingTrend.className = 'trend-badge warning';
+      pendingTrend.innerHTML = `<i data-lucide="clock"></i> <span class="trend-val">${pending} Action Required</span>`;
+    }
+  }
+
+  const verifiedTrend = document.getElementById('verified-trend');
+  if (verifiedTrend) {
+    verifiedTrend.className = 'trend-badge success';
+    verifiedTrend.innerHTML = `<i data-lucide="badge-check"></i> <span class="trend-val">${verifiedRate}% Verified</span>`;
+  }
+
+  const rejectedTrend = document.getElementById('rejected-trend');
+  if (rejectedTrend) {
+    rejectedTrend.className = rejected > 0 ? 'trend-badge danger' : 'trend-badge info';
+    rejectedTrend.innerHTML = `<i data-lucide="shield-check"></i> <span class="trend-val">${rejected} Flagged</span>`;
+  }
+
+  initIcons();
 }
 
-// Render dynamic CSS Analytics widgets
+// Render dynamic CSS Analytics widgets with executive density
 function renderAnalytics() {
   const total = shopsData.length;
   const statusDist = document.getElementById('status-distribution-bar');
   if (!statusDist) return;
 
-  if (total === 0) {
-    statusDist.innerHTML = `
-      <div style="width:100%;height:100%;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-muted)">
-        No data available
-      </div>`;
-    return;
-  }
-
   const pending = shopsData.filter(s => s.verificationStatus === 'Pending').length;
   const verified = shopsData.filter(s => s.verificationStatus === 'Verified').length;
   const rejected = shopsData.filter(s => s.verificationStatus === 'Rejected').length;
+  const unverified = total - (pending + verified + rejected);
 
   const verifiedPct = total > 0 ? Math.round((verified / total) * 100) : 0;
   const pendingPct  = total > 0 ? Math.round((pending  / total) * 100) : 0;
   const rejectedPct = total > 0 ? Math.round((rejected / total) * 100) : 0;
+  const unverifiedPct = Math.max(0, 100 - verifiedPct - pendingPct - rejectedPct);
 
-  // Update status segments
-  const verifiedSeg = statusDist.querySelector('.segment.verified');
-  const pendingSeg = statusDist.querySelector('.segment.pending');
-  const rejectedSeg = statusDist.querySelector('.segment.rejected');
+  // Update segments with smooth flex layout
+  statusDist.innerHTML = `
+    <div class="segment verified" style="width: ${verifiedPct}%" title="Verified (${verified})"></div>
+    <div class="segment pending" style="width: ${pendingPct}%" title="Pending (${pending})"></div>
+    <div class="segment rejected" style="width: ${rejectedPct}%" title="Rejected (${rejected})"></div>
+    <div class="segment unverified" style="width: ${unverifiedPct}%" title="Catalog Unverified (${unverified})"></div>
+  `;
 
-  if (verifiedSeg) verifiedSeg.style.width = `${verifiedPct}%`;
-  if (pendingSeg) pendingSeg.style.width = `${pendingPct}%`;
-  if (rejectedSeg) rejectedSeg.style.width = `${rejectedPct}%`;
+  // Update dynamic trend metrics container to eliminate empty void
+  const trendContainer = document.querySelector('#verifications-view .analytics-card .analytics-body');
+  if (trendContainer) {
+    trendContainer.innerHTML = `
+      <!-- Executive KPI Micro-strip -->
+      <div class="trend-kpi-row">
+        <div class="kpi-mini-card">
+          <span class="kpi-mini-label">Approval Ratio</span>
+          <div class="kpi-mini-val success-val">
+            <span>${verifiedPct}%</span>
+            <span class="kpi-mini-sub">${verified} of ${total} stores</span>
+          </div>
+        </div>
+        <div class="kpi-mini-card">
+          <span class="kpi-mini-label">Queue Health</span>
+          <div class="kpi-mini-val ${pending === 0 ? 'success-val' : 'warning-val'}">
+            <span class="pulse-dot"></span>
+            <span>${pending === 0 ? 'Zero Backlog' : `${pending} Pending`}</span>
+          </div>
+        </div>
+        <div class="kpi-mini-card">
+          <span class="kpi-mini-label">Avg. Turnaround</span>
+          <div class="kpi-mini-val">
+            <span>&lt; 2h</span>
+            <span class="kpi-mini-sub">Audit SLA</span>
+          </div>
+        </div>
+      </div>
 
-  // Update legends
-  document.getElementById('status-legend-verified').textContent = `${verified} (${verifiedPct}%)`;
-  document.getElementById('status-legend-pending').textContent = `${pending} (${pendingPct}%)`;
-  document.getElementById('status-legend-rejected').textContent = `${rejected} (${rejectedPct}%)`;
+      <!-- Segmented Stacked Distribution Bar -->
+      <div class="distribution-bar" id="status-distribution-bar">
+        <div class="segment verified" style="width: ${verifiedPct}%" title="Verified: ${verified}"></div>
+        <div class="segment pending" style="width: ${pendingPct}%" title="Pending: ${pending}"></div>
+        <div class="segment rejected" style="width: ${rejectedPct}%" title="Rejected: ${rejected}"></div>
+        <div class="segment unverified" style="width: ${unverifiedPct}%" title="Other: ${unverified}"></div>
+      </div>
+
+      <!-- Rich Status Legend Badges -->
+      <div class="distribution-legend">
+        <div class="legend-item" onclick="filterByStatus('Verified')" title="Filter by Approved">
+          <span class="legend-dot status-verified"></span>
+          <span class="legend-label">Approved</span>
+          <span class="legend-pill success">${verified} (${verifiedPct}%)</span>
+        </div>
+        <div class="legend-item" onclick="filterByStatus('Pending')" title="Filter by Pending">
+          <span class="legend-dot status-pending"></span>
+          <span class="legend-label">Pending</span>
+          <span class="legend-pill warning">${pending} (${pendingPct}%)</span>
+        </div>
+        <div class="legend-item" onclick="filterByStatus('Rejected')" title="Filter by Rejected">
+          <span class="legend-dot status-rejected"></span>
+          <span class="legend-label">Rejected</span>
+          <span class="legend-pill danger">${rejected} (${rejectedPct}%)</span>
+        </div>
+      </div>
+
+      <!-- Live Notice -->
+      <div class="queue-status-banner">
+        <i data-lucide="${pending === 0 ? 'check-circle' : 'alert-circle'}" style="width: 14px; height: 14px;"></i>
+        <span>${pending === 0 ? 'All pending merchant applications are fully verified.' : `${pending} shop applications waiting for review.`}</span>
+      </div>
+    `;
+  }
 
   // Update Category distributions
   const categories = {};
   shopsData.forEach(shop => {
-    const cat = shop.category || 'Others';
+    const cat = shop.category || 'General';
     categories[cat] = (categories[cat] || 0) + 1;
   });
 
@@ -435,30 +591,55 @@ function renderAnalytics() {
           <span>No category data found</span>
         </div>`;
     } else {
-      catList.innerHTML = sortedCats.map(([cat, count]) => {
+      catList.innerHTML = sortedCats.map(([cat, count], index) => {
         const pct = Math.round((count / total) * 100) || 0;
         const catLower = cat.toLowerCase();
-        let barColor = 'var(--primary)';
-        if (catLower === 'grocery') barColor = '#10b981';
-        if (catLower === 'pharmacy') barColor = '#3b82f6';
-        if (catLower === 'electronics') barColor = '#6366f1';
-        if (catLower === 'others') barColor = 'var(--text-muted)';
+        let barColor = 'linear-gradient(90deg, #c98c52, #e5a96e)';
+        let badgeColor = '#c98c52';
+        if (catLower.includes('grocery')) {
+          barColor = 'linear-gradient(90deg, #10b981, #34d399)';
+          badgeColor = '#10b981';
+        } else if (catLower.includes('pharmacy')) {
+          barColor = 'linear-gradient(90deg, #06b6d4, #38bdf8)';
+          badgeColor = '#06b6d4';
+        } else if (catLower.includes('electronic')) {
+          barColor = 'linear-gradient(90deg, #8b5cf6, #a78bfa)';
+          badgeColor = '#8b5cf6';
+        } else if (catLower.includes('snack')) {
+          barColor = 'linear-gradient(90deg, #f59e0b, #fbbf24)';
+          badgeColor = '#f59e0b';
+        }
         
         return `
           <div class="category-row">
             <div class="category-row-header">
-              <span class="name">${cat}</span>
-              <span class="count">${count} (${pct}%)</span>
+              <span class="name">
+                <span class="category-rank">#${index + 1}</span>
+                ${cat}
+              </span>
+              <span class="count">${count} <span class="pct">(${pct}%)</span></span>
             </div>
             <div class="category-bar-bg">
-              <div class="category-bar-fill" style="width: ${pct}%; background-color: ${barColor}"></div>
+              <div class="category-bar-fill" style="width: ${pct}%; background: ${barColor}"></div>
             </div>
           </div>
         `;
       }).join('');
     }
   }
+
+  initIcons();
 }
+
+// Quick filter helper from legend click
+window.filterByStatus = function(status) {
+  activeFilter = status;
+  const filterBtns = document.querySelectorAll('.queue-panel-card .filter-btn');
+  filterBtns.forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-filter') === status);
+  });
+  renderShops();
+};
 
 // Helpers for avatars and category styling
 function getCategoryClass(category) {
@@ -469,14 +650,22 @@ function getCategoryClass(category) {
   return 'others';
 }
 
-function getAvatarColor(name) {
+function getAvatarGradient(name) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const colors = ['#6366f1', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#14b8a6'];
-  const index = Math.abs(hash % colors.length);
-  return colors[index];
+  const gradients = [
+    'linear-gradient(135deg, #c98c52, #845326)',
+    'linear-gradient(135deg, #10b981, #065f46)',
+    'linear-gradient(135deg, #3b82f6, #1e3a8a)',
+    'linear-gradient(135deg, #8b5cf6, #581c87)',
+    'linear-gradient(135deg, #f59e0b, #78350f)',
+    'linear-gradient(135deg, #06b6d4, #164e63)',
+    'linear-gradient(135deg, #ec4899, #831843)'
+  ];
+  const index = Math.abs(hash % gradients.length);
+  return gradients[index];
 }
 
 // Render Queue Items (3-column layout)
@@ -501,15 +690,26 @@ function renderShops() {
   }
   
   if (filtered.length === 0) {
+    const verifiedTotal = shopsData.filter(s => s.verificationStatus === 'Verified').length;
     qList.innerHTML = `
-      <div class="empty-state">
-        <i data-lucide="inbox"></i>
-        <p>No shops found matching filters.</p>
-        ${activeFilter === 'Pending' ? `
-          <button onclick="fetchShops()" class="primary-btn empty-cta">
-            <i data-lucide="refresh-cw" style="width:12px;height:12px;"></i> Refresh Queue
-          </button>` : ''
-        }
+      <div class="empty-state queue-empty-box">
+        <div class="empty-icon-bubble">
+          <i data-lucide="${activeFilter === 'Pending' ? 'check-check' : 'inbox'}"></i>
+        </div>
+        <h4>${activeFilter === 'Pending' ? 'Verification Queue is Clear!' : 'No matching stores'}</h4>
+        <p>${activeFilter === 'Pending' 
+            ? 'There are currently no new stores awaiting audit. You can review approved merchants or search the catalog.' 
+            : 'No stores match the selected filter or search keyword.'}</p>
+        <div class="empty-quick-actions">
+          ${verifiedTotal > 0 && activeFilter !== 'Verified' ? `
+            <button onclick="filterByStatus('Verified')" class="primary-btn empty-cta">
+              <i data-lucide="badge-check" style="width:13px;height:13px;"></i> View Verified (${verifiedTotal})
+            </button>` : ''
+          }
+          <button onclick="filterByStatus('all')" class="secondary-btn empty-cta">
+            <i data-lucide="layout-grid" style="width:13px;height:13px;"></i> View All (${shopsData.length})
+          </button>
+        </div>
       </div>
     `;
     initIcons();
@@ -519,21 +719,25 @@ function renderShops() {
   qList.innerHTML = filtered.map(shop => {
     const statusLower = (shop.verificationStatus || 'unverified').toLowerCase();
     const initials = (shop.name || 'S').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-    const avatarColor = getAvatarColor(shop.name || '');
+    const avatarGradient = getAvatarGradient(shop.name || '');
     const isActive = shop._id === selectedShopId ? 'active' : '';
-    const timeAgo = shop.updatedAt ? new Date(shop.updatedAt).toLocaleDateString() : 'N/A';
+    const timeAgo = shop.updatedAt ? new Date(shop.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Recent';
+    const isVerified = shop.verificationStatus === 'Verified';
     
     return `
       <div class="queue-card ${isActive}" onclick="selectShop('${shop._id}')">
-        <div class="shop-avatar" style="background-color: ${avatarColor}">${initials}</div>
+        <div class="shop-avatar" style="background: ${avatarGradient}">${initials}</div>
         <div class="queue-card-details">
           <div class="queue-card-title-row">
-            <span class="name">${shop.name}</span>
+            <span class="name" title="${shop.name}">
+              ${shop.name}
+              ${isVerified ? '<i data-lucide="badge-check" class="verified-inline-icon"></i>' : ''}
+            </span>
             <span class="queue-card-time">${timeAgo}</span>
           </div>
-          <div class="queue-card-title-row">
-            <span class="queue-card-meta">${shop.shopType || 'Local Store'} · ${shop.category}</span>
-            <span class="status-badge ${statusLower}" style="padding: 2px 6px; font-size: 8px;">
+          <div class="queue-card-sub-row">
+            <span class="queue-card-meta">${shop.category || 'Retail'}</span>
+            <span class="status-badge ${statusLower}">
               <span class="status-dot"></span>
               ${shop.verificationStatus}
             </span>
@@ -951,5 +1155,103 @@ async function updateShopStatus(id, status, reason, notes) {
     await fetchShops();
   } catch (err) {
     showToast(err.message, 'error');
+  }
+}
+
+// Safe HTML string escaper
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Wholesale Distributors Loader & Renderer
+async function loadDistributors() {
+  const container = document.getElementById('distributors-list');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Loading wholesale distributors...</span>
+    </div>
+  `;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/distributors/public/all`);
+    if (!res.ok) throw new Error('Failed to fetch distributors');
+    const distributors = await res.json();
+
+    // Update metric counters
+    const total = distributors.length;
+    const openCount = distributors.filter(d => d.status === 'open' || d.isOpen).length;
+    const updatingCount = distributors.filter(d => d.status === 'updating').length;
+
+    const totalEl = document.getElementById('dist-total-count');
+    const openEl = document.getElementById('dist-open-count');
+    const updatingEl = document.getElementById('dist-updating-count');
+
+    if (totalEl) totalEl.textContent = total;
+    if (openEl) openEl.textContent = openCount;
+    if (updatingEl) updatingEl.textContent = updatingCount;
+
+    if (distributors.length === 0) {
+      container.innerHTML = `
+        <div class="workspace-empty-state" style="grid-column: 1 / -1; padding: 40px;">
+          <i data-lucide="truck"></i>
+          <p>No registered wholesale distributors found.</p>
+        </div>
+      `;
+      initIcons();
+      return;
+    }
+
+    container.innerHTML = distributors.map(d => {
+      const statusClass = (d.status || 'open').toLowerCase();
+      const statusLabel = d.status ? d.status.toUpperCase() : (d.isOpen ? 'OPEN' : 'CLOSED');
+      return `
+        <div class="distributor-card">
+          <div class="distributor-header">
+            <div>
+              <h4 class="distributor-title">${escapeHtml(d.name || 'Wholesale Agency')}</h4>
+              <p class="distributor-category">${escapeHtml(d.category || 'Wholesale & FMCG')}</p>
+            </div>
+            <span class="agency-status-badge ${statusClass}">
+              <span class="agency-status-dot"></span>
+              ${statusLabel}
+            </span>
+          </div>
+
+          <div class="distributor-meta-row">
+            <div class="distributor-meta-item">
+              <i data-lucide="user"></i>
+              <span><strong>Owner:</strong> ${escapeHtml(d.ownerName || 'Verified Agency Owner')}</span>
+            </div>
+            <div class="distributor-meta-item">
+              <i data-lucide="phone"></i>
+              <span><strong>Contact:</strong> +91 ${escapeHtml(d.phone || '9830012345')}</span>
+            </div>
+            <div class="distributor-meta-item">
+              <i data-lucide="map-pin"></i>
+              <span><strong>Warehouse:</strong> ${escapeHtml(d.address || 'Central Wholesale Yard')}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    initIcons();
+  } catch (err) {
+    console.error('Distributors fetch error:', err);
+    container.innerHTML = `
+      <div class="workspace-empty-state" style="grid-column: 1 / -1; padding: 40px;">
+        <i data-lucide="alert-triangle"></i>
+        <p>Could not connect to distributors API. Ensure local server is running on port 5001.</p>
+      </div>
+    `;
+    initIcons();
   }
 }

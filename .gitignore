@@ -113,13 +113,25 @@ server/dist/
 .nyc_output/
 
 # =========================
-# Scratch / Dev-only Scripts
-# (may contain hardcoded credentials)
+# Scratch / Dev-only Scripts & Demo Data
+# (may contain hardcoded credentials or test mocks)
 # =========================
 
 server/scratch/
 server/fix_shop.js
 server/seed.ts
+*.demo.*
+demo_data/
+*seed*.json
+*demo*.json
+
+# =========================
+# AI Agents, Skills & Plans
+# =========================
+
+.agents/
+skills-lock.json
+design-plans/
 
 # Documentation
 PROJECT_PLAN.md

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/design_system.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../shop/data/product_model.dart';
 
@@ -148,14 +149,14 @@ class _InventoryPageState extends State<InventoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
           "Inventory Manager", 
           style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: -0.5),
         ),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF38240D),
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         actions: [
           IconButton(
@@ -166,7 +167,7 @@ class _InventoryPageState extends State<InventoryPage> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF38240D)))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : _errorMessage != null
               ? Center(
                   child: Padding(
@@ -174,17 +175,17 @@ class _InventoryPageState extends State<InventoryPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline_rounded, size: 50, color: Colors.redAccent),
+                        const Icon(Icons.error_outline_rounded, size: 50, color: AppColors.error),
                         const SizedBox(height: 16),
                         Text(
                           _errorMessage!,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF38240D)),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: _loadProducts,
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF38240D)),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
                           child: const Text('Try Again', style: TextStyle(color: Colors.white)),
                         ),
                       ],
@@ -196,11 +197,11 @@ class _InventoryPageState extends State<InventoryPage> {
                       child: Text(
                         "No products in inventory yet.\nTap 'Add Item' to start listing products.",
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold),
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
                       itemCount: _products.length,
                       itemBuilder: (context, index) {
                         final product = _products[index];
@@ -210,11 +211,15 @@ class _InventoryPageState extends State<InventoryPage> {
                     ),
       floatingActionButton: widget.shopId == null
           ? null
-          : FloatingActionButton.extended(
-              onPressed: () => _showAddProductSheet(context),
-              backgroundColor: const Color(0xFF38240D),
-              label: const Text("Add Item", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              icon: const Icon(Icons.add, color: Colors.white),
+          : Padding(
+              padding: const EdgeInsets.only(bottom: 85),
+              child: FloatingActionButton.extended(
+                onPressed: () => _showAddProductSheet(context),
+                backgroundColor: AppColors.primary,
+                elevation: 4,
+                label: const Text("Add Item", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.add, color: Colors.white),
+              ),
             ),
     );
   }
@@ -225,31 +230,25 @@ class _InventoryPageState extends State<InventoryPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade100),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          )
-        ],
+        border: Border.all(color: AppColors.primaryLight.withOpacity(0.5)),
+        boxShadow: AppShadows.soft,
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFF38240D).withOpacity(0.05),
+            color: AppColors.primary.withOpacity(0.06),
             borderRadius: BorderRadius.circular(15),
           ),
-          child: const Icon(Icons.inventory_2_outlined, color: Color(0xFF38240D)),
+          child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
         ),
         title: Row(
           children: [
             Expanded(
               child: Text(
                 product.name,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF38240D)),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary),
               ),
             ),
             if (!product.isAvailable)
@@ -257,12 +256,12 @@ class _InventoryPageState extends State<InventoryPage> {
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Text(
                   "Draft/Inactive",
-                  style: TextStyle(color: Colors.grey, fontSize: 9, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 9, fontWeight: FontWeight.bold),
                 ),
               ),
           ],
@@ -273,19 +272,19 @@ class _InventoryPageState extends State<InventoryPage> {
             const SizedBox(height: 4),
             Text(
               "Price: ₹${product.price.toStringAsFixed(2)} per ${product.unit} • ${product.category}",
-              style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500, fontSize: 12),
+              style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w500, fontSize: 12),
             ),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: isLowStock ? const Color(0xFFC05800).withOpacity(0.1) : Colors.green.shade50,
+                color: isLowStock ? AppColors.warning.withOpacity(0.15) : AppColors.freshGreen.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 "${product.stockQuantity} ${product.unit} left",
                 style: TextStyle(
-                  color: isLowStock ? const Color(0xFFC05800) : Colors.green.shade700,
+                  color: isLowStock ? const Color(0xFFC05800) : AppColors.freshGreen,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),

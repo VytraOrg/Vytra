@@ -10,7 +10,7 @@ class DColors {
   static const Color blue = Color(0xFF3B78A6);
   static const Color red = Color(0xFFC0473B);
   static const Color grey = Color(0xFF9E9E9E);
-  static const Color chipBg = Color(0xFFF6EDE4); // beige, as in nav pill
+  static const Color chipBg = AppColors.primaryLight; // canonical cream token
 }
 
 Color agencyStatusColor(AgencyStatus s) {

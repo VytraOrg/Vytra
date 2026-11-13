@@ -12,6 +12,7 @@ import { CacheModule } from './modules/cache/cache.module';
 import { CartModule } from './modules/cart/cart.module';
 import { MailModule } from './modules/mail/mail.module';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module';
+import { DistributorsModule } from './modules/distributors/distributors.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { RecommendationsModule } from './modules/recommendations/recommendations
     CartModule,
     MailModule,
     RecommendationsModule,
+    DistributorsModule,
   ],
   providers: [
     {

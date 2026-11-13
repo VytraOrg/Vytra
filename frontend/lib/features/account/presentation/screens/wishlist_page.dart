@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/design_system.dart';
+import '../../../../shared/widgets/app_network_image.dart';
 import '../../../../shared/widgets/app_notification.dart';
 import '../../../shop/domain/entities/product_entity.dart';
 import '../../../cart/presentation/controllers/cart_controller.dart';
@@ -152,7 +153,7 @@ class _WishlistPageState extends State<WishlistPage> {
                               child: Container(
                                 color: AppColors.background,
                                 child: product.imageUrl != null
-                                    ? Image.network(product.imageUrl!, fit: BoxFit.cover)
+                                    ? AppNetworkImage(imageUrl: product.imageUrl!, fit: BoxFit.cover)
                                     : const Icon(Icons.shopping_basket_rounded, size: 40, color: AppColors.textMuted),
                               ),
                             ),

@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../shopkeeper/presentation/screens/shopkeeper_route_handler.dart';
+import '../../../distributor/presentation/screens/distributor_dash.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 import 'welcome_screen.dart';
 import '../../../shop/presentation/screens/customer_home.dart';
@@ -33,6 +34,8 @@ class _SplashScreenState extends State<SplashScreen> {
       if (user != null) {
         if (user.role == 'Shopkeeper') {
           nextScreen = const ShopkeeperRouteHandler();
+        } else if (user.role == 'Distributor') {
+          nextScreen = const DistributorDash();
         } else {
           nextScreen = CustomerHome(customerId: user.id);
         }

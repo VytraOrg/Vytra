@@ -12,6 +12,7 @@ import '../../../shop/data/product_model.dart';
 import '../../../orders/domain/order_model.dart';
 import 'inventory_page.dart';
 import 'analytics_page.dart';
+import '../../../../shared/widgets/floating_pill_nav_bar.dart';
 
 class ShopkeeperDash extends StatefulWidget {
   const ShopkeeperDash({super.key});
@@ -286,6 +287,7 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      extendBody: true,
       body: _isLoadingShop && _myShop == null
           ? const Center(child: CircularProgressIndicator())
           : IndexedStack(
@@ -395,7 +397,7 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
                 _buildSectionHeader("Recent Activity"),
                 const SizedBox(height: AppSpacing.sm),
                 _buildRecentActivityTimeline(),
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: 90),
               ]),
             ),
           ),
@@ -1431,6 +1433,7 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
                           )
                         : ListView.builder(
                             physics: const BouncingScrollPhysics(),
+                            padding: const EdgeInsets.only(bottom: 100),
                             itemCount: filteredOrders.length,
                             itemBuilder: (context, index) {
                               try {
@@ -1633,36 +1636,93 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
             ),
             const SizedBox(height: AppSpacing.xl),
 
-            // Logout Button
-            GestureDetector(
-              onTap: () async {
-                await authController.logout();
-                if (mounted) {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-                    (route) => false,
-                  );
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(color: AppColors.error.withOpacity(0.2)),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
-                    SizedBox(width: 8),
-                    Text('Log Out Merchant Account', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold, fontSize: 14)),
-                  ],
+            // Logout Action Card
+            _buildProfileSectionHeader("Account Action"),
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                boxShadow: AppShadows.soft,
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  onTap: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        title: const Text('Log out of merchant account?'),
+                        content: const Text(
+                          'You will need to sign in with your email and password to manage your shop again.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+                          ),
+                          FilledButton(
+                            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Log Out'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      await authController.logout();
+                      if (mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                          (route) => false,
+                        );
+                      }
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
+                        ),
+                        const SizedBox(width: 14),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Log Out Merchant Account',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: AppColors.error,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Sign out of this merchant session',
+                                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: 90),
           ],
         ),
       ),
@@ -1918,75 +1978,42 @@ class _ShopkeeperDashState extends State<ShopkeeperDash> {
 
   // --- BOTTOM NAVIGATION BAR ---
   Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(AppRadius.xl),
-          topRight: Radius.circular(AppRadius.xl),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+    return SafeArea(
+      top: false,
+      child: FloatingPillNavBar(
+        currentIndex: _currentIndex,
+        onTabSelected: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        items: const [
+          NavBarItem(
+            label: "Dashboard",
+            selectedIcon: Icons.dashboard_rounded,
+            unselectedIcon: Icons.dashboard_outlined,
+          ),
+          NavBarItem(
+            label: "Orders",
+            selectedIcon: Icons.receipt_long_rounded,
+            unselectedIcon: Icons.receipt_long_outlined,
+          ),
+          NavBarItem(
+            label: "Products",
+            selectedIcon: Icons.inventory_2_rounded,
+            unselectedIcon: Icons.inventory_2_outlined,
+          ),
+          NavBarItem(
+            label: "Reports",
+            selectedIcon: Icons.bar_chart_rounded,
+            unselectedIcon: Icons.bar_chart_outlined,
+          ),
+          NavBarItem(
+            label: "Profile",
+            selectedIcon: Icons.person_rounded,
+            unselectedIcon: Icons.person_outline_rounded,
           ),
         ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(0, Icons.dashboard_rounded, "Dashboard"),
-              _buildNavItem(1, Icons.shopping_cart_rounded, "Orders"),
-              _buildNavItem(2, Icons.inventory_2_rounded, "Products"),
-              _buildNavItem(3, Icons.bar_chart_rounded, "Reports"),
-              _buildNavItem(4, Icons.person_rounded, "Profile"),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(int index, IconData icon, String label) {
-    final bool isSelected = _currentIndex == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
-      child: AnimatedContainer(
-        duration: 250.ms,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              size: 20,
-            ),
-            if (isSelected) ...[
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ],
-        ),
       ),
     );
   }

@@ -90,6 +90,22 @@ export class Shop {
   @Prop()
   tradeLicenseNumber?: string;
 
+  @Prop()
+  fssaiNumber?: string;
+
+  // Agency Status for Distributors
+  @Prop({ default: true })
+  isOpen?: boolean;
+
+  @Prop({ default: true })
+  isAcceptingOrders?: boolean;
+
+  @Prop({ default: false })
+  isUpdatingRates?: boolean;
+
+  @Prop({ default: 'open', enum: ['open', 'paused', 'updating', 'closed'] })
+  agencyStatus?: string;
+
   // New Fields for Admin Review details
   @Prop()
   verificationNotes?: string;

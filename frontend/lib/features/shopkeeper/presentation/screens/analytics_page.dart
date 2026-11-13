@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/design_system.dart';
 import '../../../orders/domain/order_model.dart';
 import '../../../shop/data/product_model.dart';
 
@@ -45,16 +46,16 @@ class AnalyticsPage extends StatelessWidget {
     final totalWeeklySales = weeklyData.fold(0.0, (sum, val) => sum + val);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text("Performance Insights", 
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: AppColors.textPrimary, letterSpacing: -0.5)),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 24.0, bottom: 100.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -63,7 +64,7 @@ class AnalyticsPage extends StatelessWidget {
             const SizedBox(height: 32),
 
             const Text("Weekly Sales Trend", 
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
             const SizedBox(height: 20),
             
             // 2. MODERN GRADIENT BAR CHART
@@ -71,7 +72,7 @@ class AnalyticsPage extends StatelessWidget {
             
             const SizedBox(height: 35),
             const Text("Top Selling Inventory", 
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
             const SizedBox(height: 15),
             
             // 3. CLEAN PRODUCT RANKING
@@ -79,7 +80,7 @@ class AnalyticsPage extends StatelessWidget {
               const Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Text("No completed order sales yet", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                  child: Text("No completed order sales yet", style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
                 ),
               )
             else ...[
@@ -104,9 +105,9 @@ class AnalyticsPage extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildSmallInsightCard("Weekly Sales", "₹${weeklySales.toStringAsFixed(0)}", Icons.trending_up, Colors.green),
-        _buildSmallInsightCard("Orders", "${orders.length}", Icons.people_outline, Colors.blue),
-        _buildSmallInsightCard("Active Items", "${products.length}", Icons.inventory_2_outlined, Colors.purple),
+        _buildSmallInsightCard("Weekly Sales", "₹${weeklySales.toStringAsFixed(0)}", Icons.trending_up, AppColors.freshGreen),
+        _buildSmallInsightCard("Orders", "${orders.length}", Icons.people_outline, AppColors.skyBlue),
+        _buildSmallInsightCard("Active Items", "${products.length}", Icons.inventory_2_outlined, AppColors.accent),
       ],
     );
   }
@@ -118,20 +119,16 @@ class AnalyticsPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03), 
-            blurRadius: 10,
-          )
-        ],
+        border: Border.all(color: AppColors.primaryLight.withOpacity(0.5)),
+        boxShadow: AppShadows.soft,
       ),
       child: Column(
         children: [
           Icon(icon, color: color, size: 20),
           const SizedBox(height: 8),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), textAlign: TextAlign.center),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary), textAlign: TextAlign.center),
           const SizedBox(height: 2),
-          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 10), textAlign: TextAlign.center),
+          Text(title, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10), textAlign: TextAlign.center),
         ],
       ),
     );
@@ -144,13 +141,8 @@ class AnalyticsPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.teal.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          )
-        ],
+        border: Border.all(color: AppColors.primaryLight.withOpacity(0.5)),
+        boxShadow: AppShadows.soft,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -172,7 +164,7 @@ class AnalyticsPage extends StatelessWidget {
           height: 150 * (heightFactor > 0 ? heightFactor : 0.05),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.teal.shade300, Colors.teal.shade700],
+              colors: [AppColors.primary, AppColors.secondary],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -180,7 +172,7 @@ class AnalyticsPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
       ],
     );
   }
@@ -191,12 +183,8 @@ class AnalyticsPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02), 
-            blurRadius: 10,
-          )
-        ],
+        border: Border.all(color: AppColors.primaryLight.withOpacity(0.5)),
+        boxShadow: AppShadows.soft,
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
@@ -208,8 +196,8 @@ class AnalyticsPage extends StatelessWidget {
             child: Text(rank, style: TextStyle(color: rankColor, fontWeight: FontWeight.bold)),
           ),
         ),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-        trailing: Text(sales, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.textPrimary)),
+        trailing: Text(sales, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.freshGreen)),
       ),
     );
   }

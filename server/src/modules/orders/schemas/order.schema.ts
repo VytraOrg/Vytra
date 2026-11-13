@@ -29,7 +29,7 @@ export class Order {
   @Prop({ required: true })
   totalAmount: number;
 
-  @Prop({ required: true, enum: ['Placed', 'Processing', 'Dispatched', 'Delivered', 'Cancelled'], default: 'Placed' })
+  @Prop({ required: true, enum: ['Placed', 'Pending', 'Processing', 'Accepted', 'Dispatched', 'Delivered', 'Cancelled'], default: 'Placed' })
   status: string;
 
   @Prop({ type: Object })

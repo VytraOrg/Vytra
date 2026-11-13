@@ -11,7 +11,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Main CSS styling -->
-  <link rel="stylesheet" href="styles.css?v=2.0">
+  <link rel="stylesheet" href="styles.css?v=3.0">
 </head>
 <body>
   <!-- Toast Notification Container -->
@@ -72,6 +72,13 @@
           <span>Sign In</span>
           <i data-lucide="arrow-right"></i>
         </button>
+
+        <div style="text-align: center; margin-top: 8px;">
+          <button type="button" id="demo-login-chip" class="demo-login-chip" title="Fill test credentials">
+            <i data-lucide="zap" style="width: 13px; height: 13px;"></i>
+            <span>Quick Dev Sign-In</span>
+          </button>
+        </div>
       </form>
     </div>
   </div>
@@ -98,6 +105,10 @@
         <a href="#" class="menu-item" data-tab="all-shops">
           <i data-lucide="store"></i>
           <span>All Stores</span>
+        </a>
+        <a href="#" class="menu-item" data-tab="distributors">
+          <i data-lucide="truck"></i>
+          <span>Distributors</span>
         </a>
       </nav>
 
@@ -416,12 +427,12 @@
                 </div>
               </div>
 
-              <!-- Rejection Input Pane (Nested inline inside workspace) -->
-              <div id="ws-rejection-pane" class="rejection-pane hidden">
+              <!-- Rejection Input Pane (Cleaned CSS) -->
+              <div id="ws-rejection-pane" class="rejection-pane rejection-pane--danger hidden">
                 <div class="form-group" style="margin-bottom: 0;">
-                  <label for="ws-reject-reason-select" style="font-size: 11px; margin-bottom: 6px;">Rejection Reason</label>
+                  <label for="ws-reject-reason-select" class="rejection-pane-label">Rejection Reason</label>
                   <div class="input-wrapper">
-                    <select id="ws-reject-reason-select" style="width: 100%; padding: 8px 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); font-size: 13px; outline: none; border-color: var(--border-hover);">
+                    <select id="ws-reject-reason-select" class="rejection-pane-select">
                       <option value="GST Certificate Expired">GST Certificate Expired</option>
                       <option value="Document Details Mismatch (Name/Address)">Document Details Mismatch (Name/Address)</option>
                       <option value="Blurry or Illegible Upload">Blurry or Illegible Upload</option>
@@ -431,26 +442,26 @@
                   </div>
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                  <label for="ws-reject-notes-input" style="font-size: 11px; margin-bottom: 6px;">Detailed Notes (Shown to Merchant)</label>
+                  <label for="ws-reject-notes-input" class="rejection-pane-label">Detailed Notes (Shown to Merchant)</label>
                   <div class="input-wrapper">
-                    <textarea id="ws-reject-notes-input" placeholder="Explain what the merchant needs to correct..." style="width: 100%; height: 60px; padding: 8px 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); font-size: 13px; resize: none; outline: none; border-color: var(--border-hover);"></textarea>
+                    <textarea id="ws-reject-notes-input" placeholder="Explain what the merchant needs to correct..." class="rejection-pane-textarea"></textarea>
                   </div>
                 </div>
-                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                <div class="pane-actions-row">
                   <button id="ws-cancel-reject-btn" class="secondary-btn" style="padding: 6px 12px; font-size: 12px;">Cancel</button>
                   <button id="ws-confirm-reject-btn" class="primary-btn" style="padding: 6px 12px; font-size: 12px; background: var(--danger); border-color: var(--danger-border);">Confirm Rejection</button>
                 </div>
               </div>
 
-              <!-- Changes Requested Input Pane -->
-              <div id="ws-changes-pane" class="rejection-pane hidden" style="border-color: var(--warning-border); background: var(--warning-dim); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+              <!-- Changes Requested Input Pane (Cleaned CSS) -->
+              <div id="ws-changes-pane" class="rejection-pane rejection-pane--warning hidden">
                 <div class="form-group" style="margin-bottom: 0;">
-                  <label for="ws-changes-notes-input" style="font-size: 11px; margin-bottom: 6px; color: var(--warning);">Describe Requested Changes (Shown to Merchant)</label>
+                  <label for="ws-changes-notes-input" class="rejection-pane-label">Describe Requested Changes (Shown to Merchant)</label>
                   <div class="input-wrapper">
-                    <textarea id="ws-changes-notes-input" placeholder="Explain what the merchant needs to correct..." style="width: 100%; height: 60px; padding: 8px 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); font-size: 13px; resize: none; outline: none; border-color: var(--border-hover);"></textarea>
+                    <textarea id="ws-changes-notes-input" placeholder="Explain what the merchant needs to correct..." class="rejection-pane-textarea"></textarea>
                   </div>
                 </div>
-                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                <div class="pane-actions-row">
                   <button id="ws-cancel-changes-btn" class="secondary-btn" style="padding: 6px 12px; font-size: 12px;">Cancel</button>
                   <button id="ws-confirm-changes-btn" class="primary-btn" style="padding: 6px 12px; font-size: 12px; background: var(--warning); border-color: var(--warning-border); color: #fff;">Send Request</button>
                 </div>
@@ -499,6 +510,76 @@
             </div>
           </div>
         </section>
+      </div>
+
+      <!-- Dashboard View: Distributors -->
+      <div id="distributors-view" class="view-tab hidden">
+        <div class="view-header">
+          <div>
+            <h2>Wholesale Distributors</h2>
+            <p>Monitor wholesale agencies, live agency controls, and compliance credentials</p>
+          </div>
+          <button id="refresh-distributors-btn" class="secondary-btn">
+            <i data-lucide="refresh-cw"></i>
+            <span>Refresh</span>
+          </button>
+        </div>
+
+        <!-- Metric Grid -->
+        <section class="metrics-grid">
+          <div class="card metric-card">
+            <div class="metric-header">
+              <span class="label">Total Agencies</span>
+              <div class="metric-icon total">
+                <i data-lucide="truck"></i>
+              </div>
+            </div>
+            <div class="metric-body">
+              <span class="num" id="dist-total-count">0</span>
+              <div class="trend-badge info">
+                <span>Active Wholesalers</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card metric-card">
+            <div class="metric-header">
+              <span class="label">Accepting Orders</span>
+              <div class="metric-icon verified">
+                <i data-lucide="check-circle2"></i>
+              </div>
+            </div>
+            <div class="metric-body">
+              <span class="num" id="dist-open-count">0</span>
+              <div class="trend-badge success">
+                <span>Open for Retailers</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card metric-card">
+            <div class="metric-header">
+              <span class="label">Updating Rates</span>
+              <div class="metric-icon pending">
+                <i data-lucide="clock"></i>
+              </div>
+            </div>
+            <div class="metric-body">
+              <span class="num" id="dist-updating-count">0</span>
+              <div class="trend-badge warning">
+                <span>Rates in Revision</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Distributors List -->
+        <div id="distributors-list" class="distributors-grid">
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <span>Loading distributors...</span>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -561,6 +642,6 @@
   </div>
 
   <!-- App Logic Javascript -->
-  <script src="app.js?v=2.0"></script>
+  <script src="app.js?v=3.0"></script>
 </body>
 </html>

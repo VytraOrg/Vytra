@@ -31,6 +31,12 @@ export class Product {
 
   @Prop({ default: true })
   isAvailable: boolean;
+
+  @Prop({ default: 5 })
+  gstPercent: number;
+
+  @Prop({ default: 1 })
+  minOrderQty: number;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

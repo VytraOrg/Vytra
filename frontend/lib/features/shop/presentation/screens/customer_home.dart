@@ -866,7 +866,17 @@ class _CustomerHomeState extends State<CustomerHome> {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          Positioned.fill(child: Image.network(img, fit: BoxFit.cover, color: Colors.black.withOpacity(0.3), colorBlendMode: BlendMode.darken)),
+          Positioned.fill(
+            child: AppNetworkImage(
+              imageUrl: img,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.35),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -874,7 +884,7 @@ class _CustomerHomeState extends State<CustomerHome> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(title, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
-                Text(sub, style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)),
+                Text(sub, style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 14)),
               ],
             ),
           ),
@@ -904,10 +914,20 @@ class _CustomerHomeState extends State<CustomerHome> {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: isSelected ? cat['color'] : Colors.white,
-                    child: Icon(cat['icon'], color: isSelected ? Colors.white : cat['color']),
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: isSelected ? null : AppShadows.soft,
+                      border: Border.all(
+                        color: isSelected ? Colors.transparent : AppColors.primaryLight,
+                        width: 1.2,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 30,
+                      backgroundColor: isSelected ? cat['color'] : Colors.white,
+                      child: Icon(cat['icon'], color: isSelected ? Colors.white : cat['color']),
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(cat['name'], style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),

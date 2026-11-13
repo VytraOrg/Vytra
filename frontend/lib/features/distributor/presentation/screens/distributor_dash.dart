@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/design_system.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../shared/widgets/floating_pill_nav_bar.dart';
+import '../../../auth/presentation/auth_controller.dart';
 import 'distributor_controller.dart';
 import 'distributor_models.dart';
 import 'distributor_profile_page.dart';
@@ -21,6 +25,17 @@ class DistributorDash extends StatefulWidget {
 class _DistributorDashState extends State<DistributorDash> {
   int _index = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final apiClient = context.read<ApiClient>();
+        DistributorController.instance.init(apiClient);
+      }
+    });
+  }
+
   void _go(int i) => setState(() => _index = i);
 
   @override
@@ -35,14 +50,49 @@ class _DistributorDashState extends State<DistributorDash> {
           const DistributorInventoryPage(),
           const DistributorSalesReport(),
           DistributorProfilePage(
-            onLogout: () {
-              // TODO: sign out, then go to your login screen.
-              Navigator.of(context).popUntil((r) => r.isFirst);
+            onLogout: () async {
+              await context.read<AuthController>().logout();
+              if (mounted) {
+                Navigator.of(context).pushNamedAndRemoveUntil('/login', (r) => false);
+              }
             },
           ),
         ],
       ),
-      bottomNavigationBar: _DistributorNavBar(index: _index, onTap: _go),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: FloatingPillNavBar(
+          currentIndex: _index,
+          onTabSelected: _go,
+          items: const [
+            NavBarItem(
+              label: "Overview",
+              selectedIcon: Icons.dashboard_rounded,
+              unselectedIcon: Icons.dashboard_outlined,
+            ),
+            NavBarItem(
+              label: "Orders",
+              selectedIcon: Icons.receipt_long_rounded,
+              unselectedIcon: Icons.receipt_long_outlined,
+            ),
+            NavBarItem(
+              label: "Inventory",
+              selectedIcon: Icons.inventory_2_rounded,
+              unselectedIcon: Icons.inventory_2_outlined,
+            ),
+            NavBarItem(
+              label: "Reports",
+              selectedIcon: Icons.bar_chart_rounded,
+              unselectedIcon: Icons.bar_chart_outlined,
+            ),
+            NavBarItem(
+              label: "Profile",
+              selectedIcon: Icons.person_rounded,
+              unselectedIcon: Icons.person_outline_rounded,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -63,9 +113,13 @@ class DistributorHomeTab extends StatelessWidget {
             c.countByStatus(DeliveryStatus.accepted) +
             c.countByStatus(DeliveryStatus.dispatched);
 
-        return CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(child: _header(context, c)),
+        return RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: () => c.loadData(),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(child: _header(context, c)),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
@@ -167,7 +221,8 @@ class DistributorHomeTab extends StatelessWidget {
               ),
             ),
           ],
-        );
+        ),
+      );
       },
     );
   }
@@ -460,73 +515,6 @@ class _HeaderBadge extends StatelessWidget {
               style: const TextStyle(color: Colors.white, fontSize: 11, letterSpacing: 0.3)),
         ),
       ]),
-    );
-  }
-}
-
-// ============================================================== bottom nav
-class _NavItem {
-  final IconData icon;
-  final String label;
-  const _NavItem(this.icon, this.label);
-}
-
-class _DistributorNavBar extends StatelessWidget {
-  final int index;
-  final ValueChanged<int> onTap;
-  const _DistributorNavBar({required this.index, required this.onTap});
-
-  static const _items = [
-    _NavItem(Icons.dashboard_rounded, 'Dashboard'),
-    _NavItem(Icons.receipt_long_rounded, 'Orders'),
-    _NavItem(Icons.inventory_2_rounded, 'Inventory'),
-    _NavItem(Icons.bar_chart_rounded, 'Reports'),
-    _NavItem(Icons.person_rounded, 'Profile'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 16)],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (var i = 0; i < _items.length; i++)
-                GestureDetector(
-                  onTap: () => onTap(i),
-                  behavior: HitTestBehavior.opaque,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeOut,
-                    padding: EdgeInsets.symmetric(horizontal: i == index ? 16 : 12, vertical: 11),
-                    decoration: BoxDecoration(
-                      color: i == index ? DColors.chipBg : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(_items[i].icon,
-                          size: 22, color: i == index ? AppColors.primary : AppColors.textMuted),
-                      if (i == index) ...[
-                        const SizedBox(width: 8),
-                        Text(_items[i].label,
-                            style: const TextStyle(
-                                color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)),
-                      ],
-                    ]),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

@@ -110,41 +110,74 @@ class _DistributorInventoryPageState extends State<DistributorInventoryPage> {
             .toList();
         final available = c.inventory.where((p) => p.isAvailable).length;
 
+        final double bottomMargin = widget.showBack ? 20.0 : 90.0;
+        final double listBottomPadding = widget.showBack ? 90.0 : 165.0;
+
         return Scaffold(
           backgroundColor: AppColors.background,
-          body: Column(children: [
-            DistributorHeader(
-              title: 'Inventory & Rates',
-              subtitle: '${c.inventory.length} products  •  $available available',
-              showBack: widget.showBack,
-              trailing: const AgencyStatusPill(),
-              bottom: TextField(
-                onChanged: (v) => setState(() => _query = v),
-                decoration: InputDecoration(
-                  hintText: 'Search products...',
-                  hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-                  prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+          body: Stack(
+            children: [
+              Column(children: [
+                DistributorHeader(
+                  title: 'Inventory & Rates',
+                  subtitle: '${c.inventory.length} products  •  $available available',
+                  showBack: widget.showBack,
+                  trailing: const AgencyStatusPill(),
+                  bottom: TextField(
+                    onChanged: (v) => setState(() => _query = v),
+                    decoration: InputDecoration(
+                      hintText: 'Search products...',
+                      hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                      prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            if (updating)
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
-                child: AgencyStatusBanner(),
-              ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                itemCount: items.length,
-                itemBuilder: (_, i) => _productTile(items[i], updating),
-              ),
-            ),
-          ]),
-          bottomNavigationBar: _bottomBar(updating),
+                if (updating)
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    child: AgencyStatusBanner(),
+                  ),
+                Expanded(
+                  child: RefreshIndicator(
+                    color: AppColors.primary,
+                    onRefresh: () => c.loadData(),
+                    child: ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(20, 16, 20, listBottomPadding),
+                      itemCount: items.length,
+                      itemBuilder: (_, i) => _productTile(items[i], updating),
+                    ),
+                  ),
+                ),
+              ]),
+              if (!updating)
+                Positioned(
+                  right: 20,
+                  bottom: bottomMargin,
+                  child: FloatingActionButton.extended(
+                    onPressed: _startUpdate,
+                    backgroundColor: AppColors.primary,
+                    elevation: 4,
+                    icon: const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
+                    label: const Text(
+                      'Update Rates',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ),
+                )
+              else
+                Positioned(
+                  left: 20,
+                  right: 20,
+                  bottom: bottomMargin,
+                  child: _editingActionPanel(),
+                ),
+            ],
+          ),
         );
       },
     );
@@ -233,54 +266,43 @@ class _DistributorInventoryPageState extends State<DistributorInventoryPage> {
     );
   }
 
-  Widget _bottomBar(bool updating) {
+  Widget _editingActionPanel() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 16)],
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.primaryLight, width: 1.2),
+        boxShadow: AppShadows.premium,
       ),
-      child: SafeArea(
-        top: false,
-        child: updating
-            ? Row(children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _cancel,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.textPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                    child: const Text('Cancel'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: FilledButton.icon(
-                    onPressed: _save,
-                    icon: const Icon(Icons.lock_open_rounded),
-                    label: const Text('Save & Reopen'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: DColors.green,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    ),
-                  ),
-                ),
-              ])
-            : FilledButton.icon(
-                onPressed: _startUpdate,
-                icon: const Icon(Icons.edit_rounded),
-                label: const Text('Update Rates'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: _cancel,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.textPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
+              child: const Text('Cancel'),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            flex: 2,
+            child: FilledButton.icon(
+              onPressed: _save,
+              icon: const Icon(Icons.lock_open_rounded, size: 18),
+              label: const Text('Save & Reopen'),
+              style: FilledButton.styleFrom(
+                backgroundColor: DColors.green,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

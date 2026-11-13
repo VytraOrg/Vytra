@@ -60,13 +60,24 @@ class _DistributorOrdersPageState extends State<DistributorOrdersPage> {
               ),
             ),
             Expanded(
-              child: list.isEmpty
-                  ? const EmptyState(icon: Icons.receipt_long_outlined, text: 'No orders here yet')
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                      itemCount: list.length,
-                      itemBuilder: (_, i) => OrderCard(order: list[i]),
-                    ),
+              child: RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: () => c.loadData(),
+                child: list.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: const [
+                          SizedBox(height: 80),
+                          EmptyState(icon: Icons.receipt_long_outlined, text: 'No orders here yet'),
+                        ],
+                      )
+                    : ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                        itemCount: list.length,
+                        itemBuilder: (_, i) => OrderCard(order: list[i]),
+                      ),
+              ),
             ),
           ]);
         },

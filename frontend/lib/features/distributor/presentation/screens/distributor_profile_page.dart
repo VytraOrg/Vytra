@@ -82,22 +82,75 @@ class DistributorProfilePage extends StatelessWidget {
                   const SectionTitle('Agency Controls'),
                   const SizedBox(height: 10),
                   const AgencyControlsCard(),
-                  const SizedBox(height: 30),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: onLogout,
-                      icon: const Icon(Icons.logout_rounded),
-                      label: const Text('Log Out Distributor Account'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: DColors.red,
-                        backgroundColor: DColors.red.withOpacity(0.07),
-                        side: BorderSide(color: DColors.red.withOpacity(0.3)),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  const SizedBox(height: 26),
+                  const SectionTitle('Account Action'),
+                  const SizedBox(height: 10),
+                  DCard(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: InkWell(
+                      onTap: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            title: const Text('Log out of agency?'),
+                            content: const Text(
+                              'You will need to enter your email and password to manage this distributor account again.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+                              ),
+                              FilledButton(
+                                style: FilledButton.styleFrom(backgroundColor: DColors.red),
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Log Out'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true && onLogout != null) {
+                          onLogout!();
+                        }
+                      },
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: DColors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.logout_rounded, color: DColors.red, size: 20),
+                          ),
+                          const SizedBox(width: 14),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Log Out Agency Account',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: DColors.red,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Sign out of this distributor session',
+                                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                        ],
                       ),
                     ),
                   ),
+                  const SizedBox(height: 90), // Bottom breathing room for floating navbar
                 ]),
               ),
             ],

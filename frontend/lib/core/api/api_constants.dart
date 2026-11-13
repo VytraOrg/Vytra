@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 const String _prodBackendUrl = 'https://api.vytra.co.in/api/v1';
 
 /// Local development backend URLs (used during development)
-const String _localWebUrl = 'https://api.vytra.co.in/api/v1';
+const String _localWebUrl = 'http://localhost:5001/api/v1';
 const String _localAndroidEmulatorUrl = 'http://10.0.2.2:5001/api/v1';
 const String _localDesktopUrl = 'http://localhost:5001/api/v1';
 

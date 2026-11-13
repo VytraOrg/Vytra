@@ -76,7 +76,7 @@ class _CartPageState extends State<CartPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey.shade300),
+          Icon(Icons.shopping_cart_outlined, size: 80, color: AppColors.textMuted.withValues(alpha: 0.4)),
           const SizedBox(height: AppSpacing.lg),
           const Text("Your cart is empty", style: TextStyle(fontSize: 18, color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.md),
@@ -178,10 +178,11 @@ class _CartPageState extends State<CartPage> {
         AppSpacing.xl,
         widget.isTab ? (115 + bottomInset) : (AppSpacing.xl + bottomInset),
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -5))],
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+        border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.6), width: 1.2),
+        boxShadow: AppShadows.premium,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

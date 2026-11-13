@@ -2,15 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/design_system.dart';
 
+/// Configurable item model for the unified [FloatingPillNavBar].
+class NavBarItem {
+  final String label;
+  final IconData selectedIcon;
+  final IconData unselectedIcon;
+  final int badgeCount;
+
+  const NavBarItem({
+    required this.label,
+    required this.selectedIcon,
+    IconData? unselectedIcon,
+    this.badgeCount = 0,
+  }) : unselectedIcon = unselectedIcon ?? selectedIcon;
+}
+
+/// A modern, physics-based floating pill navigation bar used across all user roles
+/// (Customer, Shopkeeper, Distributor).
+///
+/// Features:
+/// - Smooth interactive swipe / horizontal dragging with haptic feedback
+/// - Animated sliding active-tab pill with scale dynamics
+/// - Universal role-based customization via `items` list
 class FloatingPillNavBar extends StatefulWidget {
   final int currentIndex;
   final ValueChanged<int> onTabSelected;
+  final List<NavBarItem> items;
   final int cartCount;
 
   const FloatingPillNavBar({
     super.key,
     required this.currentIndex,
     required this.onTabSelected,
+    this.items = const [],
     this.cartCount = 0,
   });
 
@@ -29,10 +53,45 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
   double _position = 0.0;
   int _lastHapticIndex = 0;
 
+  List<NavBarItem> get _effectiveItems {
+    if (widget.items.isNotEmpty) return widget.items;
+    return [
+      const NavBarItem(
+        label: "Home",
+        selectedIcon: Icons.home_rounded,
+        unselectedIcon: Icons.home_outlined,
+      ),
+      const NavBarItem(
+        label: "Orders",
+        selectedIcon: Icons.receipt_long_rounded,
+        unselectedIcon: Icons.receipt_long_outlined,
+      ),
+      const NavBarItem(
+        label: "Saved",
+        selectedIcon: Icons.favorite_rounded,
+        unselectedIcon: Icons.favorite_border_rounded,
+      ),
+      const NavBarItem(
+        label: "Account",
+        selectedIcon: Icons.person_rounded,
+        unselectedIcon: Icons.person_outline_rounded,
+      ),
+      NavBarItem(
+        label: "Cart",
+        selectedIcon: Icons.shopping_cart_rounded,
+        unselectedIcon: Icons.shopping_cart_outlined,
+        badgeCount: widget.cartCount,
+      ),
+    ];
+  }
+
+  int get _itemCount => _effectiveItems.length;
+  int get _maxIndex => _itemCount > 0 ? _itemCount - 1 : 0;
+
   @override
   void initState() {
     super.initState();
-    _position = widget.currentIndex.toDouble();
+    _position = widget.currentIndex.toDouble().clamp(0.0, _maxIndex.toDouble());
     _lastHapticIndex = widget.currentIndex;
 
     _animController = AnimationController(
@@ -59,7 +118,7 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.currentIndex != widget.currentIndex &&
         !_animController.isAnimating) {
-      _animateTo(widget.currentIndex.toDouble());
+      _animateTo(widget.currentIndex.toDouble().clamp(0.0, _maxIndex.toDouble()));
     }
   }
 
@@ -89,10 +148,10 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
   }
 
   void _onHorizontalDragUpdate(DragUpdateDetails details, double totalWidth) {
-    if (totalWidth <= 0) return;
-    final tabWidth = totalWidth / 5;
+    if (totalWidth <= 0 || _itemCount == 0) return;
+    final tabWidth = totalWidth / _itemCount;
     final delta = details.primaryDelta! / tabWidth;
-    final newPos = (_position + delta).clamp(0.0, 4.0);
+    final newPos = (_position + delta).clamp(0.0, _maxIndex.toDouble());
     final roundedIndex = newPos.round();
     if (roundedIndex != _lastHapticIndex) {
       _lastHapticIndex = roundedIndex;
@@ -108,11 +167,11 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
     final velocity = details.primaryVelocity ?? 0.0;
     int targetIndex;
     if (velocity > 350) {
-      targetIndex = (_position.floor() + 1).clamp(0, 4);
+      targetIndex = (_position.floor() + 1).clamp(0, _maxIndex);
     } else if (velocity < -350) {
-      targetIndex = (_position.ceil() - 1).clamp(0, 4);
+      targetIndex = (_position.ceil() - 1).clamp(0, _maxIndex);
     } else {
-      targetIndex = _position.round().clamp(0, 4);
+      targetIndex = _position.round().clamp(0, _maxIndex);
     }
 
     _animateTo(targetIndex.toDouble());
@@ -123,7 +182,7 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
 
   void _onHorizontalDragCancel() {
     _scaleController.reverse();
-    _animateTo(widget.currentIndex.toDouble());
+    _animateTo(widget.currentIndex.toDouble().clamp(0.0, _maxIndex.toDouble()));
   }
 
   void _onTabTapped(int index) {
@@ -136,10 +195,13 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
 
   @override
   Widget build(BuildContext context) {
+    final items = _effectiveItems;
+    final count = items.length;
+
     return AnimatedBuilder(
       animation: Listenable.merge([_animController, _scaleController]),
       builder: (context, child) {
-        final activeIndex = _position.round().clamp(0, 4);
+        final activeIndex = _position.round().clamp(0, _maxIndex);
 
         return Transform.scale(
           scale: _navScaleAnim.value,
@@ -173,7 +235,7 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final totalWidth = constraints.maxWidth;
-                  final tabWidth = totalWidth > 0 ? totalWidth / 5 : 60.0;
+                  final tabWidth = totalWidth > 0 && count > 0 ? totalWidth / count : 60.0;
 
                   return GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -184,12 +246,12 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
                     onHorizontalDragCancel: _onHorizontalDragCancel,
                     child: Stack(
                       children: [
-                        // Symmetrical draggable/sliding selection pill with dynamic zoom
+                        // Symmetrical sliding selection pill with dynamic zoom
                         Positioned(
                           left: _position * tabWidth + 3,
                           top: 3,
                           bottom: 3,
-                          width: tabWidth - 6,
+                          width: tabWidth - 6 > 0 ? tabWidth - 6 : 0,
                           child: Transform.scale(
                             scale: _pillScaleAnim.value,
                             child: Container(
@@ -217,11 +279,8 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
                           padding: const EdgeInsets.symmetric(vertical: 6),
                           child: Row(
                             children: [
-                              _buildTab(0, "Home", Icons.home_rounded, Icons.home_outlined, activeIndex),
-                              _buildTab(1, "Orders", Icons.receipt_long_rounded, Icons.receipt_long_outlined, activeIndex),
-                              _buildTab(2, "Saved", Icons.favorite_rounded, Icons.favorite_border_rounded, activeIndex),
-                              _buildTab(3, "Account", Icons.person_rounded, Icons.person_outline_rounded, activeIndex),
-                              _buildTab(4, "Cart", Icons.shopping_cart_rounded, Icons.shopping_cart_outlined, activeIndex, badgeCount: widget.cartCount),
+                              for (int i = 0; i < count; i++)
+                                _buildTab(i, items[i], activeIndex),
                             ],
                           ),
                         ),
@@ -239,13 +298,11 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
 
   Widget _buildTab(
     int index,
-    String label,
-    IconData selectedIcon,
-    IconData unselectedIcon,
-    int activeIndex, {
-    int badgeCount = 0,
-  }) {
+    NavBarItem item,
+    int activeIndex,
+  ) {
     final isSelected = activeIndex == index;
+    final badgeCount = item.badgeCount;
 
     return Expanded(
       child: GestureDetector(
@@ -261,7 +318,7 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
                 clipBehavior: Clip.none,
                 children: [
                   Icon(
-                    isSelected ? selectedIcon : unselectedIcon,
+                    isSelected ? item.selectedIcon : item.unselectedIcon,
                     color: isSelected ? AppColors.primary : AppColors.textSecondary,
                     size: 22,
                   ),
@@ -300,7 +357,7 @@ class _FloatingPillNavBarState extends State<FloatingPillNavBar>
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   letterSpacing: 0.1,
                 ),
-                child: Text(label),
+                child: Text(item.label),
               ),
             ],
           ),
