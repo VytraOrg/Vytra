@@ -67,7 +67,7 @@ jobs:
       - name: Build Flutter APK
         run: |
           cd frontend
-          flutter build apk --release --verbose --build-name=${{ steps.release_info.outputs.version }} --build-number=${{ steps.release_info.outputs.build_num }}
+          flutter build apk --release --verbose --android-skip-build-dependency-validation --build-name=${{ steps.release_info.outputs.version }} --build-number=${{ steps.release_info.outputs.build_num }}
 
       - name: Copy & Rename APK
         run: |
