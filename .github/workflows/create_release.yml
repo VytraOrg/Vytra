@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check for new commits since last release tag
+      - name: Check for new commits in frontend since last release tag
         id: check
         run: |
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
@@ -28,12 +28,12 @@ jobs:
             echo "No existing release tags found. Proceeding with build."
             echo "should_release=true" >> $GITHUB_OUTPUT
           else
-            COMMITS_SINCE=$(git rev-list "${LATEST_TAG}..HEAD" --count)
-            echo "Commits since ${LATEST_TAG}: ${COMMITS_SINCE}"
+            COMMITS_SINCE=$(git rev-list "${LATEST_TAG}..HEAD" --count -- frontend/)
+            echo "Frontend commits since ${LATEST_TAG}: ${COMMITS_SINCE}"
             if [ "$COMMITS_SINCE" -gt 0 ]; then
               echo "should_release=true" >> $GITHUB_OUTPUT
             else
-              echo "No new commits since ${LATEST_TAG}. Skipping daily build."
+              echo "No new frontend commits since ${LATEST_TAG}. Skipping daily build."
               echo "should_release=false" >> $GITHUB_OUTPUT
             fi
           fi
