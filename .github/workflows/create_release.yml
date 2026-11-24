@@ -10,7 +10,37 @@ permissions:
   contents: write
 
 jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+    steps:
+      - name: Checkout repository with tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for new commits in frontend since last release tag
+        id: check
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No existing release tags found. Proceeding with build."
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            COMMITS_SINCE=$(git rev-list "${LATEST_TAG}..HEAD" --count -- frontend/)
+            echo "Frontend commits since ${LATEST_TAG}: ${COMMITS_SINCE}"
+            if [ "$COMMITS_SINCE" -gt 0 ]; then
+              echo "should_release=true" >> $GITHUB_OUTPUT
+            else
+              echo "No new frontend commits since ${LATEST_TAG}. Skipping daily build."
+              echo "should_release=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
   build-and-release:
+    needs: check-changes
+    if: github.event_name == 'workflow_dispatch' || needs.check-changes.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -68,7 +98,7 @@ jobs:
       - name: Build Flutter APK
         run: |
           cd frontend
-          flutter build apk --release --verbose --android-skip-build-dependency-validation --build-name=${{ steps.release_info.outputs.version }} --build-number=${{ steps.release_info.outputs.build_num }}
+          flutter build apk --release --android-skip-build-dependency-validation --build-name=${{ steps.release_info.outputs.version }} --build-number=${{ steps.release_info.outputs.build_num }}
 
       - name: Copy & Rename APK
         run: |
