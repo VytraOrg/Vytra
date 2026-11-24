@@ -50,10 +50,24 @@ jobs:
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
           echo "name=${NAME}" >> $GITHUB_OUTPUT
 
+      - name: Configure Android NDK for native assets
+        run: |
+          if [ -d "$ANDROID_SDK_ROOT/ndk" ] && [ "$(ls -A $ANDROID_SDK_ROOT/ndk 2>/dev/null)" ]; then
+            NDK_PATH=$(ls -d $ANDROID_SDK_ROOT/ndk/* | sort -V | tail -n 1)
+            echo "ANDROID_NDK_ROOT=$NDK_PATH" >> $GITHUB_ENV
+            echo "ANDROID_NDK_HOME=$NDK_PATH" >> $GITHUB_ENV
+            echo "Using preinstalled NDK: $NDK_PATH"
+          else
+            echo "Installing Android NDK..."
+            echo "y" | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install "ndk;27.2.12479018"
+            echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/27.2.12479018" >> $GITHUB_ENV
+            echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.2.12479018" >> $GITHUB_ENV
+          fi
+
       - name: Build Flutter APK
         run: |
           cd frontend
-          flutter build apk --release --build-name=${{ steps.release_info.outputs.version }} --build-number=${{ steps.release_info.outputs.build_num }}
+          flutter build apk --release --verbose --build-name=${{ steps.release_info.outputs.version }} --build-number=${{ steps.release_info.outputs.build_num }}
 
       - name: Copy & Rename APK
         run: |
@@ -62,6 +76,8 @@ jobs:
 
       - name: Create GitHub Release and Attach Vytra.apk
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: dist/Vytra.apk
           tag_name: ${{ steps.release_info.outputs.tag }}
